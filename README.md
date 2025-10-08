@@ -1,12 +1,40 @@
-# React + Vite
+# Interactive Study Guides for Middle School 📝
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a simple web application built to help my daughter study for her middle school classes. It features interactive flashcards and randomized quizzes designed to make learning engaging and effective.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 View the Live App
 
-## Expanding the ESLint configuration
+You can use the study guide right now by visiting the link below:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**[https://omygodwin.github.io/seasons-study-app/](https://omygodwin.github.io/seasons-study-app/)**
+
+
+
+---
+
+## 📚 Topics Covered
+
+Currently, the app includes study guides for the following subjects:
+
+* **🌍 Earth Science:** An in-depth guide to Earth's seasons, tilt, solstices, and climate zones.
+* **📜 Ancient Egypt:** Explore the world of pharaohs, gods, pyramids, and key historical periods.
+
+---
+
+## ✨ Features
+
+* **Interactive Flashcards**: Flip cards to learn terms and mark them as "Known" or "Review Again" to track your progress.
+* **Randomized Quizzes**: Test your knowledge with a unique, 10-question quiz generated from a larger question bank each time.
+* **Multiple Topics**: Easily switch between different study guides from the main navigation bar.
+
+---
+
+## 🛠️ Built With
+
+This project was built using modern web technologies:
+
+* **React**
+* **Vite**
+* **Tailwind CSS**
