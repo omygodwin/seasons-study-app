@@ -514,6 +514,13 @@ export default function App() {
   const [dischargePapers, setDischargePapers] = useState({});
   const [editingPaper, setEditingPaper] = useState(null);
 
+  // ── PWA & Device notifications state ─────────────────────────────────────
+  const [notifPermission, setNotifPermission] = useState(() => typeof Notification !== 'undefined' ? Notification.permission : 'denied');
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  const notifPromptDismissed = useRef(localStorage.getItem('rrNotifDismissed') === '1');
+  const seenNotifIds = useRef(new Set());
+
   const fileRef = useRef(null);
 
   // ── Derived values ─────────────────────────────────────────────────────────
@@ -558,6 +565,48 @@ export default function App() {
   const filteredNotifs = isStaff ? notifications.filter(n => enabledNotifTypes.includes(n.type)) : [];
   const unreadNotifs = filteredNotifs.filter(n => !n.readBy?.[currentUser?.username]).length;
 
+  // ── PWA helpers ──────────────────────────────────────────────────────────────
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+  const requestNotifPermission = async () => {
+    if (typeof Notification === 'undefined') return;
+    const result = await Notification.requestPermission();
+    setNotifPermission(result);
+    if (result === 'granted') showToast('Device notifications enabled!');
+  };
+
+  const sendBrowserNotif = (title, body, tag, isEmergency = false) => {
+    if (notifPermission !== 'granted') return;
+    try {
+      const n = new Notification(title, {
+        body,
+        icon: '/seasons-study-app/hospital/icon-192.png',
+        badge: '/seasons-study-app/hospital/icon-192.png',
+        tag: tag || undefined,
+        requireInteraction: isEmergency,
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+      if (isEmergency) {
+        try { new Audio('/seasons-study-app/hospital/alert.wav').play(); } catch {}
+      }
+    } catch {}
+  };
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') setInstallPrompt(null);
+  };
+
+  // ── PWA install prompt listener ──────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
   // ── Firebase real-time sync ──────────────────────────────────────────────────
   useEffect(() => {
     if (!IS_CONFIGURED || !db) return;
@@ -585,7 +634,16 @@ export default function App() {
     }));
     unsubs.push(onValue(ref(db, 'notifications'), (snap) => {
       const val = snap.val();
-      setNotifications(val ? Object.entries(val).map(([k, v]) => ({ ...v, id: k })).sort((a, b) => b.timestamp - a.timestamp) : []);
+      const arr = val ? Object.entries(val).map(([k, v]) => ({ ...v, id: k })).sort((a, b) => b.timestamp - a.timestamp) : [];
+      // Fire browser notification for new items from other tabs (recent = last 30s)
+      const cutoff = Date.now() - 30000;
+      arr.filter(n => n.timestamp > cutoff && !seenNotifIds.current.has(n.id)).forEach(n => {
+        seenNotifIds.current.add(n.id);
+        const nt = NOTIF_TYPES[n.type];
+        const shouldNotify = isStaff ? enabledNotifTypes.includes(n.type) : (isFamily && n.patientId && currentUser?.patientIds?.includes(n.patientId));
+        if (shouldNotify) sendBrowserNotif(`${nt?.emoji || '🔔'} ${nt?.label || 'Alert'}`, n.message, `fb-${n.id}`, n.type === 'emergency');
+      });
+      setNotifications(arr);
     }));
     unsubs.push(onValue(ref(db, 'timers'), (snap) => {
       setTimers(snap.val() || {});
@@ -634,6 +692,14 @@ export default function App() {
     const notif = { type, message, patientId: patientId || null, visitId: visitId || null, timestamp: Date.now(), readBy: {} };
     if (IS_CONFIGURED && db) set(ref(db, 'notifications/' + genId()), notif);
     setNotifications(prev => [{ ...notif, id: genId() }, ...prev]);
+    // Bridge to Browser Notification API
+    const nt = NOTIF_TYPES[type];
+    const isEmergency = type === 'emergency';
+    if (isStaff && enabledNotifTypes.includes(type)) {
+      sendBrowserNotif(`${nt?.emoji || '🔔'} ${nt?.label || 'Alert'}`, message, `notif-${Date.now()}`, isEmergency);
+    } else if (isFamily && patientId && currentUser?.patientIds?.includes(patientId)) {
+      sendBrowserNotif(`${nt?.emoji || '🔔'} ${nt?.label || 'Alert'}`, message, `notif-${Date.now()}`, isEmergency);
+    }
   };
 
   const markNotifRead = (notifId) => {
@@ -1696,6 +1762,42 @@ export default function App() {
             ))}
           </div>
         </div>
+        {/* Device Notifications */}
+        <div className="bg-white rounded-2xl shadow p-5">
+          <h3 className="font-bold text-gray-800 mb-3">📱 Device Notifications</h3>
+          {typeof Notification === 'undefined' ? (
+            <p className="text-sm text-gray-400">Your browser does not support notifications.</p>
+          ) : notifPermission === 'granted' ? (
+            <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border-2 border-green-200">
+              <span className="text-green-500 text-lg">✅</span>
+              <div><p className="text-sm font-semibold text-green-700">Notifications enabled!</p><p className="text-xs text-green-500">You&apos;ll receive device alerts for your enabled categories above.</p></div>
+            </div>
+          ) : notifPermission === 'denied' ? (
+            <div className="p-3 bg-red-50 rounded-xl border-2 border-red-200">
+              <p className="text-sm font-semibold text-red-600">Notifications blocked</p>
+              <p className="text-xs text-red-400 mt-1">To enable: open your browser settings → Site permissions → allow notifications for this site.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">Get device alerts (banners &amp; sounds) for check-ins, emergencies, and more.</p>
+              <button onClick={requestNotifPermission} className="w-full btn-purple py-2.5 rounded-xl font-bold text-sm shadow">🔔 Enable Device Notifications</button>
+            </div>
+          )}
+          {isIOS && !isStandalone && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
+              <p className="text-xs text-blue-600 font-semibold">📲 For the best experience on iOS:</p>
+              <p className="text-xs text-blue-500 mt-1">Tap <strong>Share</strong> ↗ → <strong>Add to Home Screen</strong> to install this app and get notifications.</p>
+            </div>
+          )}
+        </div>
+        {/* Install App */}
+        {installPrompt && (
+          <div className="bg-white rounded-2xl shadow p-5">
+            <h3 className="font-bold text-gray-800 mb-3">📲 Install App</h3>
+            <p className="text-sm text-gray-600 mb-3">Install to your home screen for quick access — works like a native app!</p>
+            <button onClick={handleInstallApp} className="w-full btn-pink py-2.5 rounded-xl font-bold text-sm shadow">📲 Install App</button>
+          </div>
+        )}
         <div className="bg-white rounded-2xl shadow p-5">
           <h3 className="font-bold text-gray-800 mb-3">👤 Account Info</h3>
           <div className="text-sm text-gray-600 space-y-1">
@@ -1817,6 +1919,26 @@ export default function App() {
         <button onClick={handleLogout} className="mt-2 text-pink-200 text-xs underline hover:text-white">Logout</button>
       </div>
       <div className="px-5 py-5 max-w-lg mx-auto space-y-4">
+        {/* Notification enable banner for families */}
+        {notifPermission === 'default' && !notifPromptDismissed.current && (
+          <div className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-2xl p-4 shadow-lg">
+            <p className="font-bold text-sm">🔔 Get notified about your pet!</p>
+            <p className="text-purple-100 text-xs mt-1">Receive alerts when your pet moves to a new stage or is ready for pickup.</p>
+            <div className="flex gap-2 mt-3">
+              <button onClick={requestNotifPermission} className="flex-1 bg-white text-purple-600 py-2 rounded-xl font-bold text-sm shadow">Enable Alerts</button>
+              <button onClick={() => { notifPromptDismissed.current = true; localStorage.setItem('rrNotifDismissed', '1'); showToast('You can enable alerts later in settings.'); }}
+                className="px-4 py-2 text-purple-200 text-sm font-semibold hover:text-white">Not now</button>
+            </div>
+          </div>
+        )}
+        {/* iOS install instructions */}
+        {isIOS && !isStandalone && showInstallBanner && (
+          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200 relative">
+            <button onClick={() => setShowInstallBanner(false)} className="absolute top-2 right-3 text-blue-300 hover:text-blue-500 text-lg">&times;</button>
+            <p className="text-sm font-bold text-blue-700">📲 Install this app</p>
+            <p className="text-xs text-blue-500 mt-1">Tap <strong>Share</strong> ↗ then <strong>Add to Home Screen</strong> for the best experience with notifications!</p>
+          </div>
+        )}
         <h2 className="font-bold text-gray-800 text-lg">🐾 My Pets</h2>
         {myPatients.length === 0 ? (
           <div className="bg-white rounded-2xl shadow p-5 text-center text-gray-400">
@@ -2088,6 +2210,20 @@ export default function App() {
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex flex-col">
         {PubHeader({})}
         <div className="flex-1 px-5 py-6 space-y-4 max-w-sm mx-auto w-full">
+          {/* iOS install instructions */}
+          {isIOS && !isStandalone && showInstallBanner && (
+            <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200 relative">
+              <button onClick={() => setShowInstallBanner(false)} className="absolute top-2 right-3 text-blue-300 hover:text-blue-500 text-lg">&times;</button>
+              <p className="text-sm font-bold text-blue-700">📲 Install our app!</p>
+              <p className="text-xs text-blue-500 mt-1">Tap <strong>Share</strong> ↗ then <strong>Add to Home Screen</strong> to get quick access and notifications.</p>
+            </div>
+          )}
+          {/* Install prompt for Android/desktop */}
+          {installPrompt && (
+            <button onClick={handleInstallApp} className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-white rounded-2xl p-4 shadow-lg font-bold text-sm text-center">
+              📲 Install App for Quick Access
+            </button>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setPubView('checkin')} className="bg-gradient-to-br from-pink-500 to-fuchsia-500 text-white rounded-3xl p-5 text-center shadow-lg hover:shadow-xl transition-all">
               <div className="text-4xl mb-2">🐾</div><div className="font-extrabold text-lg leading-tight">Check In</div><div className="text-pink-100 text-xs mt-0.5">Register your pet</div></button>
