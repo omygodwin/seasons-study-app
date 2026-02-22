@@ -27,9 +27,22 @@ jobs:
           node-version: 20
           cache: npm
 
+      # Build main study app
       - run: npm ci
-
       - run: npm run build
+
+      # Build animal hospital app
+      - name: Install hospital dependencies
+        run: npm ci
+        working-directory: animal-hospital
+
+      - name: Build hospital app
+        run: npm run build
+        working-directory: animal-hospital
+
+      # Merge hospital build into main dist under /hospital/
+      - name: Merge hospital build into dist
+        run: cp -r animal-hospital/dist dist/hospital
 
       - uses: actions/configure-pages@v4
 

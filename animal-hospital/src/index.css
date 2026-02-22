@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .input {
+    @apply w-full border-2 border-gray-200 rounded-xl px-3 py-2 focus:border-pink-400 focus:outline-none text-gray-800 bg-white transition-colors;
+  }
+
+  .label {
+    @apply block text-sm font-semibold text-gray-700 mb-1;
+  }
+
+  .btn-pink {
+    @apply bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white transition-all;
+  }
+
+  .btn-purple {
+    @apply bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white transition-all;
+  }
+
+  .btn-teal {
+    @apply bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-white transition-all;
+  }
+
+  .btn-blue {
+    @apply bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white transition-all;
+  }
+
+  .btn-green {
+    @apply bg-green-500 hover:bg-green-600 active:bg-green-700 text-white transition-all;
+  }
+
+  .btn-amber {
+    @apply bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-white transition-all;
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
