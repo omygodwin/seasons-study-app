@@ -566,7 +566,7 @@ export default function App() {
   const unreadNotifs = filteredNotifs.filter(n => !n.readBy?.[currentUser?.username]).length;
 
   // ── PWA helpers ──────────────────────────────────────────────────────────────
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
   const requestNotifPermission = async () => {
@@ -913,6 +913,11 @@ export default function App() {
     createTimer(visitId, visitForm.urgency);
     addNotification(visitForm.urgency === 'emergency' ? 'emergency' : 'check-in', `${patForm.animalName} checked in!`, patId, visitId);
     showToast(`${patForm.animalName} checked in!`);
+    // Pre-generate AI suggestion from check-in symptoms
+    if (visitForm.symptoms.length > 0) {
+      const sug = generateSuggestion(visitForm.symptoms);
+      setSuggestion(sug); setShowSuggestion(!!sug);
+    }
     setPatForm(blankPatientForm()); setVisitForm(blankVisitForm()); setCiStep('search'); setCiQuery('');
     navToPatient(patId, visitId);
   };
@@ -927,6 +932,11 @@ export default function App() {
     createTimer(visitId, visitForm.urgency);
     addNotification(visitForm.urgency === 'emergency' ? 'emergency' : 'check-in', `New visit for ${pat?.animalName}!`, patId, visitId);
     showToast(`New visit started for ${pat?.animalName}!`);
+    // Pre-generate AI suggestion from check-in symptoms
+    if (visitForm.symptoms.length > 0) {
+      const sug = generateSuggestion(visitForm.symptoms);
+      setSuggestion(sug); setShowSuggestion(!!sug);
+    }
     setVisitForm(blankVisitForm()); setCiStep('search'); setCiQuery('');
     navToPatient(patId, visitId);
   };
@@ -1201,7 +1211,7 @@ export default function App() {
           value={visitForm.chiefComplaint} onChange={e => setVisitForm(f => ({ ...f, chiefComplaint: e.target.value }))} />
       </div>
       <div>
-        <label className="label mb-2">Symptoms (check all that apply)</label>
+        <label className="label mb-2">Symptoms (check all that apply) <span className="text-red-400">*</span></label>
         <div className="grid grid-cols-2 gap-y-1 gap-x-3">
           {SYMPTOM_LIST.map(s => (
             <label key={s} className="flex items-center gap-2 text-sm cursor-pointer select-none">
@@ -1365,7 +1375,7 @@ export default function App() {
                 <select className="input" value={patForm.species} onChange={e => setPatForm(f => ({ ...f, species: e.target.value }))}>
                   {Object.entries(ANIMAL_EMOJI).map(([s, emoji]) => (<option key={s} value={s}>{emoji} {s.charAt(0).toUpperCase() + s.slice(1)}</option>))}</select></div>
               <div><label className="label">Breed</label><input className="input" placeholder="e.g. Golden Retriever" value={patForm.breed} onChange={e => setPatForm(f => ({ ...f, breed: e.target.value }))} /></div>
-              <div><label className="label">Birthday</label><input type="date" className="input" value={patForm.birthday} onChange={e => setPatForm(f => ({ ...f, birthday: e.target.value }))} /></div>
+              <div><label className="label">Birthday <span className="text-red-400">*</span></label><input type="date" className="input" value={patForm.birthday} onChange={e => setPatForm(f => ({ ...f, birthday: e.target.value }))} /></div>
               <div className="col-span-2"><label className="label">Color / Markings</label><input className="input" placeholder="e.g. Orange tabby" value={patForm.color} onChange={e => setPatForm(f => ({ ...f, color: e.target.value }))} /></div>
             </div>
           </div>
@@ -1381,7 +1391,7 @@ export default function App() {
           {VisitFormSection()}
           <div className="flex gap-3">
             <button className="flex-1 border-2 border-gray-300 text-gray-600 py-3 rounded-2xl font-bold hover:bg-gray-50" onClick={() => setCiStep('search')}>← Back</button>
-            <button disabled={!patForm.animalName || !patForm.ownerName || !visitForm.chiefComplaint}
+            <button disabled={!patForm.animalName || !patForm.ownerName || !patForm.birthday || !visitForm.chiefComplaint || visitForm.symptoms.length === 0}
               className="flex-[2] btn-pink py-3 rounded-2xl font-bold shadow-lg disabled:opacity-40 disabled:cursor-not-allowed" onClick={submitNewPatient}>Check In Patient! 🏥</button>
           </div>
         </div>
@@ -1396,7 +1406,7 @@ export default function App() {
           {VisitFormSection()}
           <div className="flex gap-3">
             <button className="flex-1 border-2 border-gray-300 text-gray-600 py-3 rounded-2xl font-bold hover:bg-gray-50" onClick={() => setCiStep('search')}>← Back</button>
-            <button disabled={!visitForm.chiefComplaint} className="flex-[2] btn-teal py-3 rounded-2xl font-bold shadow-lg disabled:opacity-40" onClick={() => submitNewVisit(selPatId)}>Start Visit! 🏥</button>
+            <button disabled={!visitForm.chiefComplaint || visitForm.symptoms.length === 0} className="flex-[2] btn-teal py-3 rounded-2xl font-bold shadow-lg disabled:opacity-40" onClick={() => submitNewVisit(selPatId)}>Start Visit! 🏥</button>
           </div>
         </div>);
       })()}
@@ -1577,6 +1587,42 @@ export default function App() {
 
   const MedicalReport = () => {
     if (!selVisit) return null;
+    // Build quick-fill conditions from patient's check-in symptoms
+    const quickConditions = (() => {
+      const syms = selVisit.symptoms || [];
+      if (!syms.length) return Object.keys(CONDITION_TREATMENT_MAP).slice(0, 12).map(name => ({ name, confidence: null }));
+      const seen = new Set();
+      const result = [];
+      syms.forEach(s => {
+        (SYMPTOM_CONDITION_MAP[s] || []).forEach(c => {
+          if (!seen.has(c.condition) && CONDITION_TREATMENT_MAP[c.condition]) {
+            seen.add(c.condition);
+            result.push({ name: c.condition, confidence: c.confidence });
+          }
+        });
+      });
+      return result.sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.confidence] || 3) - ({ high: 0, medium: 1, low: 2 }[b.confidence] || 3));
+    })();
+    const applyCondition = (condName) => {
+      const info = CONDITION_TREATMENT_MAP[condName];
+      if (!info) return;
+      setReportForm(f => ({
+        ...f,
+        diagnosis: condName,
+        treatment: info.treatment,
+        medications: info.medications.map(m => ({ ...m })),
+      }));
+      if (info.estimatedMinutes && timers[selVisitId]) {
+        const timer = timers[selVisitId];
+        const updated = { ...timer, stages: { ...timer.stages } };
+        Object.entries(info.estimatedMinutes).forEach(([key, mins]) => {
+          if (updated.stages[key]) updated.stages[key] = { ...updated.stages[key], estimatedMinutes: mins };
+        });
+        if (IS_CONFIGURED && db) set(ref(db, `timers/${selVisitId}`), updated);
+        setTimers(prev => ({ ...prev, [selVisitId]: updated }));
+      }
+      showToast(`Applied: ${condName}`);
+    };
     return (
       <div className="space-y-4">
         <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-3xl p-4 text-center shadow">
@@ -1584,6 +1630,26 @@ export default function App() {
           <p className="text-blue-100 text-sm">{selPat?.animalName} · {fmtDate(selVisit.checkInDate)}</p>
         </div>
         {SuggestionCard()}
+        {/* Quick diagnosis buttons */}
+        {quickConditions.length > 0 && (
+          <div className="bg-white rounded-2xl shadow p-4">
+            <h4 className="font-bold text-gray-700 text-sm mb-2">⚡ Quick Diagnosis {(selVisit.symptoms || []).length > 0 ? <span className="text-xs text-gray-400 font-normal">· based on check-in symptoms</span> : <span className="text-xs text-gray-400 font-normal">· tap to auto-fill report</span>}</h4>
+            <div className="flex flex-wrap gap-2">
+              {quickConditions.map(c => {
+                const cls = c.confidence === 'high' ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                  : c.confidence === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+                return (
+                  <button key={c.name} onClick={() => applyCondition(c.name)}
+                    className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition-all ${cls}`}>
+                    {c.confidence === 'high' && '🔴 '}{c.confidence === 'medium' && '🟡 '}{c.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Tap any condition to auto-fill diagnosis, treatment &amp; meds. You can still edit everything below.</p>
+          </div>
+        )}
         <div className="bg-white rounded-2xl shadow p-5 space-y-4">
           <div><label className="label">Diagnosing Doctor</label><input className="input" placeholder="e.g. Dr. Emma" value={reportForm.doctorName} onChange={e => setReportForm(f => ({ ...f, doctorName: e.target.value }))} /></div>
           <div><label className="label">Diagnosis</label><textarea className="input min-h-[80px]" placeholder="What is wrong with the patient?" value={reportForm.diagnosis} onChange={e => setReportForm(f => ({ ...f, diagnosis: e.target.value }))} /></div>
