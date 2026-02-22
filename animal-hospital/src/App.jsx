@@ -131,6 +131,12 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState('');
 
+  // Public page state
+  const [pubView, setPubView]       = useState('home'); // home | checkin | lookup | confirmed
+  const [pubForm, setPubForm]       = useState({ animalName: '', species: 'dog', ownerName: '', complaint: '', urgency: 'routine' });
+  const [pubSearch, setPubSearch]   = useState('');
+  const [pubConfirmId, setPubConfirmId] = useState(null); // patientId of newly checked-in patient
+
   // Check-in wizard state
   const [ciStep, setCiStep]   = useState('search'); // search | new-patient | new-visit
   const [ciQuery, setCiQuery] = useState('');
@@ -1309,29 +1315,245 @@ export default function App() {
     }
   };
 
-  // ─── PUBLIC WAITING ROOM PAGE ─────────────────────────────────────────────
+  // ─── PUBLIC PAGE ─────────────────────────────────────────────────────────────
+  const pubSubmitCheckIn = () => {
+    const patId   = genId();
+    const visitId = genId();
+    const visit = {
+      id: visitId,
+      checkInDate: today(), checkInTime: nowTime(),
+      chiefComplaint: pubForm.complaint,
+      symptoms: [], urgency: pubForm.urgency,
+      doctorName: '', status: 'waiting',
+      ambulanceRequested: false, ambulancePickupType: 'pickup', ambulanceAddress: '',
+      diagnosis: '', treatment: '', medications: [], notes: '',
+      dischargeDate: null, dischargeTime: null, dischargeInstructions: '',
+      followUpDate: '', deliveryType: null, deliveryAddress: '', dischargeMeds: [],
+      services: [], totalAmount: 0, paymentStatus: 'pending',
+      ambulanceStatus: null, ambulanceNotes: '',
+    };
+    const patient = { id: patId, animalName: pubForm.animalName, species: pubForm.species,
+      breed: '', birthday: '', color: '', photo: '',
+      ownerName: pubForm.ownerName, ownerPhone: '', ownerEmail: '', ownerAddress: '',
+      createdAt: today(), visits: [visit] };
+    updatePatients(ps => [...ps, patient]);
+    setPubConfirmId(patId);
+    setPubView('confirmed');
+    setPubForm({ animalName: '', species: 'dog', ownerName: '', complaint: '', urgency: 'routine' });
+  };
+
   if (!isStaff) {
+    // Header shared by all public views
+    const PubHeader = ({ back }) => (
+      <div className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white px-6 pt-8 pb-6 text-center relative">
+        {back && (
+          <button onClick={() => setPubView('home')}
+            className="absolute left-4 top-6 text-pink-200 hover:text-white text-sm font-semibold">
+            ← Back
+          </button>
+        )}
+        <div className="text-5xl mb-1">🏥🐾</div>
+        <h1 className="text-3xl font-extrabold tracking-tight">Rose &amp; Ruth&apos;s</h1>
+        <p className="text-lg font-bold text-pink-100">Animal Hospital</p>
+      </div>
+    );
+
+    // ── Confirmed ─────────────────────────────────────────────────────────────
+    if (pubView === 'confirmed') {
+      const confirmedPat = patients.find(p => p.id === pubConfirmId);
+      const qPos = patients.filter(p => p.visits?.some(v => v.status === 'waiting')).length;
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex flex-col">
+          {PubHeader({})}
+          <div className="flex-1 px-5 py-8 max-w-sm mx-auto w-full space-y-5">
+            <div className="bg-white rounded-3xl shadow-xl p-7 text-center space-y-3">
+              <div className="text-6xl">🎉</div>
+              <h2 className="text-2xl font-extrabold text-green-600">You&apos;re Checked In!</h2>
+              <p className="text-gray-700 font-semibold text-lg">{confirmedPat?.animalName} is on the list!</p>
+              <p className="text-gray-400 text-sm">Please have a seat — our vets will call you shortly.</p>
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 mt-2">
+                <p className="text-xs font-bold text-amber-600 uppercase mb-1">Position in Queue</p>
+                <p className="text-4xl font-extrabold text-amber-700">#{qPos}</p>
+              </div>
+            </div>
+            <button onClick={() => setPubView('lookup')}
+              className="w-full bg-purple-100 text-purple-700 font-bold py-3.5 rounded-2xl hover:bg-purple-200 transition-all">
+              🔍 Check Visit Status
+            </button>
+            <button onClick={() => setPubView('home')}
+              className="w-full border-2 border-gray-200 text-gray-500 font-semibold py-3 rounded-2xl hover:bg-gray-50">
+              ← Back to Home
+            </button>
+          </div>
+          <div className="text-center pb-5">{StaffLoginLink()}</div>
+        </div>
+      );
+    }
+
+    // ── Self Check-In form ────────────────────────────────────────────────────
+    if (pubView === 'checkin') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex flex-col pb-10">
+          {PubHeader({ back: true })}
+          <div className="flex-1 px-5 py-5 max-w-sm mx-auto w-full space-y-4">
+            <div className="bg-white rounded-3xl shadow p-5 space-y-4">
+              <h2 className="text-xl font-extrabold text-pink-600">🐾 Check In Your Pet</h2>
+              <div>
+                <label className="label">Your Pet&apos;s Name <span className="text-red-400">*</span></label>
+                <input className="input" placeholder="e.g. Fluffy" value={pubForm.animalName}
+                  onChange={e => setPubForm(f => ({ ...f, animalName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">Type of Animal</label>
+                <select className="input" value={pubForm.species}
+                  onChange={e => setPubForm(f => ({ ...f, species: e.target.value }))}>
+                  {Object.entries(ANIMAL_EMOJI).map(([s, emoji]) => (
+                    <option key={s} value={s}>{emoji} {s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Your Name <span className="text-red-400">*</span></label>
+                <input className="input" placeholder="Owner's name" value={pubForm.ownerName}
+                  onChange={e => setPubForm(f => ({ ...f, ownerName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">What&apos;s wrong? <span className="text-red-400">*</span></label>
+                <textarea className="input min-h-[80px]" placeholder="Describe what's going on with your pet…"
+                  value={pubForm.complaint}
+                  onChange={e => setPubForm(f => ({ ...f, complaint: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label mb-2">How urgent is it?</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[['routine','✅ Routine','border-green-400 bg-green-500'],['urgent','⚡ Urgent','border-amber-400 bg-amber-400'],['emergency','🚨 Emergency','border-red-500 bg-red-500']].map(([val, lbl, ac]) => (
+                    <button key={val} onClick={() => setPubForm(f => ({ ...f, urgency: val }))}
+                      className={`py-2 rounded-xl text-sm font-bold border-2 transition-all ${pubForm.urgency === val ? `${ac} text-white` : 'border-gray-200 text-gray-500 bg-white'}`}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button
+              disabled={!pubForm.animalName || !pubForm.ownerName || !pubForm.complaint}
+              onClick={pubSubmitCheckIn}
+              className="w-full btn-pink py-4 rounded-2xl font-extrabold text-lg shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
+              Check In! 🏥
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Visit Lookup ──────────────────────────────────────────────────────────
+    if (pubView === 'lookup') {
+      const lookupResults = pubSearch
+        ? patients.filter(p =>
+            p.animalName?.toLowerCase().includes(pubSearch.toLowerCase()) ||
+            p.ownerName?.toLowerCase().includes(pubSearch.toLowerCase()))
+        : [];
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex flex-col pb-10">
+          {PubHeader({ back: true })}
+          <div className="flex-1 px-5 py-5 max-w-sm mx-auto w-full space-y-4">
+            <div className="bg-white rounded-3xl shadow p-5 space-y-3">
+              <h2 className="text-xl font-extrabold text-purple-600">🔍 Look Up Your Visit</h2>
+              <input className="input" placeholder="Search by pet name or your name…"
+                value={pubSearch}
+                onChange={e => setPubSearch(e.target.value)}
+                autoFocus />
+            </div>
+            {pubSearch && lookupResults.length === 0 && (
+              <p className="text-center text-gray-400 text-sm py-4">No patients found. Try a different name.</p>
+            )}
+            {lookupResults.map(p => {
+              const activeVisit = p.visits?.find(v => v.status !== 'discharged');
+              const lastVisit   = p.visits?.[p.visits.length - 1];
+              const showVisit   = activeVisit || lastVisit;
+              return (
+                <div key={p.id} className="bg-white rounded-3xl shadow p-5 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{emojiFor(p.species)}</span>
+                    <div>
+                      <div className="font-extrabold text-gray-800 text-lg">{p.animalName}</div>
+                      <div className="text-sm text-gray-400">Owner: {p.ownerName}</div>
+                    </div>
+                    {showVisit && (
+                      <span className={`ml-auto text-xs px-2 py-1 rounded-full font-semibold border ${STATUS[showVisit.status]?.cls}`}>
+                        {STATUS[showVisit.status]?.label}
+                      </span>
+                    )}
+                  </div>
+                  {showVisit && (
+                    <div className="bg-gray-50 rounded-2xl p-4 space-y-1.5 text-sm">
+                      <div><span className="text-gray-400">Reason: </span><span className="text-gray-700">{showVisit.chiefComplaint}</span></div>
+                      {showVisit.doctorName && <div><span className="text-gray-400">Doctor: </span><span className="text-gray-700">{showVisit.doctorName}</span></div>}
+                      {showVisit.diagnosis  && <div><span className="text-gray-400">Diagnosis: </span><span className="text-gray-700">{showVisit.diagnosis}</span></div>}
+                      {showVisit.status === 'discharged' && showVisit.dischargeInstructions && (
+                        <div><span className="text-gray-400">Home care: </span><span className="text-gray-700">{showVisit.dischargeInstructions}</span></div>
+                      )}
+                      {showVisit.status === 'discharged' && showVisit.followUpDate && (
+                        <div><span className="text-gray-400">Follow-up: </span><span className="text-gray-700">{fmtDate(showVisit.followUpDate)}</span></div>
+                      )}
+                    </div>
+                  )}
+                  {!showVisit && <p className="text-gray-400 text-sm">No visits on record.</p>}
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-center pb-5">{StaffLoginLink()}</div>
+        </div>
+      );
+    }
+
+    // ── Home ──────────────────────────────────────────────────────────────────
+    const StaffLoginLink = () => !showLogin ? (
+      <button onClick={() => { setShowLogin(true); setPwError(false); setPwInput(''); }}
+        className="text-gray-300 hover:text-gray-500 text-xs underline underline-offset-2 transition-colors">
+        Staff Login
+      </button>
+    ) : (
+      <form onSubmit={handleLogin} className="mx-auto max-w-xs px-5 space-y-3 bg-white rounded-3xl shadow-xl p-6 mb-4">
+        <p className="text-center font-bold text-gray-700">👩‍⚕️ Staff Login</p>
+        <input type="password" className="input text-center text-lg tracking-widest" placeholder="••••••••"
+          value={pwInput} onChange={e => { setPwInput(e.target.value); setPwError(false); }} autoFocus />
+        {pwError && <p className="text-center text-red-500 text-sm font-semibold">Wrong password! Try again 🐾</p>}
+        <button type="submit"
+          className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-2xl font-extrabold shadow-lg">
+          Enter Clinic 🏥
+        </button>
+        <button type="button" onClick={() => setShowLogin(false)} className="w-full text-gray-400 text-sm hover:text-gray-600">
+          Cancel
+        </button>
+      </form>
+    );
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white px-6 pt-10 pb-8 text-center relative">
-          <div className="text-6xl mb-2">🏥🐾</div>
-          <h1 className="text-4xl font-extrabold tracking-tight">Rose &amp; Ruth&apos;s</h1>
-          <p className="text-xl font-bold text-pink-100">Animal Hospital</p>
-          <p className="text-pink-200 text-sm mt-1 italic">Where every pet gets pawsome care!</p>
-        </div>
+        {PubHeader({})}
 
-        {/* Welcome card */}
-        <div className="flex-1 px-5 py-6 space-y-5 max-w-sm mx-auto w-full">
-          <div className="bg-white rounded-3xl shadow-lg p-6 text-center space-y-3">
-            <div className="text-5xl">👋</div>
-            <h2 className="text-2xl font-extrabold text-gray-800">Welcome!</h2>
-            <p className="text-gray-500">Please have a seat — our vets will be with you shortly!</p>
+        <div className="flex-1 px-5 py-6 space-y-4 max-w-sm mx-auto w-full">
+          {/* Action buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => setPubView('checkin')}
+              className="bg-gradient-to-br from-pink-500 to-fuchsia-500 text-white rounded-3xl p-5 text-center shadow-lg hover:shadow-xl transition-all">
+              <div className="text-4xl mb-2">🐾</div>
+              <div className="font-extrabold text-lg leading-tight">Check In</div>
+              <div className="text-pink-100 text-xs mt-0.5">Register your pet</div>
+            </button>
+            <button onClick={() => { setPubSearch(''); setPubView('lookup'); }}
+              className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-3xl p-5 text-center shadow-lg hover:shadow-xl transition-all">
+              <div className="text-4xl mb-2">🔍</div>
+              <div className="font-extrabold text-lg leading-tight">My Visit</div>
+              <div className="text-purple-100 text-xs mt-0.5">See your status</div>
+            </button>
           </div>
 
           {/* Waiting room display */}
           <div className="bg-white rounded-3xl shadow p-5">
-            <h3 className="font-bold text-gray-700 text-lg mb-3">🐾 Currently Being Seen</h3>
+            <h3 className="font-bold text-gray-700 text-lg mb-3">🏥 Currently in Clinic</h3>
             {patients.filter(p => p.visits?.some(v => v.status !== 'discharged')).length === 0 ? (
               <div className="text-center py-4 text-gray-400">
                 <div className="text-4xl mb-1">😴</div>
@@ -1346,7 +1568,7 @@ export default function App() {
                       <span className="text-2xl">{emojiFor(p.species)}</span>
                       <div>
                         <div className="font-bold text-gray-800">{p.animalName}</div>
-                        <div className="text-xs text-gray-400 capitalize">{p.species}{p.breed ? ` · ${p.breed}` : ''}</div>
+                        <div className="text-xs text-gray-400 capitalize">{p.species}</div>
                       </div>
                       <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-semibold border ${STATUS[v?.status]?.cls}`}>
                         {STATUS[v?.status]?.label}
@@ -1366,37 +1588,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Staff login link — small and discreet at the bottom */}
-        <div className="text-center pb-6">
-          {!showLogin ? (
-            <button
-              onClick={() => { setShowLogin(true); setPwError(false); setPwInput(''); }}
-              className="text-gray-300 hover:text-gray-500 text-xs underline underline-offset-2 transition-colors">
-              Staff Login
-            </button>
-          ) : (
-            <form onSubmit={handleLogin} className="mx-auto max-w-xs px-5 space-y-3 bg-white rounded-3xl shadow-xl p-6 mb-4">
-              <p className="text-center font-bold text-gray-700">👩‍⚕️ Staff Login</p>
-              <input
-                type="password"
-                className="input text-center text-lg tracking-widest"
-                placeholder="••••••••"
-                value={pwInput}
-                onChange={e => { setPwInput(e.target.value); setPwError(false); }}
-                autoFocus
-              />
-              {pwError && <p className="text-center text-red-500 text-sm font-semibold">Wrong password! Try again 🐾</p>}
-              <button type="submit"
-                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-2xl font-extrabold shadow-lg">
-                Enter Clinic 🏥
-              </button>
-              <button type="button" onClick={() => setShowLogin(false)}
-                className="w-full text-gray-400 text-sm hover:text-gray-600">
-                Cancel
-              </button>
-            </form>
-          )}
-        </div>
+        <div className="text-center pb-6">{StaffLoginLink()}</div>
       </div>
     );
   }
