@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { db, IS_CONFIGURED } from './firebase';
+import { ref, onValue, set } from 'firebase/database';
 
 // ─── CONSTANTS & HELPERS ──────────────────────────────────────────────────────
 
@@ -116,9 +118,10 @@ const blankPatientForm = () => ({
 const STAFF_PASSWORD = 'rosieruth';
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(() => sessionStorage.getItem('rrStaff') === '1');
-  const [pwInput, setPwInput]   = useState('');
-  const [pwError, setPwError]   = useState(false);
+  const [isStaff, setIsStaff]     = useState(() => sessionStorage.getItem('rrStaff') === '1');
+  const [showLogin, setShowLogin] = useState(false);
+  const [pwInput, setPwInput]     = useState('');
+  const [pwError, setPwError]     = useState(false);
 
   const [data, setData]   = useState(() => loadData());
   const [view, setView]   = useState('dashboard');   // dashboard | checkin | records | patient
@@ -172,8 +175,24 @@ export default function App() {
         p.ownerName?.toLowerCase().includes(ciQuery.toLowerCase()))
     : [];
 
+  // ── Firebase real-time sync ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!IS_CONFIGURED || !db) return;
+    const unsub = onValue(ref(db, 'hospital'), (snap) => {
+      const val = snap.val();
+      if (val) { setData(val); saveData(val); }
+    });
+    return unsub;
+  }, []);
+
   // ── Helpers ─────────────────────────────────────────────────────────────────
-  const update = (newData) => { setData(newData); saveData(newData); };
+  const update = (newData) => {
+    setData(newData);
+    saveData(newData);
+    if (IS_CONFIGURED && db) {
+      set(ref(db, 'hospital'), newData).catch(console.error);
+    }
+  };
 
   const showToast = (msg, type = 'ok') => {
     setToast({ msg, type });
@@ -479,7 +498,7 @@ export default function App() {
             {activeVisits.map(v => (
               <div key={v.id} onClick={() => navToPatient(v.pat.id, v.id)}
                 className="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 hover:border-pink-200 hover:bg-pink-50 cursor-pointer transition-all">
-                <PatAvatar pat={v.pat} size={12} />
+                {PatAvatar({pat: v.pat, size: 12})}
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-gray-800">{v.pat.animalName}
                     <span className="text-gray-400 font-normal text-sm ml-1 capitalize">({v.pat.species})</span>
@@ -505,7 +524,7 @@ export default function App() {
             {[...patients].reverse().slice(0, 9).map(p => (
               <div key={p.id} onClick={() => navToPatient(p.id)}
                 className="flex flex-col items-center gap-1 p-2 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50 cursor-pointer transition-all">
-                <PatAvatar pat={p} size={12} />
+                {PatAvatar({pat: p, size: 12})}
                 <div className="text-xs font-semibold text-gray-700 text-center truncate w-full text-center">{p.animalName}</div>
                 <div className="text-xs text-gray-400">{p.visits?.length || 0} visit{p.visits?.length !== 1 ? 's' : ''}</div>
               </div>
@@ -541,7 +560,7 @@ export default function App() {
                   ? <p className="text-sm text-gray-400">No matches found.</p>
                   : ciResults.map(p => (
                     <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 bg-gray-50 hover:border-teal-300 transition-all">
-                      <PatAvatar pat={p} size={10} />
+                      {PatAvatar({pat: p, size: 10})}
                       <div className="flex-1">
                         <div className="font-bold text-gray-800">{p.animalName} <span className="text-gray-400 text-sm capitalize">({p.species})</span></div>
                         <div className="text-xs text-gray-500">Owner: {p.ownerName} · {p.visits?.length || 0} visit(s)</div>
@@ -649,7 +668,7 @@ export default function App() {
             </div>
           </div>
 
-          <VisitFormSection />
+          {VisitFormSection()}
 
           <div className="flex gap-3">
             <button className="flex-1 border-2 border-gray-300 text-gray-600 py-3 rounded-2xl font-bold hover:bg-gray-50"
@@ -669,13 +688,13 @@ export default function App() {
         return (
           <div className="space-y-4">
             <div className="bg-teal-50 border-2 border-teal-300 rounded-2xl p-4 flex items-center gap-3">
-              <PatAvatar pat={p} size={12} />
+              {PatAvatar({pat: p, size: 12})}
               <div>
                 <div className="font-bold text-teal-800">Returning: {p?.animalName}</div>
                 <div className="text-sm text-teal-600">Owner: {p?.ownerName} · {p?.visits?.length || 0} previous visit(s)</div>
               </div>
             </div>
-            <VisitFormSection />
+            {VisitFormSection()}
             <div className="flex gap-3">
               <button className="flex-1 border-2 border-gray-300 text-gray-600 py-3 rounded-2xl font-bold hover:bg-gray-50"
                 onClick={() => setCiStep('search')}>← Back</button>
@@ -714,7 +733,7 @@ export default function App() {
               return (
                 <div key={p.id} onClick={() => navToPatient(p.id)}
                   className="bg-white rounded-2xl shadow p-4 flex items-center gap-4 cursor-pointer hover:shadow-md border-2 border-transparent hover:border-purple-200 transition-all">
-                  <PatAvatar pat={p} size={16} />
+                  {PatAvatar({pat: p, size: 16})}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-gray-800 text-lg">{p.animalName}</span>
@@ -743,7 +762,7 @@ export default function App() {
         {/* Patient card */}
         <div className="bg-white rounded-2xl shadow p-5">
           <div className="flex items-center gap-4">
-            <PatAvatar pat={selPat} size={20} ring />
+            {PatAvatar({pat: selPat, size: 20, ring: true})}
             <div className="flex-1">
               <h2 className="text-2xl font-extrabold text-gray-800">{selPat.animalName}</h2>
               <p className="text-gray-500 capitalize">{selPat.species}{selPat.breed ? ` · ${selPat.breed}` : ''}</p>
@@ -842,7 +861,7 @@ export default function App() {
       <div className="space-y-4">
         <div className="bg-white rounded-2xl shadow p-5">
           <div className="flex items-center gap-3 mb-4">
-            <PatAvatar pat={selPat} size={12} />
+            {PatAvatar({pat: selPat, size: 12})}
             <div>
               <div className="font-bold text-gray-800 text-lg">{selPat.animalName}&apos;s Visit</div>
               <div className="text-gray-500 text-sm">{fmtDate(selVisit.checkInDate)} at {selVisit.checkInTime}</div>
@@ -851,7 +870,7 @@ export default function App() {
           </div>
 
           <div className="space-y-3">
-            <InfoBlock label="Chief Complaint" value={selVisit.chiefComplaint} />
+            {InfoBlock({label: "Chief Complaint", value: selVisit.chiefComplaint})}
             {selVisit.symptoms?.length > 0 && (
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs font-bold text-gray-500 uppercase mb-2">Symptoms</p>
@@ -860,9 +879,9 @@ export default function App() {
                 </div>
               </div>
             )}
-            {selVisit.doctorName && <InfoBlock label="Doctor" value={selVisit.doctorName} />}
-            {selVisit.diagnosis  && <InfoBlock label="Diagnosis" value={selVisit.diagnosis} color="blue" />}
-            {selVisit.treatment  && <InfoBlock label="Treatment"  value={selVisit.treatment}  color="green" />}
+            {selVisit.doctorName && InfoBlock({label: "Doctor", value: selVisit.doctorName})}
+            {selVisit.diagnosis  && InfoBlock({label: "Diagnosis", value: selVisit.diagnosis, color: "blue"})}
+            {selVisit.treatment  && InfoBlock({label: "Treatment",  value: selVisit.treatment,  color: "green"})}
             {selVisit.medications?.length > 0 && (
               <div className="bg-purple-50 rounded-xl p-3">
                 <p className="text-xs font-bold text-purple-600 uppercase mb-2">Medications Prescribed</p>
@@ -871,7 +890,7 @@ export default function App() {
                 ))}
               </div>
             )}
-            {selVisit.notes && <InfoBlock label="Notes" value={selVisit.notes} color="yellow" />}
+            {selVisit.notes && InfoBlock({label: "Notes", value: selVisit.notes, color: "yellow"})}
             {selVisit.status === 'discharged' && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-3">
                 <p className="text-xs font-bold text-green-600 uppercase mb-2">Discharge Info</p>
@@ -1267,12 +1286,12 @@ export default function App() {
 
   // ── Render the correct patient subview ──────────────────────────────────────
   const PatientView = () => {
-    if (subView === 'visit')      return <VisitDetail />;
-    if (subView === 'report')     return <MedicalReport />;
-    if (subView === 'discharge')  return <DischargeFormView />;
-    if (subView === 'invoice')    return <InvoiceView />;
-    if (subView === 'ambulance')  return <AmbulanceView />;
-    return <PatientDetail />;
+    if (subView === 'visit')      return VisitDetail();
+    if (subView === 'report')     return MedicalReport();
+    if (subView === 'discharge')  return DischargeFormView();
+    if (subView === 'invoice')    return InvoiceView();
+    if (subView === 'ambulance')  return AmbulanceView();
+    return PatientDetail();
   };
 
   // ─── STAFF LOGIN ─────────────────────────────────────────────────────────────
@@ -1280,67 +1299,118 @@ export default function App() {
     e.preventDefault();
     if (pwInput.toLowerCase() === STAFF_PASSWORD) {
       sessionStorage.setItem('rrStaff', '1');
-      setLoggedIn(true);
+      setIsStaff(true);
+      setShowLogin(false);
       setPwError(false);
+      setPwInput('');
     } else {
       setPwError(true);
       setPwInput('');
     }
   };
 
-  if (!loggedIn) {
+  // ─── PUBLIC WAITING ROOM PAGE ─────────────────────────────────────────────
+  if (!isStaff) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-100 via-pink-50 to-purple-100 flex flex-col items-center justify-center px-6">
-        <div className="w-full max-w-sm">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="text-7xl mb-3">🏥🐾</div>
-            <h1 className="text-4xl font-extrabold text-rose-600 tracking-tight leading-tight">
-              Rose &amp; Ruth&apos;s
-            </h1>
-            <p className="text-2xl font-bold text-purple-600">Animal Hospital</p>
-            <p className="text-gray-400 text-sm mt-1 italic">Where every pet gets pawsome care!</p>
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white px-6 pt-10 pb-8 text-center relative">
+          <div className="text-6xl mb-2">🏥🐾</div>
+          <h1 className="text-4xl font-extrabold tracking-tight">Rose &amp; Ruth&apos;s</h1>
+          <p className="text-xl font-bold text-pink-100">Animal Hospital</p>
+          <p className="text-pink-200 text-sm mt-1 italic">Where every pet gets pawsome care!</p>
+        </div>
+
+        {/* Welcome card */}
+        <div className="flex-1 px-5 py-6 space-y-5 max-w-sm mx-auto w-full">
+          <div className="bg-white rounded-3xl shadow-lg p-6 text-center space-y-3">
+            <div className="text-5xl">👋</div>
+            <h2 className="text-2xl font-extrabold text-gray-800">Welcome!</h2>
+            <p className="text-gray-500">Please have a seat — our vets will be with you shortly!</p>
           </div>
 
-          {/* Staff badge */}
-          <div className="flex justify-center mb-6">
-            <span className="bg-amber-100 border-2 border-amber-400 text-amber-700 px-5 py-1.5 rounded-full font-bold text-sm tracking-wide">
-              🔒 STAFF ONLY — Authorized Personnel
-            </span>
-          </div>
-
-          {/* Login card */}
-          <form onSubmit={handleLogin} className="bg-white rounded-3xl shadow-xl p-7 space-y-4">
-            <p className="text-center text-gray-600 font-semibold">Enter the staff password to continue</p>
-            <input
-              type="password"
-              className="input text-center text-lg tracking-widest"
-              placeholder="••••••••••"
-              value={pwInput}
-              onChange={e => { setPwInput(e.target.value); setPwError(false); }}
-              autoFocus
-            />
-            {pwError && (
-              <p className="text-center text-red-500 text-sm font-semibold animate-bounce">
-                Wrong password! Try again 🐾
-              </p>
+          {/* Waiting room display */}
+          <div className="bg-white rounded-3xl shadow p-5">
+            <h3 className="font-bold text-gray-700 text-lg mb-3">🐾 Currently Being Seen</h3>
+            {patients.filter(p => p.visits?.some(v => v.status !== 'discharged')).length === 0 ? (
+              <div className="text-center py-4 text-gray-400">
+                <div className="text-4xl mb-1">😴</div>
+                <p className="text-sm">No patients right now — walk-ins welcome!</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {patients.filter(p => p.visits?.some(v => v.status !== 'discharged')).map(p => {
+                  const v = p.visits.find(v => v.status !== 'discharged');
+                  return (
+                    <div key={p.id} className="flex items-center gap-3 bg-pink-50 rounded-2xl px-4 py-3">
+                      <span className="text-2xl">{emojiFor(p.species)}</span>
+                      <div>
+                        <div className="font-bold text-gray-800">{p.animalName}</div>
+                        <div className="text-xs text-gray-400 capitalize">{p.species}{p.breed ? ` · ${p.breed}` : ''}</div>
+                      </div>
+                      <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-semibold border ${STATUS[v?.status]?.cls}`}>
+                        {STATUS[v?.status]?.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white py-3.5 rounded-2xl font-extrabold text-lg shadow-lg transition-all">
-              Enter Clinic 🏥
-            </button>
-          </form>
+          </div>
 
-          <p className="text-center text-gray-300 text-xs mt-6">Rose &amp; Ruth&apos;s Animal Hospital · Staff Portal</p>
+          {/* Info */}
+          <div className="bg-white rounded-3xl shadow p-5 space-y-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2"><span>🕐</span><span><strong>Hours:</strong> Every day · 8am – 8pm</span></div>
+            <div className="flex items-center gap-2"><span>📞</span><span><strong>Phone:</strong> (555) PAWS-001</span></div>
+            <div className="flex items-center gap-2"><span>📍</span><span><strong>Address:</strong> 1 Animal Hospital Lane</span></div>
+          </div>
+        </div>
+
+        {/* Staff login link — small and discreet at the bottom */}
+        <div className="text-center pb-6">
+          {!showLogin ? (
+            <button
+              onClick={() => { setShowLogin(true); setPwError(false); setPwInput(''); }}
+              className="text-gray-300 hover:text-gray-500 text-xs underline underline-offset-2 transition-colors">
+              Staff Login
+            </button>
+          ) : (
+            <form onSubmit={handleLogin} className="mx-auto max-w-xs px-5 space-y-3 bg-white rounded-3xl shadow-xl p-6 mb-4">
+              <p className="text-center font-bold text-gray-700">👩‍⚕️ Staff Login</p>
+              <input
+                type="password"
+                className="input text-center text-lg tracking-widest"
+                placeholder="••••••••"
+                value={pwInput}
+                onChange={e => { setPwInput(e.target.value); setPwError(false); }}
+                autoFocus
+              />
+              {pwError && <p className="text-center text-red-500 text-sm font-semibold">Wrong password! Try again 🐾</p>}
+              <button type="submit"
+                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-2xl font-extrabold shadow-lg">
+                Enter Clinic 🏥
+              </button>
+              <button type="button" onClick={() => setShowLogin(false)}
+                className="w-full text-gray-400 text-sm hover:text-gray-600">
+                Cancel
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );
   }
 
-  // ─── MAIN RENDER ─────────────────────────────────────────────────────────────
+  // ─── MAIN STAFF RENDER ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 pb-24">
+      {/* Sync banner */}
+      {!IS_CONFIGURED && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-amber-700 text-xs text-center">
+          ⚠️ Data is saved on <strong>this device only</strong> — not shared across devices. See <code>src/firebase.js</code> to enable sync.
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-2xl shadow-xl text-white font-semibold text-sm animate-bounce ${toast.type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`}>
@@ -1348,13 +1418,13 @@ export default function App() {
         </div>
       )}
 
-      <Breadcrumb />
+      {Breadcrumb()}
 
       <div className="max-w-lg mx-auto px-4 py-5">
-        {view === 'dashboard' && <Dashboard />}
-        {view === 'checkin'   && <CheckIn />}
-        {view === 'records'   && <Records />}
-        {view === 'patient'   && <PatientView />}
+        {view === 'dashboard' && Dashboard()}
+        {view === 'checkin'   && CheckIn()}
+        {view === 'records'   && Records()}
+        {view === 'patient'   && PatientView()}
       </div>
 
       {/* Bottom nav */}
