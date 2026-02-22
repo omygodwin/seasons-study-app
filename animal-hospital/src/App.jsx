@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 // ─── CONSTANTS & HELPERS ──────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'pawsAndCareHospital_v1';
+const STORAGE_KEY = 'roseAndRuthHospital_v1';
 
 const loadData = () => {
   try {
@@ -113,7 +113,13 @@ const blankPatientForm = () => ({
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
+const STAFF_PASSWORD = 'rosieruth';
+
 export default function App() {
+  const [loggedIn, setLoggedIn] = useState(() => sessionStorage.getItem('rrStaff') === '1');
+  const [pwInput, setPwInput]   = useState('');
+  const [pwError, setPwError]   = useState(false);
+
   const [data, setData]   = useState(() => loadData());
   const [view, setView]   = useState('dashboard');   // dashboard | checkin | records | patient
   const [subView, setSubView] = useState('info');    // info | visit | report | discharge | invoice | ambulance
@@ -429,9 +435,9 @@ export default function App() {
       {/* Hero */}
       <div className="bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-600 text-white rounded-3xl p-6 text-center shadow-lg">
         <div className="text-6xl mb-2">🏥🐾</div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Paws &amp; Care</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Rose &amp; Ruth&apos;s</h1>
         <p className="text-pink-100 font-medium">Animal Hospital</p>
-        <p className="text-pink-200 text-sm mt-1">Where every animal gets the very best care!</p>
+        <p className="text-pink-200 text-sm mt-1">Where every pet gets pawsome care!</p>
       </div>
 
       {/* Stats */}
@@ -520,7 +526,7 @@ export default function App() {
       <div className="bg-gradient-to-r from-teal-500 to-green-500 text-white rounded-3xl p-5 text-center shadow">
         <div className="text-4xl mb-1">📋</div>
         <h2 className="text-2xl font-extrabold">Patient Check-In</h2>
-        <p className="text-teal-100 text-sm">Welcome to Paws &amp; Care!</p>
+        <p className="text-teal-100 text-sm">Welcome to Rose &amp; Ruth&apos;s!</p>
       </div>
 
       {ciStep === 'search' && (
@@ -1072,7 +1078,7 @@ export default function App() {
         <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-3xl p-4 text-center shadow">
           <div className="text-3xl mb-1">💰</div>
           <h2 className="text-xl font-extrabold">Invoice &amp; Payment</h2>
-          <p className="text-amber-100 text-sm">Paws &amp; Care Animal Hospital</p>
+          <p className="text-amber-100 text-sm">Rose &amp; Ruth&apos;s Animal Hospital</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow p-5">
@@ -1242,7 +1248,7 @@ export default function App() {
     const subLabels = { info: null, visit: '📅 Visit', report: '📋 Report', discharge: '🏠 Discharge', invoice: '💰 Invoice', ambulance: '🚑 Ambulance' };
     return (
       <div className="bg-white border-b border-gray-200 px-4 py-2.5 flex items-center gap-2 text-sm flex-wrap sticky top-0 z-20 shadow-sm">
-        <button onClick={() => setView('dashboard')} className="text-pink-500 font-semibold hover:text-pink-700">🏥 Home</button>
+        <button onClick={() => setView('dashboard')} className="text-pink-500 font-semibold hover:text-pink-700">🏥 R&amp;R Hospital</button>
         {view === 'checkin' && <><span className="text-gray-300">›</span><span className="text-gray-600 font-semibold">Check-In</span></>}
         {view === 'records' && <><span className="text-gray-300">›</span><span className="text-gray-600 font-semibold">Records</span></>}
         {view === 'patient' && (
@@ -1268,6 +1274,69 @@ export default function App() {
     if (subView === 'ambulance')  return <AmbulanceView />;
     return <PatientDetail />;
   };
+
+  // ─── STAFF LOGIN ─────────────────────────────────────────────────────────────
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (pwInput.toLowerCase() === STAFF_PASSWORD) {
+      sessionStorage.setItem('rrStaff', '1');
+      setLoggedIn(true);
+      setPwError(false);
+    } else {
+      setPwError(true);
+      setPwInput('');
+    }
+  };
+
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-100 via-pink-50 to-purple-100 flex flex-col items-center justify-center px-6">
+        <div className="w-full max-w-sm">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="text-7xl mb-3">🏥🐾</div>
+            <h1 className="text-4xl font-extrabold text-rose-600 tracking-tight leading-tight">
+              Rose &amp; Ruth&apos;s
+            </h1>
+            <p className="text-2xl font-bold text-purple-600">Animal Hospital</p>
+            <p className="text-gray-400 text-sm mt-1 italic">Where every pet gets pawsome care!</p>
+          </div>
+
+          {/* Staff badge */}
+          <div className="flex justify-center mb-6">
+            <span className="bg-amber-100 border-2 border-amber-400 text-amber-700 px-5 py-1.5 rounded-full font-bold text-sm tracking-wide">
+              🔒 STAFF ONLY — Authorized Personnel
+            </span>
+          </div>
+
+          {/* Login card */}
+          <form onSubmit={handleLogin} className="bg-white rounded-3xl shadow-xl p-7 space-y-4">
+            <p className="text-center text-gray-600 font-semibold">Enter the staff password to continue</p>
+            <input
+              type="password"
+              className="input text-center text-lg tracking-widest"
+              placeholder="••••••••••"
+              value={pwInput}
+              onChange={e => { setPwInput(e.target.value); setPwError(false); }}
+              autoFocus
+            />
+            {pwError && (
+              <p className="text-center text-red-500 text-sm font-semibold animate-bounce">
+                Wrong password! Try again 🐾
+              </p>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white py-3.5 rounded-2xl font-extrabold text-lg shadow-lg transition-all">
+              Enter Clinic 🏥
+            </button>
+          </form>
+
+          <p className="text-center text-gray-300 text-xs mt-6">Rose &amp; Ruth&apos;s Animal Hospital · Staff Portal</p>
+        </div>
+      </div>
+    );
+  }
 
   // ─── MAIN RENDER ─────────────────────────────────────────────────────────────
   return (
