@@ -34,8 +34,35 @@
   .btn-amber {
     @apply bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-white transition-all;
   }
+
+  .btn-red {
+    @apply bg-red-500 hover:bg-red-600 active:bg-red-700 text-white transition-all;
+  }
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Discharge paper print styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .discharge-paper,
+  .discharge-paper * {
+    visibility: visible;
+  }
+  .discharge-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-size: 12pt;
+    color: black;
+    background: white;
+  }
+  .no-print {
+    display: none !important;
+  }
 }
