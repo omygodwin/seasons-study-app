@@ -654,11 +654,13 @@ export default function App() {
     return () => unsubs.forEach(u => u());
   }, []);
 
-  // Timer tick - 1 second interval
+  // Timer tick - 1 second interval (only when there are active timers and user is logged in)
+  const hasActiveTimers = Object.keys(timers).length > 0 && isLoggedIn;
   useEffect(() => {
+    if (!hasActiveTimers) return;
     const iv = setInterval(() => setTimerTick(t => t + 1), 1000);
     return () => clearInterval(iv);
-  }, []);
+  }, [hasActiveTimers]);
 
   // ── Core helpers ───────────────────────────────────────────────────────────
   const update = (newData) => {
@@ -2078,7 +2080,7 @@ export default function App() {
         {(loginMode === 'staff' || loginMode === 'family') && (
           <div className="bg-white rounded-3xl shadow-xl p-5 space-y-3">
             <p className="text-center font-bold text-gray-700">{loginMode === 'staff' ? '👩‍⚕️ Staff Login' : '👨‍👩‍👧 Family Login'}</p>
-            <input className="input" placeholder="Username" value={loginForm.username} onChange={e => { setLoginForm(f => ({ ...f, username: e.target.value })); setLoginError(''); }} autoFocus />
+            <input className="input" placeholder="Username" value={loginForm.username} onChange={e => { setLoginForm(f => ({ ...f, username: e.target.value })); setLoginError(''); }} />
             <input type="password" className="input" placeholder="Password" value={loginForm.password} onChange={e => { setLoginForm(f => ({ ...f, password: e.target.value })); setLoginError(''); }}
               onKeyDown={e => { if (e.key === 'Enter') loginMode === 'staff' ? handleStaffLogin() : handleFamilyLogin(); }} />
             {loginError && <p className="text-center text-red-500 text-sm font-semibold">{loginError}</p>}
@@ -2090,7 +2092,7 @@ export default function App() {
         {loginMode === 'register' && (
           <div className="bg-white rounded-3xl shadow-xl p-5 space-y-3">
             <p className="text-center font-bold text-gray-700">📝 Create Family Account</p>
-            <input className="input" placeholder="Choose a username" value={registerForm.username} onChange={e => { setRegisterForm(f => ({ ...f, username: e.target.value })); setRegisterError(''); }} autoFocus />
+            <input className="input" placeholder="Choose a username" value={registerForm.username} onChange={e => { setRegisterForm(f => ({ ...f, username: e.target.value })); setRegisterError(''); }} />
             <input type="password" className="input" placeholder="Password (4+ chars)" value={registerForm.password} onChange={e => setRegisterForm(f => ({ ...f, password: e.target.value }))} />
             <input type="password" className="input" placeholder="Confirm password" value={registerForm.confirm} onChange={e => setRegisterForm(f => ({ ...f, confirm: e.target.value }))} />
             <input className="input" placeholder="Your family/display name" value={registerForm.displayName} onChange={e => setRegisterForm(f => ({ ...f, displayName: e.target.value }))} />
@@ -2126,7 +2128,7 @@ export default function App() {
             <button onClick={() => setPubView('lookup')} className="w-full bg-purple-100 text-purple-700 font-bold py-3.5 rounded-2xl hover:bg-purple-200">🔍 Check Visit Status</button>
             <button onClick={() => setPubView('home')} className="w-full border-2 border-gray-200 text-gray-500 font-semibold py-3 rounded-2xl hover:bg-gray-50">← Back to Home</button>
           </div>
-          <div className="text-center pb-5"><LoginButtons /></div>
+          <div className="text-center pb-5">{LoginButtons()}</div>
         </div>
       );
     }
@@ -2200,7 +2202,7 @@ export default function App() {
                 </div>);
             })}
           </div>
-          <div className="px-5 max-w-sm mx-auto w-full"><LoginButtons /></div>
+          <div className="px-5 max-w-sm mx-auto w-full">{LoginButtons()}</div>
         </div>
       );
     }
@@ -2252,7 +2254,7 @@ export default function App() {
             <div className="flex items-center gap-2"><span>📞</span><span><strong>Phone:</strong> (555) PAWS-001</span></div>
             <div className="flex items-center gap-2"><span>📍</span><span><strong>Address:</strong> 1 Animal Hospital Lane</span></div>
           </div>
-          <LoginButtons />
+          {LoginButtons()}
         </div>
       </div>
     );
