@@ -25,7 +25,7 @@ const firebaseConfig = {
   measurementId: "G-WW7QMN54D3"
 };
 
-export const IS_CONFIGURED = firebaseConfig.apiKey !== "AIzaSyDteMx6A0f0jf0peeAvEMWTMvUVPOCYynA";
+export const IS_CONFIGURED = true;
 
 export let db = null;
 
