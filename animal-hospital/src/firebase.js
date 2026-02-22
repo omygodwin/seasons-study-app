@@ -15,16 +15,17 @@ import { getDatabase } from 'firebase/database';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const firebaseConfig = {
-  apiKey:            "PASTE_HERE",
-  authDomain:        "PASTE_HERE",
-  databaseURL:       "PASTE_HERE",   // must end with .firebaseio.com
-  projectId:         "PASTE_HERE",
-  storageBucket:     "PASTE_HERE",
-  messagingSenderId: "PASTE_HERE",
-  appId:             "PASTE_HERE",
+  apiKey:            "AIzaSyDteMx6A0f0jf0peeAvEMWTMvUVPOCYynA",
+  authDomain:        "roseruthclinic.firebaseapp.com",
+  databaseURL:       "https://roseruthclinic-default-rtdb.firebaseio.com",   // must end with .firebaseio.com
+  projectId:         "roseruthclinic",
+  storageBucket:     "roseruthclinic.firebasestorage.app",
+  messagingSenderId: "739476924225",
+  appId:             "1:739476924225:web:9777db16912272a95ba3c0",
+  measurementId: "G-WW7QMN54D3"
 };
 
-export const IS_CONFIGURED = firebaseConfig.apiKey !== "PASTE_HERE";
+export const IS_CONFIGURED = true;
 
 export let db = null;
 
