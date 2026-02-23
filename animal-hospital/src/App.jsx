@@ -1437,6 +1437,15 @@ export default function App() {
     </div>
   );
 
+  const patPhotoRef = useRef(null);
+  const handlePatPhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selPat) return;
+    const b64 = await compressImage(file);
+    updatePatients(ps => ps.map(p => p.id !== selPat.id ? p : { ...p, photo: b64 }));
+    showToast('Photo updated!');
+  };
+
   const PatientDetail = () => {
     if (!selPat) return <div className="text-center py-12 text-gray-400">Patient not found.</div>;
     const activeVisit = selPat.visits?.find(v => v.status !== 'discharged');
@@ -1444,12 +1453,19 @@ export default function App() {
       <div className="space-y-4">
         <div className="bg-white rounded-2xl shadow p-5">
           <div className="flex items-center gap-4">
-            {PatAvatar({ pat: selPat, size: 20, ring: true })}
+            <div className="relative cursor-pointer group" onClick={() => patPhotoRef.current?.click()}>
+              {PatAvatar({ pat: selPat, size: 20, ring: true })}
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-full flex items-center justify-center transition-all">
+                <span className="text-white opacity-0 group-hover:opacity-100 text-sm font-bold">📸</span>
+              </div>
+              <input ref={patPhotoRef} type="file" accept="image/*" className="hidden" onChange={handlePatPhotoChange} />
+            </div>
             <div className="flex-1">
               <h2 className="text-2xl font-extrabold text-gray-800">{selPat.animalName}</h2>
               <p className="text-gray-500 capitalize">{selPat.species}{selPat.breed ? ` · ${selPat.breed}` : ''}</p>
               {selPat.color && <p className="text-gray-400 text-sm">{selPat.color}</p>}
               {selPat.birthday && <p className="text-gray-400 text-sm">🎂 {fmtDate(selPat.birthday)}</p>}
+              <p className="text-xs text-pink-400 mt-1 group-hover:text-pink-600">Tap photo to change</p>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100">
@@ -2061,6 +2077,17 @@ export default function App() {
             </div>
           );
         })}
+        {/* Quick actions for families */}
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => { setPubView('checkin'); setView('pub-checkin'); }}
+            className="bg-gradient-to-br from-pink-500 to-fuchsia-500 text-white rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl mb-1">🐾</div><div className="font-bold text-sm">Check In Pet</div>
+          </button>
+          <button onClick={() => { setPubSearch(''); setView('pub-lookup'); }}
+            className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl mb-1">🔍</div><div className="font-bold text-sm">Visit Status</div>
+          </button>
+        </div>
         {/* Recent updates for my pets */}
         {(() => {
           const myNotifs = notifications.filter(n => myPatients.some(p => p.id === n.patientId)).slice(0, 10);
@@ -2328,16 +2355,80 @@ export default function App() {
 
   // ─── FAMILY VIEW ─────────────────────────────────────────────────────────────
   if (isFamily) {
-    // If navigated to patient detail (e.g., for discharge paper), render that
+    const FamilyBackHeader = ({ title }) => (
+      <div className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white px-6 pt-6 pb-4 flex items-center justify-between">
+        <button onClick={() => setView('dashboard')} className="text-pink-200 hover:text-white text-sm font-semibold">← Back</button>
+        <span className="font-bold">{title}</span>
+        <span />
+      </div>
+    );
+    // Discharge paper view
     if (view === 'patient' && subView === 'discharge-paper') {
       return (
         <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 pb-10">
-          <div className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white px-6 pt-6 pb-4 flex items-center justify-between">
-            <button onClick={() => { setView('dashboard'); setSubView('info'); }} className="text-pink-200 hover:text-white text-sm font-semibold">← Back</button>
-            <span className="font-bold">📄 Discharge Paper</span>
-            <span />
-          </div>
+          {FamilyBackHeader({ title: '📄 Discharge Paper' })}
           <div className="px-5 py-5 max-w-lg mx-auto">{DischargePaperView()}</div>
+        </div>
+      );
+    }
+    // Family check-in (reuse public check-in form)
+    if (view === 'pub-checkin') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 pb-10">
+          {FamilyBackHeader({ title: '🐾 Check In Pet' })}
+          <div className="flex-1 px-5 py-5 max-w-sm mx-auto w-full space-y-4">
+            <div className="bg-white rounded-3xl shadow p-5 space-y-4">
+              <h2 className="text-xl font-extrabold text-pink-600">🐾 Check In Your Pet</h2>
+              <div><label className="label">Pet&apos;s Name <span className="text-red-400">*</span></label>
+                <input className="input" placeholder="e.g. Fluffy" value={pubForm.animalName} onChange={e => setPubForm(f => ({ ...f, animalName: e.target.value }))} /></div>
+              <div><label className="label">Type of Animal</label>
+                <select className="input" value={pubForm.species} onChange={e => setPubForm(f => ({ ...f, species: e.target.value }))}>
+                  {Object.entries(ANIMAL_EMOJI).map(([s, emoji]) => <option key={s} value={s}>{emoji} {s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                </select></div>
+              <div><label className="label">Your Name <span className="text-red-400">*</span></label>
+                <input className="input" placeholder="Owner's name" value={pubForm.ownerName} onChange={e => setPubForm(f => ({ ...f, ownerName: e.target.value }))} /></div>
+              <div><label className="label">What&apos;s wrong? <span className="text-red-400">*</span></label>
+                <textarea className="input min-h-[80px]" placeholder="Describe what's going on..." value={pubForm.complaint} onChange={e => setPubForm(f => ({ ...f, complaint: e.target.value }))} /></div>
+              <div><label className="label mb-2">Urgency</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[['routine','✅ Routine','border-green-400 bg-green-500'],['urgent','⚡ Urgent','border-amber-400 bg-amber-400'],['emergency','🚨 Emergency','border-red-500 bg-red-500']].map(([val,lbl,ac]) => (
+                    <button key={val} onClick={() => setPubForm(f => ({ ...f, urgency: val }))}
+                      className={`py-2 rounded-xl text-sm font-bold border-2 transition-all ${pubForm.urgency === val ? `${ac} text-white` : 'border-gray-200 text-gray-500 bg-white'}`}>{lbl}</button>
+                  ))}
+                </div></div>
+              <button disabled={!pubForm.animalName || !pubForm.ownerName || !pubForm.complaint} onClick={() => { pubSubmitCheckIn(); setView('dashboard'); }}
+                className="w-full btn-pink py-4 rounded-2xl font-extrabold text-lg shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">Check In! 🏥</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    // Family visit lookup
+    if (view === 'pub-lookup') {
+      const lookupResults = pubSearch ? patients.filter(p =>
+        p.animalName?.toLowerCase().includes(pubSearch.toLowerCase()) || p.ownerName?.toLowerCase().includes(pubSearch.toLowerCase())) : [];
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 pb-10">
+          {FamilyBackHeader({ title: '🔍 Visit Status' })}
+          <div className="flex-1 px-5 py-5 max-w-sm mx-auto w-full space-y-4">
+            <div className="bg-white rounded-3xl shadow p-5 space-y-3">
+              <input className="input" placeholder="Search by pet name or your name..." value={pubSearch} onChange={e => setPubSearch(e.target.value)} />
+              {pubSearch && lookupResults.length === 0 && <p className="text-center text-gray-400 text-sm">No matches found.</p>}
+              {lookupResults.map(p => {
+                const av = p.visits?.find(v => v.status !== 'discharged');
+                return (
+                  <div key={p.id} className="bg-pink-50 rounded-2xl p-4 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{emojiFor(p.species)}</span>
+                      <div className="flex-1"><div className="font-bold text-gray-800">{p.animalName}</div><div className="text-xs text-gray-500">{p.ownerName}</div></div>
+                      {av && <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${STATUS[av.status].cls}`}>{STATUS[av.status].label}</span>}
+                    </div>
+                    {av && timers[av.id] && <TimerCard visitId={av.id} compact />}
+                    {!av && <p className="text-sm text-gray-400">No active visit.</p>}
+                  </div>);
+              })}
+            </div>
+          </div>
         </div>
       );
     }
