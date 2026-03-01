@@ -1,0 +1,38 @@
+{
+  "name": "Ruth & Rose's Grand Hotel",
+  "short_name": "R&R Hotel",
+  "description": "Hotel management for Ruth & Rose's Grand Hotel",
+  "start_url": "/seasons-study-app/hotel/",
+  "scope": "/seasons-study-app/hotel/",
+  "display": "standalone",
+  "background_color": "#eff6ff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "categories": ["business"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
