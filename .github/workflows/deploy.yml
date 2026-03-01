@@ -44,6 +44,19 @@ jobs:
       - name: Merge hospital build into dist
         run: cp -r animal-hospital/dist dist/hospital
 
+      # Build hotel app
+      - name: Install hotel dependencies
+        run: npm ci
+        working-directory: hotel
+
+      - name: Build hotel app
+        run: npm run build
+        working-directory: hotel
+
+      # Merge hotel build into main dist under /hotel/
+      - name: Merge hotel build into dist
+        run: cp -r hotel/dist dist/hotel
+
       - uses: actions/configure-pages@v4
 
       - uses: actions/upload-pages-artifact@v3
