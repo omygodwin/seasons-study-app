@@ -46,7 +46,7 @@ jobs:
 
       # Build hotel app
       - name: Install hotel dependencies
-        run: npm ci
+        run: npm install
         working-directory: hotel
 
       - name: Build hotel app
