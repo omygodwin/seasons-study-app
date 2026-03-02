@@ -107,8 +107,9 @@ const FB = 'hotel';
 export default function App() {
   // ─── auth state ──────────────────────────────────────────────────────────
   const [staff, setStaff] = useState([]);
+  const [guestAccounts, setGuestAccounts] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [loginStep, setLoginStep] = useState('pick'); // pick | pin | role
+  const [loginStep, setLoginStep] = useState('pick'); // pick | pin | role | guest-pick | guest-pin
   const [loginTarget, setLoginTarget] = useState(null);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -131,7 +132,7 @@ export default function App() {
   const [timerTick, setTimerTick] = useState(0);
 
   // ─── forms ───────────────────────────────────────────────────────────────
-  const blankGuest = () => ({ name: '', numGuests: 1, roomNum: '', checkIn: new Date().toISOString().slice(0, 10), nights: 1, vip: false, requests: '', phone: '' });
+  const blankGuest = () => ({ name: '', numGuests: 1, roomNum: '', checkIn: new Date().toISOString().slice(0, 10), nights: 1, vip: false, requests: '', phone: '', guestPin: '' });
   const [guestForm, setGuestForm] = useState(blankGuest());
   const [menuCat, setMenuCat] = useState('breakfast');
   const [cart, setCart] = useState([]);
@@ -146,6 +147,7 @@ export default function App() {
   const seenNotifIds = useRef(new Set());
 
   const isLoggedIn = !!currentUser;
+  const isGuest = currentUser?.accountType === 'guest';
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
@@ -180,6 +182,7 @@ export default function App() {
       unsubs.push(() => u());
     };
     listen('staff', setStaff);
+    listen('guestAccounts', setGuestAccounts);
     listen('rooms', (val) => {
       // initialize rooms if empty
       if (!val || Object.keys(val).length === 0) {
@@ -277,8 +280,27 @@ export default function App() {
     setPinInput('');
   };
 
+  const handlePickGuest = (g) => {
+    setLoginTarget(g);
+    setPinInput('');
+    setPinError('');
+    setLoginStep('guest-pin');
+  };
+
+  const handleGuestPinSubmit = () => {
+    if (pinInput === loginTarget.pin) {
+      setCurrentUser({ ...loginTarget, accountType: 'guest' });
+      setLoginStep('pick');
+      setLoginTarget(null);
+      setPinInput('');
+      setView('guest-dashboard');
+    } else {
+      setPinError('Wrong PIN!');
+    }
+  };
+
   const handleLogout = () => {
-    if (db && currentUser) update(ref(db, `${FB}/staff/${currentUser.id}`), { currentRole: null });
+    if (db && currentUser && !isGuest) update(ref(db, `${FB}/staff/${currentUser.id}`), { currentRole: null });
     setCurrentUser(null);
     setView('dashboard');
     setLoginStep('pick');
@@ -344,6 +366,15 @@ export default function App() {
     };
     set(ref(db, `${FB}/guests/${guestId}`), guest);
     update(ref(db, `${FB}/rooms/${guestForm.roomNum}`), { status: ROOM_STATUS.OCCUPIED, guestId });
+    // Create guest login account if PIN provided
+    if (guestForm.guestPin) {
+      push(ref(db, `${FB}/guestAccounts`), {
+        name: guestForm.name,
+        pin: guestForm.guestPin,
+        roomNum: Number(guestForm.roomNum),
+        guestId,
+      });
+    }
     addNotification(guestForm.vip ? 'vip' : 'guest-checkin', `${guest.name} checked into Room ${guest.roomNum}${guestForm.vip ? ' (VIP!)' : ''}`, guest.roomNum);
     setGuestForm(blankGuest());
     showToast(`Welcome ${guest.name} to Room ${guest.roomNum}!`);
@@ -354,6 +385,9 @@ export default function App() {
     if (!db || !guest) return;
     update(ref(db, `${FB}/guests/${guest.id}`), { checkedOut: true, checkedOutAt: Date.now() });
     update(ref(db, `${FB}/rooms/${guest.roomNum}`), { status: ROOM_STATUS.VACANT_DIRTY, guestId: null });
+    // Remove guest login account
+    const acct = guestAccounts.find(a => a.guestId === guest.id);
+    if (acct) remove(ref(db, `${FB}/guestAccounts/${acct.id}`));
     addNotification('guest-checkout', `${guest.name} checked out of Room ${guest.roomNum}`, guest.roomNum);
     showToast(`${guest.name} has checked out. Room ${guest.roomNum} needs cleaning!`);
   };
@@ -401,10 +435,11 @@ export default function App() {
 
   const cartTotal = cart.reduce((sum, ci) => sum + ci.price * ci.qty, 0);
 
-  const submitOrder = () => {
-    if (!db || cart.length === 0 || !orderRoom) return;
+  const submitOrder = (overrideRoom) => {
+    const room = overrideRoom || orderRoom;
+    if (!db || cart.length === 0 || !room) return;
     const order = {
-      roomNum: Number(orderRoom),
+      roomNum: Number(room),
       items: cart.map(ci => ({ name: ci.name, emoji: ci.emoji, qty: ci.qty, price: ci.price })),
       total: cartTotal,
       status: 'ordered',
@@ -412,7 +447,7 @@ export default function App() {
       createdBy: currentUser?.name || 'Guest',
     };
     push(ref(db, `${FB}/orders`), order);
-    addNotification('room-service', `Room service order for Room ${orderRoom} — $${cartTotal}`, Number(orderRoom));
+    addNotification('room-service', `Room service order from ${currentUser?.name || 'Guest'} in Room ${room} — $${cartTotal}`, Number(room));
     setCart([]);
     setOrderRoom('');
     showToast('Order placed!');
@@ -550,6 +585,55 @@ export default function App() {
                 <span className="text-lg font-bold" style={{ color: s.color }}>{s.name}</span>
               </button>
             ))}
+            {guestAccounts.length > 0 && (
+              <div className="pt-4 border-t mt-4">
+                <button onClick={() => setLoginStep('guest-pick')}
+                  className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-amber-50 shadow-md hover:shadow-lg border-2 border-amber-200 hover:border-amber-400 transition-all">
+                  <span className="text-2xl">🔑</span>
+                  <span className="text-lg font-bold text-amber-700">I'm a Guest</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {loginStep === 'guest-pick' && (
+          <div className="w-full max-w-sm space-y-3">
+            <p className="text-center text-gray-600 font-medium mb-4">Welcome! Which guest are you?</p>
+            {guestAccounts.map(g => (
+              <button key={g.id} onClick={() => handlePickGuest(g)}
+                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-white shadow-md hover:shadow-lg border-2 border-transparent hover:border-amber-300 transition-all">
+                <span className="text-3xl">🏨</span>
+                <div className="text-left">
+                  <span className="text-lg font-bold text-gray-800">{g.name}</span>
+                  <div className="text-sm text-gray-500">Room {g.roomNum}</div>
+                </div>
+              </button>
+            ))}
+            <button onClick={() => setLoginStep('pick')}
+              className="w-full mt-2 py-2 rounded-xl bg-gray-100 text-gray-600 font-semibold">Back to Staff</button>
+          </div>
+        )}
+
+        {loginStep === 'guest-pin' && loginTarget && (
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6">
+            <div className="text-center mb-4">
+              <span className="text-4xl">🔑</span>
+              <p className="font-bold text-lg mt-1 text-gray-800">{loginTarget.name}</p>
+              <p className="text-sm text-gray-500">Room {loginTarget.roomNum}</p>
+            </div>
+            <label className="label">Enter your Guest PIN</label>
+            <input type="password" maxLength={4} value={pinInput}
+              onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={e => e.key === 'Enter' && handleGuestPinSubmit()}
+              className="input text-center text-2xl tracking-widest mb-3" placeholder="••••" />
+            {pinError && <p className="text-red-500 text-sm text-center mb-2">{pinError}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => { setLoginStep('guest-pick'); setLoginTarget(null); }}
+                className="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 font-semibold">Back</button>
+              <button onClick={handleGuestPinSubmit} disabled={pinInput.length < 4}
+                className="flex-1 py-2 rounded-xl btn-amber font-semibold disabled:opacity-40">Enter</button>
+            </div>
           </div>
         )}
 
@@ -714,7 +798,9 @@ export default function App() {
           <span className="text-xl">🏨</span>
           <div>
             <h1 className="text-sm font-bold leading-tight">Ruth & Rose's Grand Hotel</h1>
-            <div className="text-xs text-blue-200">{currentRole?.emoji} {currentUser.name} — {currentRole?.label}</div>
+            <div className="text-xs text-blue-200">
+              {isGuest ? `🔑 ${currentUser.name} — Room ${currentUser.roomNum}` : `${currentRole?.emoji} ${currentUser.name} — ${currentRole?.label}`}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1016,6 +1102,14 @@ export default function App() {
                 <div>
                   <label className="label">Special Requests</label>
                   <textarea className="input" rows={2} value={guestForm.requests} onChange={e => setGuestForm(f => ({ ...f, requests: e.target.value }))} placeholder="Extra pillows, late checkout..." />
+                </div>
+
+                <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
+                  <label className="label flex items-center gap-1">🔑 Guest Login PIN <span className="text-xs text-gray-400 font-normal">(optional)</span></label>
+                  <p className="text-xs text-gray-500 mb-2">Set a 4-digit PIN so the guest can log in from their own device to order room service</p>
+                  <input type="text" maxLength={4} className="input text-center text-xl tracking-widest"
+                    value={guestForm.guestPin} onChange={e => setGuestForm(f => ({ ...f, guestPin: e.target.value.replace(/\D/g, '') }))}
+                    placeholder="e.g. 1234" />
                 </div>
 
                 <button onClick={checkInGuest}
@@ -1393,6 +1487,24 @@ export default function App() {
               </div>
             </div>
 
+            {/* Guest accounts */}
+            {guestAccounts.length > 0 && (
+              <div className="bg-white rounded-2xl p-4 shadow-sm border mb-4">
+                <h3 className="font-bold text-gray-800 mb-3">Guest Accounts</h3>
+                {guestAccounts.map(g => (
+                  <div key={g.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div>
+                      <span className="font-semibold text-gray-800">{g.name}</span>
+                      <span className="text-sm text-gray-500 ml-2">Room {g.roomNum}</span>
+                      <span className="text-xs text-gray-400 ml-2">PIN: {g.pin}</span>
+                    </div>
+                    <button onClick={() => { if (db) remove(ref(db, `${FB}/guestAccounts/${g.id}`)); showToast('Guest account removed'); }}
+                      className="text-red-400 text-sm">Remove</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Device notifications */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border mb-4">
               <h3 className="font-bold text-gray-800 mb-3">Device Notifications</h3>
@@ -1450,20 +1562,229 @@ export default function App() {
           </div>
         )}
 
+        {/* ═══ GUEST DASHBOARD ═══ */}
+        {view === 'guest-dashboard' && isGuest && (() => {
+          const myRoom = rooms[currentUser.roomNum] || {};
+          const theme = ROOM_THEMES.find(t => t.id === (myRoom.theme || 'default'));
+          const myGuest = guests.find(g => g.id === currentUser.guestId && !g.checkedOut);
+          const myOrders = orders.filter(o => o.roomNum === currentUser.roomNum && o.status !== 'delivered');
+
+          return (
+            <div>
+              {/* Room key card */}
+              <div className={`p-5 rounded-2xl bg-gradient-to-br ${theme?.bg || 'from-gray-50 to-slate-50'} border-2 border-amber-300 shadow-lg mb-4`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-2xl font-bold text-blue-800">🏨 R&R Hotel</span>
+                  {myGuest?.vip && <span className="text-amber-500 text-xl">⭐ VIP</span>}
+                </div>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <div className="text-sm text-gray-500 font-medium">Welcome,</div>
+                  <div className="text-xl font-bold text-gray-800">{currentUser.name}</div>
+                  <div className="flex justify-between mt-2">
+                    <div>
+                      <div className="text-xs text-gray-500">Your Room</div>
+                      <div className="text-3xl font-bold text-blue-700">{currentUser.roomNum}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-500">Nights</div>
+                      <div className="text-3xl font-bold text-amber-600">{myGuest?.nights || '—'}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2 text-center text-xs text-gray-500">
+                  {theme?.emoji} {theme?.label} Suite
+                </div>
+              </div>
+
+              {/* Door sign control */}
+              <div className="bg-white rounded-2xl p-4 shadow-sm border mb-4">
+                <h3 className="font-bold text-gray-800 mb-2">Door Sign</h3>
+                <div className="flex gap-2 flex-wrap">
+                  {DOOR_SIGNS.map(s => (
+                    <button key={s.id} onClick={() => setDoorSign(currentUser.roomNum, s.id)}
+                      className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 transition-all ${(myRoom.doorSign || 'none') === s.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                      {s.emoji} {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active orders for my room */}
+              {myOrders.length > 0 && (
+                <div className="bg-white rounded-2xl p-4 shadow-sm border mb-4">
+                  <h3 className="font-bold text-gray-800 mb-2">Your Orders</h3>
+                  {myOrders.map(o => (
+                    <div key={o.id} className="py-2 border-b last:border-b-0">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm">{o.items.map(i => `${i.emoji} ${i.name} x${i.qty}`).join(', ')}</div>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${o.status === 'ordered' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{o.status === 'ordered' ? 'Ordered' : 'Preparing'}</span>
+                      </div>
+                      <div className="text-xs text-gray-400">${o.total}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Quick actions */}
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setView('guest-room-service')}
+                  className="p-4 rounded-2xl btn-amber font-bold text-sm shadow-md flex flex-col items-center gap-1">
+                  <span className="text-2xl">🍽️</span>
+                  Order Room Service
+                </button>
+                <button onClick={() => setView('guest-review')}
+                  className="p-4 rounded-2xl btn-blue font-bold text-sm shadow-md flex flex-col items-center gap-1">
+                  <span className="text-2xl">📝</span>
+                  Leave a Review
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ═══ GUEST ROOM SERVICE ═══ */}
+        {view === 'guest-room-service' && isGuest && (
+          <div>
+            <button onClick={() => setView('guest-dashboard')} className="text-blue-600 font-semibold mb-3 flex items-center gap-1">
+              ← Back to My Room
+            </button>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">🍽️ Room Service — Room {currentUser.roomNum}</h2>
+
+            {/* Menu */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border mb-4">
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+                {MENU_CATEGORIES.map(cat => (
+                  <button key={cat.id} onClick={() => setMenuCat(cat.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap border-2 transition-all ${menuCat === cat.id ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 bg-white text-gray-600'}`}>
+                    {cat.emoji} {cat.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {MENU_ITEMS.filter(i => i.cat === menuCat).map(item => (
+                  <button key={item.id} onClick={() => addToCart(item)}
+                    className="p-3 rounded-xl bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 transition-all text-left">
+                    <div className="text-2xl mb-1">{item.emoji}</div>
+                    <div className="text-sm font-semibold text-gray-800">{item.name}</div>
+                    <div className="text-sm text-amber-600 font-bold">${item.price}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cart */}
+            {cart.length > 0 && (
+              <div className="bg-white rounded-2xl p-4 shadow-sm border mb-4">
+                <h3 className="font-bold text-gray-800 mb-2">Your Order</h3>
+                {cart.map(ci => (
+                  <div key={ci.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div className="flex items-center gap-2">
+                      <span>{ci.emoji}</span>
+                      <span className="text-sm font-medium">{ci.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateCartQty(ci.id, -1)} className="w-7 h-7 rounded-full bg-gray-100 font-bold text-gray-600">-</button>
+                      <span className="text-sm font-bold w-6 text-center">{ci.qty}</span>
+                      <button onClick={() => updateCartQty(ci.id, 1)} className="w-7 h-7 rounded-full bg-gray-100 font-bold text-gray-600">+</button>
+                      <span className="text-sm font-semibold text-amber-600 w-10 text-right">${ci.price * ci.qty}</span>
+                      <button onClick={() => removeFromCart(ci.id)} className="text-red-400 text-sm">✕</button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between mt-3 pt-3 border-t">
+                  <span className="font-bold text-gray-800">Total</span>
+                  <span className="font-bold text-amber-600 text-lg">${cartTotal}</span>
+                </div>
+                <button onClick={() => { submitOrder(String(currentUser.roomNum)); setView('guest-dashboard'); }}
+                  className="w-full mt-3 py-3 rounded-xl btn-amber font-bold shadow-md">
+                  🍽️ Place Order → Room {currentUser.roomNum}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ GUEST REVIEW ═══ */}
+        {view === 'guest-review' && isGuest && (
+          <div>
+            <button onClick={() => setView('guest-dashboard')} className="text-blue-600 font-semibold mb-3 flex items-center gap-1">
+              ← Back to My Room
+            </button>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">📝 Leave a Review</h2>
+
+            <div className="bg-white rounded-2xl p-4 shadow-sm border mb-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="label">Rating</label>
+                  <div className="flex gap-1 justify-center">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button key={n} onClick={() => setReviewForm(f => ({ ...f, stars: n }))}
+                        className={`text-4xl transition-transform hover:scale-110 ${n <= reviewForm.stars ? 'text-amber-400' : 'text-gray-300'}`}>
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Comment</label>
+                  <textarea className="input" rows={4} value={reviewForm.comment}
+                    onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
+                    placeholder="How is your stay so far?" />
+                </div>
+                <button onClick={() => {
+                  if (!db) return;
+                  push(ref(db, `${FB}/guestBook`), {
+                    guestName: currentUser.name,
+                    roomNum: String(currentUser.roomNum),
+                    stars: reviewForm.stars,
+                    comment: reviewForm.comment,
+                    createdAt: Date.now(),
+                  });
+                  addNotification('review', `${currentUser.name} left a ${reviewForm.stars}-star review!`);
+                  setReviewForm({ guestName: '', stars: 5, comment: '', roomNum: '' });
+                  showToast('Review submitted! Thank you!');
+                  setView('guest-dashboard');
+                }}
+                  className="w-full py-3 rounded-xl btn-blue font-bold shadow-md">
+                  📝 Submit Review
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* ── Bottom nav ─────────────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg">
-        <div className="flex justify-around max-w-2xl mx-auto">
-          {navItems.map(item => (
-            <button key={item.id} onClick={() => setView(item.id)}
-              className={`flex flex-col items-center py-2 px-1 min-w-0 flex-1 transition-colors ${view === item.id || (view === 'room-detail' && item.id === 'dashboard') ? 'text-blue-600' : 'text-gray-400'}`}>
-              <span className="text-lg">{item.emoji}</span>
-              <span className="text-[10px] font-medium truncate">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      {isGuest ? (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg">
+          <div className="flex justify-around max-w-2xl mx-auto">
+            {[
+              { id: 'guest-dashboard',    label: 'My Room',      emoji: '🏨' },
+              { id: 'guest-room-service', label: 'Room Service', emoji: '🍽️' },
+              { id: 'guest-review',       label: 'Review',       emoji: '📝' },
+            ].map(item => (
+              <button key={item.id} onClick={() => setView(item.id)}
+                className={`flex flex-col items-center py-2 px-1 min-w-0 flex-1 transition-colors ${view === item.id ? 'text-amber-600' : 'text-gray-400'}`}>
+                <span className="text-lg">{item.emoji}</span>
+                <span className="text-[10px] font-medium truncate">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+      ) : (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg">
+          <div className="flex justify-around max-w-2xl mx-auto">
+            {navItems.map(item => (
+              <button key={item.id} onClick={() => setView(item.id)}
+                className={`flex flex-col items-center py-2 px-1 min-w-0 flex-1 transition-colors ${view === item.id || (view === 'room-detail' && item.id === 'dashboard') ? 'text-blue-600' : 'text-gray-400'}`}>
+                <span className="text-lg">{item.emoji}</span>
+                <span className="text-[10px] font-medium truncate">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
