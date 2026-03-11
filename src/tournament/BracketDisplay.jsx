@@ -2,8 +2,9 @@ import { getGameResults } from '../data/tournamentData';
 
 function MatchupBox({ game, result, highlightTeam }) {
   const hasResult = result && result.score1 != null;
+  const isBye = game.bye && !game.team2;
   const team1 = game.team1 || 'TBD';
-  const team2 = game.team2 || 'TBD';
+  const team2 = isBye ? 'BYE' : (game.team2 || 'TBD');
   const team1Won = hasResult && result.winner === game.team1;
   const team2Won = hasResult && result.winner === game.team2;
 
@@ -50,22 +51,26 @@ function MatchupBox({ game, result, highlightTeam }) {
 function resolveBracket(bracket, results) {
   const resolved = JSON.parse(JSON.stringify(bracket));
 
+  // Helper: get winner of a QF game (handles byes and results)
+  function getQfWinner(qfGame, result) {
+    if (qfGame.bye) return { winner: qfGame.team1, seed: qfGame.seed1 };
+    if (result && result.winner) {
+      const seed = result.winner === qfGame.team1 ? qfGame.seed1 : qfGame.seed2;
+      return { winner: result.winner, seed };
+    }
+    return null;
+  }
+
   // Fill semi-finals from quarter-final winners
   resolved.semiFinals.forEach((sf) => {
     if (sf.source) {
       const [src1Id, src2Id] = sf.source;
-      const r1 = results[src1Id];
-      const r2 = results[src2Id];
       const src1 = resolved.quarterFinals.find((g) => g.gameId === src1Id);
       const src2 = resolved.quarterFinals.find((g) => g.gameId === src2Id);
-      if (r1 && r1.winner) {
-        sf.team1 = r1.winner;
-        sf.seed1 = src1 && r1.winner === src1.team1 ? src1.seed1 : src1 ? src1.seed2 : null;
-      }
-      if (r2 && r2.winner) {
-        sf.team2 = r2.winner;
-        sf.seed2 = src2 && r2.winner === src2.team1 ? src2.seed1 : src2 ? src2.seed2 : null;
-      }
+      const w1 = getQfWinner(src1, results[src1Id]);
+      const w2 = getQfWinner(src2, results[src2Id]);
+      if (w1) { sf.team1 = w1.winner; sf.seed1 = w1.seed; }
+      if (w2) { sf.team2 = w2.winner; sf.seed2 = w2.seed; }
     }
   });
 
