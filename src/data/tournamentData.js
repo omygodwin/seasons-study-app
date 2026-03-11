@@ -84,14 +84,14 @@ export const teams = [
 ];
 
 // Bracket structure for each division
-// Each division has 8 teams in standard seeded bracket: 1v8, 4v5, 3v6, 2v7
+// Each division has 8 teams in standard seeded bracket: 1v8, 5v4, 3v6, 7v2
 export const brackets = {
   "3rd Boys": {
     quarterFinals: [
       { gameId: "3B-QF1", team1: "Camo Cranberries", team2: "Bucket Corgis", seed1: 1, seed2: 8 },
-      { gameId: "3B-QF2", team1: "Grizzly Bears", team2: "Net Swishers", seed1: 4, seed2: 5 },
+      { gameId: "3B-QF2", team1: "Net Swishers", team2: "Grizzly Bears", seed1: 5, seed2: 4 },
       { gameId: "3B-QF3", team1: "Hersheys", team2: "Burnt Chicken Nuggets", seed1: 3, seed2: 6 },
-      { gameId: "3B-QF4", team1: "The Hoops", team2: "Tropical Boys", seed1: 2, seed2: 7 },
+      { gameId: "3B-QF4", team1: "Tropical Boys", team2: "The Hoops", seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "3B-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["3B-QF1", "3B-QF2"] },
@@ -104,9 +104,9 @@ export const brackets = {
   "3rd Girls": {
     quarterFinals: [
       { gameId: "3G-QF1", team1: "The Bananas", team2: "Dunkin' Donuts", seed1: 1, seed2: 8 },
-      { gameId: "3G-QF2", team1: "Pink Superstars", team2: "Neon Fruits", seed1: 4, seed2: 5 },
+      { gameId: "3G-QF2", team1: "Neon Fruits", team2: "Pink Superstars", seed1: 5, seed2: 4 },
       { gameId: "3G-QF3", team1: "Eagles", team2: "Sassy Fashion", seed1: 3, seed2: 6 },
-      { gameId: "3G-QF4", team1: "Good Vibes", team2: "Crazy Coconuts", seed1: 2, seed2: 7 },
+      { gameId: "3G-QF4", team1: "Crazy Coconuts", team2: "Good Vibes", seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "3G-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["3G-QF1", "3G-QF2"] },
@@ -119,9 +119,9 @@ export const brackets = {
   "4th Boys": {
     quarterFinals: [
       { gameId: "4B-QF1", team1: "BUNZ", team2: "CC&G", seed1: 1, seed2: 8 },
-      { gameId: "4B-QF2", team1: "NC Tarheels", team2: "Scammer Bananers", seed1: 4, seed2: 5 },
+      { gameId: "4B-QF2", team1: "Scammer Bananers", team2: "NC Tarheels", seed1: 5, seed2: 4 },
       { gameId: "4B-QF3", team1: "The Kobes", team2: "Hoopers", seed1: 3, seed2: 6 },
-      { gameId: "4B-QF4", team1: "Peppa Pig Biggies", team2: "GOATS", seed1: 2, seed2: 7 },
+      { gameId: "4B-QF4", team1: "GOATS", team2: "Peppa Pig Biggies", seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "4B-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["4B-QF1", "4B-QF2"] },
@@ -134,9 +134,9 @@ export const brackets = {
   "4th Girls": {
     quarterFinals: [
       { gameId: "4G-QF1", team1: "Triple Basket Girls", team2: "Crumble Cookies", seed1: 1, seed2: 8 },
-      { gameId: "4G-QF2", team1: "The Bucket Boys", team2: "Pink Palm Trees", seed1: 4, seed2: 5 },
+      { gameId: "4G-QF2", team1: "Pink Palm Trees", team2: "The Bucket Boys", seed1: 5, seed2: 4 },
       { gameId: "4G-QF3", team1: "The Howlers", team2: "Super Stars", seed1: 3, seed2: 6 },
-      { gameId: "4G-QF4", team1: "The Blue Stars", team2: "Dream Team Champions", seed1: 2, seed2: 7 },
+      { gameId: "4G-QF4", team1: "Dream Team Champions", team2: "The Blue Stars", seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "4G-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["4G-QF1", "4G-QF2"] },
@@ -149,9 +149,9 @@ export const brackets = {
   "5th Boys": {
     quarterFinals: [
       { gameId: "5B-QF1", team1: "Bucks", team2: "BKTSCWOD", seed1: 1, seed2: 8 },
-      { gameId: "5B-QF2", team1: "The Goats", team2: "Cliffbars Arent Healthy", seed1: 4, seed2: 5 },
+      { gameId: "5B-QF2", team1: "Cliffbars Arent Healthy", team2: "The Goats", seed1: 5, seed2: 4 },
       { gameId: "5B-QF3", team1: "Gnarly Dudes", team2: "The Sea Turtles", seed1: 3, seed2: 6 },
-      { gameId: "5B-QF4", team1: "Nothing But Nets", team2: "Knee Walkers", seed1: 2, seed2: 7 },
+      { gameId: "5B-QF4", team1: "Knee Walkers", team2: "Nothing But Nets", seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "5B-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["5B-QF1", "5B-QF2"] },
@@ -164,9 +164,9 @@ export const brackets = {
   "5th Girls": {
     quarterFinals: [
       { gameId: "5G-QF1", team1: "The Sawiches", team2: "B-Ball Blizzards", seed1: 1, seed2: 8 },
-      { gameId: "5G-QF2", team1: "Ducky Dudes", team2: "The Biggie Eagles", seed1: 4, seed2: 5 },
+      { gameId: "5G-QF2", team1: "The Biggie Eagles", team2: "Ducky Dudes", seed1: 5, seed2: 4 },
       { gameId: "5G-QF3", team1: "The A.Q. (Attitude Queens)", team2: "Da Thunderbolts", seed1: 3, seed2: 6 },
-      { gameId: "5G-QF4", team1: "The Blue Stars", team2: "B-Ball Queens", seed1: 2, seed2: 7 },
+      { gameId: "5G-QF4", team1: "B-Ball Queens", team2: "The Blue Stars", seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "5G-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["5G-QF1", "5G-QF2"] },
