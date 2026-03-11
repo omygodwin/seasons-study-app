@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { schedule, courts, teams, getGameResults } from '../data/tournamentData';
+import { schedule, courts, teams, divisions, getGameResults } from '../data/tournamentData';
 import GameCard from './components/GameCard';
 import CourtKey from './components/CourtKey';
 
-export default function ScheduleView({ selectedChild }) {
+export default function ScheduleView({ selectedChild, onTeamClick, onGameClick }) {
   const [filterTeam, setFilterTeam] = useState('');
+  const [filterDivision, setFilterDivision] = useState('');
   const [gameResults, setGameResults] = useState(getGameResults());
 
   useEffect(() => {
@@ -13,22 +14,22 @@ export default function ScheduleView({ selectedChild }) {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  // Get unique team names for filter dropdown
   const teamNames = [...new Set(teams.map((t) => t.name))].sort();
 
-  // Child's team schedule
   const childGames = selectedChild
     ? schedule.filter(
         (g) => g.team1 === selectedChild.teamName || g.team2 === selectedChild.teamName
       )
     : [];
 
-  // Filtered schedule
-  const filteredSchedule = filterTeam
-    ? schedule.filter((g) => g.team1 === filterTeam || g.team2 === filterTeam)
-    : schedule;
+  let filteredSchedule = schedule;
+  if (filterTeam) {
+    filteredSchedule = filteredSchedule.filter((g) => g.team1 === filterTeam || g.team2 === filterTeam);
+  }
+  if (filterDivision) {
+    filteredSchedule = filteredSchedule.filter((g) => g.division === filterDivision);
+  }
 
-  // Group by court
   const byCourt = {};
   filteredSchedule.forEach((game) => {
     if (!byCourt[game.court]) byCourt[game.court] = [];
@@ -38,7 +39,6 @@ export default function ScheduleView({ selectedChild }) {
 
   return (
     <div>
-      {/* Child's schedule section */}
       {selectedChild && childGames.length > 0 && (
         <div className="mb-8">
           <h3 className="text-lg font-bold text-orange-400 mb-3">
@@ -51,6 +51,8 @@ export default function ScheduleView({ selectedChild }) {
                 game={game}
                 result={gameResults[game.gameId]}
                 highlightTeam={selectedChild.teamName}
+                onTeamClick={onTeamClick}
+                onClick={() => onGameClick && onGameClick(game)}
               />
             ))}
           </div>
@@ -58,9 +60,18 @@ export default function ScheduleView({ selectedChild }) {
         </div>
       )}
 
-      {/* Filter */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <h3 className="text-lg font-bold text-white">Full Tournament Schedule</h3>
+        <select
+          value={filterDivision}
+          onChange={(e) => setFilterDivision(e.target.value)}
+          className="bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+        >
+          <option value="">All Divisions</option>
+          {divisions.map((div) => (
+            <option key={div} value={div}>{div}</option>
+          ))}
+        </select>
         <select
           value={filterTeam}
           onChange={(e) => setFilterTeam(e.target.value)}
@@ -73,7 +84,6 @@ export default function ScheduleView({ selectedChild }) {
         </select>
       </div>
 
-      {/* Schedule by court */}
       {Object.keys(byCourt).sort((a, b) => Number(a) - Number(b)).map((courtId) => {
         const court = courts.find((c) => c.id === Number(courtId));
         return (
@@ -91,6 +101,8 @@ export default function ScheduleView({ selectedChild }) {
                   game={game}
                   result={gameResults[game.gameId]}
                   highlightTeam={selectedChild?.teamName}
+                  onTeamClick={onTeamClick}
+                  onClick={() => onGameClick && onGameClick(game)}
                 />
               ))}
             </div>

@@ -1,44 +1,52 @@
 import { useState } from 'react';
-import { getSelectedChild, saveSelectedChild } from '../data/tournamentData';
+import { getSelectedChild, getSelectedChildren, getActiveChildIndex, saveSelectedChild, setActiveChildIndex } from '../data/tournamentData';
 import PlayerSearch from './components/PlayerSearch';
-import ChildBanner from './components/ChildBanner';
-import TeamPage from './TeamPage';
+import ChildSwitcher from './components/ChildSwitcher';
 import TournamentCentral from './TournamentCentral';
 import AdminPanel from './AdminPanel';
+import InstallBanner from './components/InstallBanner';
 
-// Views: 'home' | 'team' | 'central' | 'admin'
+// Views: 'home' | 'central' | 'admin'
 
 export default function TournamentApp() {
   const [view, setView] = useState('home');
   const [selectedChild, setSelectedChild] = useState(getSelectedChild());
+  const [allChildren, setAllChildren] = useState(getSelectedChildren());
+  const [activeChildIdx, setActiveChildIdx] = useState(getActiveChildIndex());
+
+  function refreshChildState() {
+    setAllChildren(getSelectedChildren());
+    setSelectedChild(getSelectedChild());
+    setActiveChildIdx(getActiveChildIndex());
+  }
 
   function handlePlayerSelect(player) {
-    const child = { playerName: player.name, teamName: player.teamName, division: player.division };
     saveSelectedChild(player.name, player.teamName, player.division);
-    setSelectedChild(child);
-    setView('team');
+    refreshChildState();
+    setView('central');
   }
 
   function handleClearChild() {
     setSelectedChild(null);
+    setAllChildren([]);
+    setActiveChildIdx(0);
   }
 
-  if (view === 'team' && selectedChild) {
-    return (
-      <TeamPage
-        selectedChild={selectedChild}
-        onViewCentral={() => setView('central')}
-        onBack={() => setView('home')}
-      />
-    );
+  function handleChildSwitch(idx) {
+    setActiveChildIndex(idx);
+    refreshChildState();
   }
 
   if (view === 'central') {
     return (
       <TournamentCentral
         selectedChild={selectedChild}
+        allChildren={allChildren}
+        activeChildIndex={activeChildIdx}
+        onChildSwitch={handleChildSwitch}
         onClearChild={handleClearChild}
-        onBack={() => selectedChild ? setView('team') : setView('home')}
+        onAddChild={() => setView('home')}
+        onBack={() => setView('home')}
       />
     );
   }
@@ -58,14 +66,19 @@ export default function TournamentApp() {
         </div>
 
         {/* Child banner if already selected */}
-        {selectedChild && (
+        {allChildren.length > 0 && (
           <div className="space-y-3">
-            <ChildBanner child={selectedChild} onClear={handleClearChild} />
+            <ChildSwitcher
+              children={allChildren}
+              activeIndex={activeChildIdx}
+              onSwitch={handleChildSwitch}
+              onClear={handleClearChild}
+            />
             <button
-              onClick={() => setView('team')}
+              onClick={() => setView('central')}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
             >
-              Go to {selectedChild.teamName}'s Page
+              Go to Tournament Central
             </button>
           </div>
         )}
@@ -73,18 +86,20 @@ export default function TournamentApp() {
         {/* Search */}
         <div>
           <p className="text-gray-300 text-sm mb-2">
-            {selectedChild ? 'Search for a different player:' : 'Search for your child\'s name:'}
+            {allChildren.length > 0 ? 'Add another child or search for a different player:' : 'Search for your child\'s name:'}
           </p>
           <PlayerSearch onSelect={handlePlayerSelect} />
         </div>
 
-        {/* Tournament Central button */}
-        <button
-          onClick={() => setView('central')}
-          className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors border border-gray-600"
-        >
-          Tournament Central
-        </button>
+        {/* Tournament Central button (when no child selected) */}
+        {allChildren.length === 0 && (
+          <button
+            onClick={() => setView('central')}
+            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors border border-gray-600"
+          >
+            Tournament Central
+          </button>
+        )}
 
         {/* Admin link */}
         <button
@@ -94,6 +109,8 @@ export default function TournamentApp() {
           Admin / Score Entry
         </button>
       </div>
+
+      <InstallBanner />
     </div>
   );
 }
