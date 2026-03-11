@@ -51,6 +51,7 @@ export const teams = [
   { name: "Super Stars", division: "4th Boys", seed: 6, roster: ["Addie Bouck", "Brynn Schweiker", "Charlotte Canales"] },
   { name: "Dream Team Champions", division: "4th Boys", seed: 7, roster: ["Libby Thomas", "Virginia Ball", "Zelie Moore"] },
   { name: "Crumble Cookies", division: "4th Boys", seed: 2, roster: ["Priscilla Baggett", "Emma Schuster", "Zoe Lee"] },
+  { name: "Scammer Bananers", division: "4th Boys", seed: null, roster: ["Aiden Shumate", "George Sanders", "Eli Rice", "Daniel Chen"] },
 
   // --- 4th Grade Girls ---
   { name: "Triple Basket Girls", division: "4th Girls", seed: 1, roster: ["Eila McKinney", "Chloe Leedham", "Winnie Greer"] },
