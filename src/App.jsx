@@ -1,63 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SeasonsStudyApp from './SeasonsStudyApp';
 import EgyptStudyApp from './EgyptStudyApp';
 import RocksStudyApp from './RocksStudyApp';
 import TournamentApp from './tournament/TournamentApp';
 
-export default function App() {
-  const [mainTopic, setMainTopic] = useState('tournament');
+function getRouteFromHash() {
+  const hash = window.location.hash.replace('#', '');
+  if (hash === 'study') return 'study';
+  return 'tournament';
+}
 
-  // Tournament gets its own full-screen layout without the top nav
-  if (mainTopic === 'tournament') {
-    return (
-      <div>
-        <div className="bg-gray-800 p-2 text-white flex justify-end sticky top-0 z-10">
-          <button
-            onClick={() => setMainTopic('seasons')}
-            className="text-gray-400 hover:text-white text-xs underline"
-          >
-            Study Guides
-          </button>
-        </div>
-        <TournamentApp />
-      </div>
-    );
+export default function App() {
+  const [route, setRoute] = useState(getRouteFromHash);
+  const [studyTopic, setStudyTopic] = useState('seasons');
+
+  useEffect(() => {
+    function handleHashChange() {
+      setRoute(getRouteFromHash());
+    }
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  if (route === 'tournament') {
+    return <TournamentApp />;
   }
 
+  // Study guides view
   return (
     <div>
-      {/* Main navigation to switch between study guides */}
       <nav className="bg-gray-800 p-4 text-white flex justify-center space-x-4 sticky top-0 z-10 flex-wrap gap-2">
         <button
-          onClick={() => setMainTopic('tournament')}
-          className={`px-4 py-2 rounded font-semibold bg-orange-600 hover:bg-orange-700`}
+          onClick={() => { window.location.hash = ''; setRoute('tournament'); }}
+          className="px-4 py-2 rounded font-semibold bg-orange-600 hover:bg-orange-700"
         >
           Basketball Tournament
         </button>
         <button
-          onClick={() => setMainTopic('seasons')}
-          className={`px-4 py-2 rounded font-semibold ${mainTopic === 'seasons' ? 'bg-blue-600' : 'bg-gray-600 hover:bg-gray-700'}`}
+          onClick={() => setStudyTopic('seasons')}
+          className={`px-4 py-2 rounded font-semibold ${studyTopic === 'seasons' ? 'bg-blue-600' : 'bg-gray-600 hover:bg-gray-700'}`}
         >
           Earth Science: Seasons
         </button>
         <button
-          onClick={() => setMainTopic('egypt')}
-          className={`px-4 py-2 rounded font-semibold ${mainTopic === 'egypt' ? 'bg-yellow-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+          onClick={() => setStudyTopic('egypt')}
+          className={`px-4 py-2 rounded font-semibold ${studyTopic === 'egypt' ? 'bg-yellow-700' : 'bg-gray-600 hover:bg-gray-700'}`}
         >
           Ancient Egypt
         </button>
         <button
-          onClick={() => setMainTopic('rocks')}
-          className={`px-4 py-2 rounded font-semibold ${mainTopic === 'rocks' ? 'bg-stone-600' : 'bg-gray-600 hover:bg-gray-700'}`}
+          onClick={() => setStudyTopic('rocks')}
+          className={`px-4 py-2 rounded font-semibold ${studyTopic === 'rocks' ? 'bg-stone-600' : 'bg-gray-600 hover:bg-gray-700'}`}
         >
           Rocks & Minerals
         </button>
       </nav>
 
-      {/* Conditionally render the selected study guide */}
-      {mainTopic === 'seasons' && <SeasonsStudyApp />}
-      {mainTopic === 'egypt' && <EgyptStudyApp />}
-      {mainTopic === 'rocks' && <RocksStudyApp />}
+      {studyTopic === 'seasons' && <SeasonsStudyApp />}
+      {studyTopic === 'egypt' && <EgyptStudyApp />}
+      {studyTopic === 'rocks' && <RocksStudyApp />}
     </div>
   );
 }

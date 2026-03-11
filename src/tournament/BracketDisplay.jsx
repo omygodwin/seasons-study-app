@@ -1,6 +1,6 @@
 import { getGameResults } from '../data/tournamentData';
 
-function MatchupBox({ game, result, highlightTeam }) {
+function MatchupBox({ game, result, highlightTeam, onTeamClick, onGameClick }) {
   const hasResult = result && result.score1 != null;
   const isBye = game.bye && !game.team2;
   const team1 = game.team1 || 'TBD';
@@ -8,18 +8,35 @@ function MatchupBox({ game, result, highlightTeam }) {
   const team1Won = hasResult && result.winner === game.team1;
   const team2Won = hasResult && result.winner === game.team2;
 
-  function teamRow(name, seed, won, lost, isHighlighted, score) {
+  function teamRow(name, seed, won, lost, isHighlighted, score, isReal) {
     return (
-      <div className={`flex items-center justify-between px-2 py-1.5 ${
-        won ? 'bg-green-900/40' : lost ? 'opacity-50' : ''
-      } ${isHighlighted ? 'ring-1 ring-orange-400 rounded' : ''}`}>
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div
+        className={`flex items-center justify-between px-2 py-1.5 ${
+          won ? 'bg-green-900/40' : lost ? 'opacity-50' : ''
+        } ${isHighlighted ? 'ring-1 ring-orange-400 rounded' : ''}`}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {seed && <span className="text-gray-500 text-xs font-mono w-4 shrink-0">{seed}</span>}
-          <span className={`truncate text-sm font-medium ${
-            won ? 'text-green-400 font-bold' : lost ? 'text-gray-500 line-through' : 'text-white'
-          }`}>
-            {name}
-          </span>
+          {isReal && onTeamClick ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onTeamClick(name); }}
+              className={`truncate text-sm font-medium text-left hover:underline ${
+                won ? 'text-green-400 font-bold' : lost ? 'text-gray-500 line-through' : 'text-white'
+              }`}
+              title={name}
+            >
+              {name}
+            </button>
+          ) : (
+            <span
+              className={`truncate text-sm font-medium ${
+                won ? 'text-green-400 font-bold' : lost ? 'text-gray-500 line-through' : name === 'TBD' || name === 'BYE' ? 'text-gray-500' : 'text-white'
+              }`}
+              title={name}
+            >
+              {name}
+            </span>
+          )}
         </div>
         {score != null && (
           <span className={`text-sm font-bold ml-2 shrink-0 ${won ? 'text-green-400' : 'text-gray-500'}`}>
@@ -31,27 +48,31 @@ function MatchupBox({ game, result, highlightTeam }) {
   }
 
   return (
-    <div className="bg-gray-800 border border-gray-600 rounded w-48 overflow-hidden shadow-md">
+    <div
+      className="bg-gray-800 border border-gray-600 rounded w-56 overflow-hidden shadow-md cursor-pointer hover:border-gray-500 transition-colors"
+      onClick={() => onGameClick && onGameClick(game)}
+      title="Click for matchup details"
+    >
       {teamRow(
         team1, game.seed1, team1Won, hasResult && !team1Won,
         highlightTeam && game.team1 === highlightTeam,
-        hasResult ? result.score1 : null
+        hasResult ? result.score1 : null,
+        game.team1 && game.team1 !== 'TBD'
       )}
       <div className="border-t border-gray-600" />
       {teamRow(
         team2, game.seed2, team2Won, hasResult && !team2Won,
         highlightTeam && game.team2 === highlightTeam,
-        hasResult ? result.score2 : null
+        hasResult ? result.score2 : null,
+        game.team2 && game.team2 !== 'TBD' && game.team2 !== 'BYE'
       )}
     </div>
   );
 }
 
-// Resolve bracket: fill in semi-finals and finals based on results
 function resolveBracket(bracket, results) {
   const resolved = JSON.parse(JSON.stringify(bracket));
 
-  // Helper: get winner of a QF game (handles byes and results)
   function getQfWinner(qfGame, result) {
     if (qfGame.bye) return { winner: qfGame.team1, seed: qfGame.seed1 };
     if (result && result.winner) {
@@ -61,7 +82,6 @@ function resolveBracket(bracket, results) {
     return null;
   }
 
-  // Fill semi-finals from quarter-final winners
   resolved.semiFinals.forEach((sf) => {
     if (sf.source) {
       const [src1Id, src2Id] = sf.source;
@@ -74,7 +94,6 @@ function resolveBracket(bracket, results) {
     }
   });
 
-  // Fill final from semi-final winners
   resolved.final.forEach((f) => {
     if (f.source) {
       const [src1Id, src2Id] = f.source;
@@ -96,7 +115,7 @@ function resolveBracket(bracket, results) {
   return resolved;
 }
 
-export default function BracketDisplay({ bracket, highlightTeam, gameResults }) {
+export default function BracketDisplay({ bracket, highlightTeam, gameResults, onTeamClick, onGameClick }) {
   const results = gameResults || getGameResults();
   const resolved = resolveBracket(bracket, results);
 
@@ -104,18 +123,24 @@ export default function BracketDisplay({ bracket, highlightTeam, gameResults }) 
   const sf = resolved.semiFinals;
   const final = resolved.final;
 
-  // Champion
   const finalResult = results[final[0]?.gameId];
   const champion = finalResult?.winner || null;
 
   return (
     <div className="w-full overflow-x-auto">
-      <div className="min-w-[700px] flex items-stretch gap-0 py-4 px-2">
+      <div className="min-w-[750px] flex items-stretch gap-0 py-4 px-2">
         {/* Quarter-Finals */}
         <div className="flex flex-col justify-around flex-shrink-0 gap-6" style={{ minHeight: '400px' }}>
           <div className="text-xs text-gray-500 uppercase tracking-wide text-center mb-1">Quarter-Finals</div>
           {qf.map((game) => (
-            <MatchupBox key={game.gameId} game={game} result={results[game.gameId]} highlightTeam={highlightTeam} />
+            <MatchupBox
+              key={game.gameId}
+              game={game}
+              result={results[game.gameId]}
+              highlightTeam={highlightTeam}
+              onTeamClick={onTeamClick}
+              onGameClick={onGameClick}
+            />
           ))}
         </div>
 
@@ -135,7 +160,14 @@ export default function BracketDisplay({ bracket, highlightTeam, gameResults }) 
         <div className="flex flex-col justify-around flex-shrink-0 gap-24" style={{ minHeight: '400px' }}>
           <div className="text-xs text-gray-500 uppercase tracking-wide text-center mb-1">Semi-Finals</div>
           {sf.map((game) => (
-            <MatchupBox key={game.gameId} game={game} result={results[game.gameId]} highlightTeam={highlightTeam} />
+            <MatchupBox
+              key={game.gameId}
+              game={game}
+              result={results[game.gameId]}
+              highlightTeam={highlightTeam}
+              onTeamClick={onTeamClick}
+              onGameClick={onGameClick}
+            />
           ))}
         </div>
 
@@ -148,7 +180,13 @@ export default function BracketDisplay({ bracket, highlightTeam, gameResults }) 
         {/* Final */}
         <div className="flex flex-col justify-center flex-shrink-0" style={{ minHeight: '400px' }}>
           <div className="text-xs text-gray-500 uppercase tracking-wide text-center mb-1">Final</div>
-          <MatchupBox game={final[0]} result={results[final[0]?.gameId]} highlightTeam={highlightTeam} />
+          <MatchupBox
+            game={final[0]}
+            result={results[final[0]?.gameId]}
+            highlightTeam={highlightTeam}
+            onTeamClick={onTeamClick}
+            onGameClick={onGameClick}
+          />
           {champion && (
             <div className="mt-3 text-center">
               <div className="text-xs text-gray-500 uppercase tracking-wide">Champion</div>

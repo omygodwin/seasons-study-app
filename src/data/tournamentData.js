@@ -268,7 +268,8 @@ export function getBracket(division) {
 
 // LocalStorage helpers for game results
 const RESULTS_KEY = "tournament-results";
-const SELECTED_CHILD_KEY = "tournament-selected-child";
+const SELECTED_CHILDREN_KEY = "tournament-selected-children";
+const ACTIVE_CHILD_KEY = "tournament-active-child-index";
 
 export function getGameResults() {
   try {
@@ -285,22 +286,160 @@ export function saveGameResult(gameId, score1, score2, winner) {
   localStorage.setItem(RESULTS_KEY, JSON.stringify(results));
 }
 
-export function getSelectedChild() {
+// Multi-child support
+export function getSelectedChildren() {
   try {
-    const stored = localStorage.getItem(SELECTED_CHILD_KEY);
-    return stored ? JSON.parse(stored) : null;
+    const stored = localStorage.getItem(SELECTED_CHILDREN_KEY);
+    return stored ? JSON.parse(stored) : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
+export function getActiveChildIndex() {
+  try {
+    const stored = localStorage.getItem(ACTIVE_CHILD_KEY);
+    return stored ? parseInt(stored, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function setActiveChildIndex(index) {
+  localStorage.setItem(ACTIVE_CHILD_KEY, String(index));
+}
+
+export function getSelectedChild() {
+  const children = getSelectedChildren();
+  if (children.length === 0) return null;
+  const idx = getActiveChildIndex();
+  return children[Math.min(idx, children.length - 1)] || null;
+}
+
 export function saveSelectedChild(playerName, teamName, division) {
-  localStorage.setItem(
-    SELECTED_CHILD_KEY,
-    JSON.stringify({ playerName, teamName, division })
+  const children = getSelectedChildren();
+  const existing = children.findIndex(
+    (c) => c.playerName === playerName && c.teamName === teamName
   );
+  if (existing >= 0) {
+    setActiveChildIndex(existing);
+    return;
+  }
+  children.push({ playerName, teamName, division });
+  localStorage.setItem(SELECTED_CHILDREN_KEY, JSON.stringify(children));
+  setActiveChildIndex(children.length - 1);
+}
+
+export function removeChild(index) {
+  const children = getSelectedChildren();
+  children.splice(index, 1);
+  localStorage.setItem(SELECTED_CHILDREN_KEY, JSON.stringify(children));
+  const activeIdx = getActiveChildIndex();
+  if (activeIdx >= children.length) {
+    setActiveChildIndex(Math.max(0, children.length - 1));
+  }
 }
 
 export function clearSelectedChild() {
-  localStorage.removeItem(SELECTED_CHILD_KEY);
+  localStorage.removeItem(SELECTED_CHILDREN_KEY);
+  localStorage.removeItem(ACTIVE_CHILD_KEY);
+}
+
+// Elimination & next game helpers
+export function isTeamEliminated(teamName, division) {
+  const results = getGameResults();
+  const bracket = getBracket(division);
+  if (!bracket) return false;
+
+  const resolved = resolveFullBracket(bracket, results);
+  const allGames = [
+    ...resolved.quarterFinals,
+    ...resolved.semiFinals,
+    ...resolved.final,
+  ];
+
+  for (const game of allGames) {
+    const r = results[game.gameId];
+    if (r && r.winner && (game.team1 === teamName || game.team2 === teamName)) {
+      if (r.winner !== teamName) return true;
+    }
+  }
+  return false;
+}
+
+export function getTeamNextGame(teamName, division) {
+  const results = getGameResults();
+  const bracket = getBracket(division);
+  if (!bracket) return null;
+
+  const resolved = resolveFullBracket(bracket, results);
+  const allGames = [
+    ...resolved.quarterFinals,
+    ...resolved.semiFinals,
+    ...resolved.final,
+  ];
+
+  for (const game of allGames) {
+    if (game.team1 === teamName || game.team2 === teamName) {
+      const r = results[game.gameId];
+      if (!r || r.winner == null) {
+        const scheduleEntry = schedule.find((s) => s.gameId === game.gameId);
+        return {
+          gameId: game.gameId,
+          opponent: game.team1 === teamName ? game.team2 : game.team1,
+          round: scheduleEntry?.round || '',
+          court: scheduleEntry?.court,
+          slot: scheduleEntry?.slot,
+          game,
+        };
+      }
+    }
+  }
+  return null;
+}
+
+// Resolve bracket fully (exported for reuse)
+export function resolveFullBracket(bracket, results) {
+  const resolved = JSON.parse(JSON.stringify(bracket));
+
+  function getWinner(game, result) {
+    if (game.bye) return { winner: game.team1, seed: game.seed1 };
+    if (result && result.winner) {
+      const seed = result.winner === game.team1 ? game.seed1 : game.seed2;
+      return { winner: result.winner, seed };
+    }
+    return null;
+  }
+
+  resolved.semiFinals.forEach((sf) => {
+    if (sf.source) {
+      const [src1Id, src2Id] = sf.source;
+      const src1 = resolved.quarterFinals.find((g) => g.gameId === src1Id);
+      const src2 = resolved.quarterFinals.find((g) => g.gameId === src2Id);
+      const w1 = getWinner(src1, results[src1Id]);
+      const w2 = getWinner(src2, results[src2Id]);
+      if (w1) { sf.team1 = w1.winner; sf.seed1 = w1.seed; }
+      if (w2) { sf.team2 = w2.winner; sf.seed2 = w2.seed; }
+    }
+  });
+
+  resolved.final.forEach((f) => {
+    if (f.source) {
+      const [src1Id, src2Id] = f.source;
+      const r1 = results[src1Id];
+      const r2 = results[src2Id];
+      const src1 = resolved.semiFinals.find((g) => g.gameId === src1Id);
+      const src2 = resolved.semiFinals.find((g) => g.gameId === src2Id);
+      if (r1 && r1.winner) {
+        f.team1 = r1.winner;
+        f.seed1 = src1 && r1.winner === src1.team1 ? src1.seed1 : src1 ? src1.seed2 : null;
+      }
+      if (r2 && r2.winner) {
+        f.team2 = r2.winner;
+        f.seed2 = src2 && r2.winner === src2.team1 ? src2.seed1 : src2 ? src2.seed2 : null;
+      }
+    }
+  });
+
+  return resolved;
 }

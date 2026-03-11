@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { divisions, getBracket, getGameResults } from '../data/tournamentData';
 import BracketDisplay from './BracketDisplay';
 
-export default function BracketsView({ selectedChild }) {
+export default function BracketsView({ selectedChild, onTeamClick, onGameClick }) {
   const defaultDiv = selectedChild ? selectedChild.division : divisions[0];
   const [activeDivision, setActiveDivision] = useState(defaultDiv);
   const [gameResults, setGameResults] = useState(getGameResults());
 
   useEffect(() => {
-    // Re-read results when tab becomes visible (in case admin updated)
     function handleFocus() { setGameResults(getGameResults()); }
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
@@ -22,7 +21,6 @@ export default function BracketsView({ selectedChild }) {
 
   return (
     <div>
-      {/* Division sub-tabs */}
       <div className="flex flex-wrap gap-2 mb-4">
         {divisions.map((div) => (
           <button
@@ -46,6 +44,8 @@ export default function BracketsView({ selectedChild }) {
           bracket={bracket}
           highlightTeam={selectedChild?.teamName}
           gameResults={gameResults}
+          onTeamClick={onTeamClick}
+          onGameClick={onGameClick}
         />
       ) : (
         <p className="text-gray-400">No bracket data available for {activeDivision}.</p>
