@@ -53,14 +53,14 @@ export const teams = [
   { name: "Peppa Pig Biggies", division: "4th Boys", seed: 2, roster: ["Luke Dizon", "Wesley Fields", "Goodwin Frazer", "Joseph Bates"] },
 
   // --- 4th Grade Girls ---
-  { name: "Triple Basket Girls", division: "4th Girls", seed: 1, roster: ["Eila McKinney", "Chloe Leedham", "Winnie Greer"] },
-  { name: "Crumble Cookies", division: "4th Girls", seed: 8, roster: ["Priscilla Baggett", "Emma Schuster", "Zoe Lee"] },
-  { name: "Pink Palm Trees", division: "4th Girls", seed: 5, roster: ["Mya Trudel", "Charlotte King", "Olivia Bryne", "Charlotte Turner"] },
-  { name: "The Bucket Boys", division: "4th Girls", seed: 4, roster: ["Henry Pivonka", "Toddy Henderson", "Cars Luck"] },
-  { name: "The Howlers", division: "4th Girls", seed: 3, roster: ["Ella Turner", "CeCe McDonald", "Harper Car"] },
-  { name: "Super Stars", division: "4th Girls", seed: 6, roster: ["Addie Bouck", "Brynn Schweiker", "Charlotte Canales"] },
-  { name: "Dream Team Champions", division: "4th Girls", seed: 7, roster: ["Libby Thomas", "Virginia Ball", "Zelie Moore"] },
-  { name: "The Blue Stars", division: "4th Girls", seed: 2, roster: ["Keaton Griffith", "Vivian Henderson", "Georgia Walters", "Sophia Dakolios"] },
+  { name: "Nothing But Nets", division: "4th Girls", seed: 1, roster: ["Elise Thompson", "Emmie Smith", "Anna Jarrell"] },
+  { name: "Triple Basket Girls", division: "4th Girls", seed: 8, roster: ["Eila McKinney", "Chloe Leedham", "Winnie Greer"] },
+  { name: "The Sea Turtles", division: "4th Girls", seed: 5, roster: ["Carter Teague", "Hadley McGarey", "Darcy Fairchild"] },
+  { name: "Pink Palm Trees", division: "4th Girls", seed: 4, roster: ["Mya Trudel", "Charlotte King", "Olivia Bryne", "Charlotte Turner"] },
+  { name: "Super Stars", division: "4th Girls", seed: 3, roster: ["Addie Bouck", "Brynn Schweiker", "Charlotte Canales"] },
+  { name: "Crumble Cookies", division: "4th Girls", seed: 6, roster: ["Priscilla Baggett", "Emma Schuster", "Zoe Lee"] },
+  { name: "The Howlers", division: "4th Girls", seed: 7, roster: ["Ella Turner", "CeCe McDonald", "Harper Car"] },
+  { name: "Dream Team Champions", division: "4th Girls", seed: 2, roster: ["Libby Thomas", "Virginia Ball", "Zelie Moore"] },
 
   // --- 5th Grade Boys ---
   { name: "Bucks", division: "5th Boys", seed: 1, roster: ["Jack Lukens", "James Griffin", "Eli Besecker"] },
@@ -68,9 +68,8 @@ export const teams = [
   { name: "Cliffbars Arent Healthy", division: "5th Boys", seed: 5, roster: ["Austin Morton", "Wyatt Pritchard", "Ethan Campbell"] },
   { name: "The Goats", division: "5th Boys", seed: 4, roster: ["Adrian Atcho", "George Hite", "George Moore"] },
   { name: "Gnarly Dudes", division: "5th Boys", seed: 3, roster: ["Ben Weikel", "Hobson Herndon", "Ari Mannem"] },
-  { name: "The Sea Turtles", division: "5th Boys", seed: 6, roster: ["Carter Teague", "Hadley McGarey", "Darcy Fairchild"] },
+  { name: "The Bucket Boys", division: "5th Boys", seed: 6, roster: ["Henry Pivonka", "Toddy Henderson", "Cars Luck"] },
   { name: "Knee Walkers", division: "5th Boys", seed: 7, roster: ["Emmett Noble", "Aiden Taylor", "Grayson Lewis"] },
-  { name: "Nothing But Nets", division: "5th Boys", seed: 2, roster: ["Elise Thompson", "Emmie Smith", "Anna Jarrell"] },
 
   // --- 5th Grade Girls ---
   { name: "The Sawiches", division: "5th Girls", seed: 1, roster: ["Johanna Venton", "Anna McConnell", "Lauren Craddock", "Bonnie Froehlich"] },
@@ -133,10 +132,10 @@ export const brackets = {
   },
   "4th Girls": {
     quarterFinals: [
-      { gameId: "4G-QF1", team1: "Triple Basket Girls", team2: "Crumble Cookies", seed1: 1, seed2: 8 },
-      { gameId: "4G-QF2", team1: "Pink Palm Trees", team2: "The Bucket Boys", seed1: 5, seed2: 4 },
-      { gameId: "4G-QF3", team1: "The Howlers", team2: "Super Stars", seed1: 3, seed2: 6 },
-      { gameId: "4G-QF4", team1: "Dream Team Champions", team2: "The Blue Stars", seed1: 7, seed2: 2 },
+      { gameId: "4G-QF1", team1: "Nothing But Nets", team2: "Triple Basket Girls", seed1: 1, seed2: 8 },
+      { gameId: "4G-QF2", team1: "The Sea Turtles", team2: "Pink Palm Trees", seed1: 5, seed2: 4 },
+      { gameId: "4G-QF3", team1: "Super Stars", team2: "Crumble Cookies", seed1: 3, seed2: 6 },
+      { gameId: "4G-QF4", team1: "The Howlers", team2: "Dream Team Champions", seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "4G-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["4G-QF1", "4G-QF2"] },
@@ -150,8 +149,8 @@ export const brackets = {
     quarterFinals: [
       { gameId: "5B-QF1", team1: "Bucks", team2: "BKTSCWOD", seed1: 1, seed2: 8 },
       { gameId: "5B-QF2", team1: "Cliffbars Arent Healthy", team2: "The Goats", seed1: 5, seed2: 4 },
-      { gameId: "5B-QF3", team1: "Gnarly Dudes", team2: "The Sea Turtles", seed1: 3, seed2: 6 },
-      { gameId: "5B-QF4", team1: "Knee Walkers", team2: "Nothing But Nets", seed1: 7, seed2: 2 },
+      { gameId: "5B-QF3", team1: "Gnarly Dudes", team2: "The Bucket Boys", seed1: 3, seed2: 6 },
+      { gameId: "5B-QF4", team1: "Knee Walkers", team2: null, seed1: 7, seed2: 2 },
     ],
     semiFinals: [
       { gameId: "5B-SF1", team1: null, team2: null, seed1: null, seed2: null, source: ["5B-QF1", "5B-QF2"] },
