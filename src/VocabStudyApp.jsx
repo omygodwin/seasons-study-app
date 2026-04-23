@@ -60,6 +60,7 @@ export default function VocabStudyApp() {
   const [deckOrder, setDeckOrder] = useState(() => VOCAB.map((_, i) => i));
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showDefinitionFirst, setShowDefinitionFirst] = useState(false);
 
   const [knownCards, setKnownCards] = useState(new Set());
   const [reviewCards, setReviewCards] = useState(new Set());
@@ -166,6 +167,20 @@ export default function VocabStudyApp() {
         </div>
       </div>
 
+      <div className="flex justify-center">
+        <button
+          onClick={() => {
+            setShowDefinitionFirst((v) => !v);
+            setIsFlipped(false);
+          }}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+        >
+          {showDefinitionFirst
+            ? '🔄 Showing: Definition first (guess the word)'
+            : '🔄 Showing: Word first (guess the definition)'}
+        </button>
+      </div>
+
       <div
         className="relative h-64 [perspective:1000px]"
         onClick={() => setIsFlipped(!isFlipped)}
@@ -175,17 +190,28 @@ export default function VocabStudyApp() {
             isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         >
-          <div>
-            <h3 className="text-4xl font-bold text-purple-800">{card?.term}</h3>
-            <p className="mt-3 text-xs text-gray-500">(tap to see definition)</p>
-          </div>
+          {showDefinitionFirst ? (
+            <div>
+              <p className="text-2xl text-purple-900 font-medium">{card?.definition}</p>
+              <p className="mt-3 text-xs text-gray-500">(tap to reveal the word)</p>
+            </div>
+          ) : (
+            <div>
+              <h3 className="text-4xl font-bold text-purple-800">{card?.term}</h3>
+              <p className="mt-3 text-xs text-gray-500">(tap to see definition)</p>
+            </div>
+          )}
         </div>
         <div
           className={`absolute inset-0 w-full h-full flex justify-center items-center bg-purple-800 text-white p-6 rounded-lg shadow-lg text-center cursor-pointer transition-opacity duration-300 ${
             isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
-          <p className="text-xl">{card?.definition}</p>
+          {showDefinitionFirst ? (
+            <h3 className="text-4xl font-bold">{card?.term}</h3>
+          ) : (
+            <p className="text-xl">{card?.definition}</p>
+          )}
         </div>
       </div>
 
