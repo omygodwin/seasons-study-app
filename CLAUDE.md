@@ -1,7 +1,7 @@
 # seasons-study-app
 
 Interactive study guide PWA for my daughter Rose, with an embedded basketball
-tournament hub and two separately-built sub-apps.
+tournament hub and three separately-built sub-apps.
 
 ## Commands
 
@@ -16,8 +16,9 @@ npm run lint
 Sub-apps build independently:
 
 ```bash
-cd animal-hospital && npm ci && npm run build   # → animal-hospital/dist
-cd hotel && npm install && npm run build        # → hotel/dist
+cd animal-hospital && npm ci && npm run build       # → animal-hospital/dist
+cd hotel && npm install && npm run build            # → hotel/dist
+cd movie-theater && npm install && npm run build    # → movie-theater/dist
 ```
 
 ## Deployment
@@ -26,7 +27,8 @@ cd hotel && npm install && npm run build        # → hotel/dist
   1. Builds the main app into `dist/`
   2. Builds `animal-hospital/` → copied into `dist/hospital/`
   3. Builds `hotel/` → copied into `dist/hotel/`
-  4. Deploys the merged `dist/` to GitHub Pages
+  4. Builds `movie-theater/` → copied into `dist/movie-theater/`
+  5. Deploys the merged `dist/` to GitHub Pages
 - Live: https://omygodwin.github.io/seasons-study-app/
 - Vite `base` is `/seasons-study-app/` — do not change without updating links
 
@@ -54,6 +56,7 @@ src/
   data/                     # Tournament data
 animal-hospital/            # Independent Vite app → dist/hospital/
 hotel/                      # Independent Vite app → dist/hotel/
+movie-theater/              # Independent Vite app → dist/movie-theater/
 ```
 
 ## Study-app conventions
@@ -70,11 +73,12 @@ hotel/                      # Independent Vite app → dist/hotel/
 
 ## Gotchas
 
-- The `animal-hospital` build uses `npm ci` (lockfile-strict); the `hotel`
-  build uses `npm install` because its lockfile is intentionally absent
-  (see commit 83762e3).
+- The `animal-hospital` build uses `npm ci` (lockfile-strict); `hotel/` and
+  `movie-theater/` use `npm install` because their lockfiles are intentionally
+  absent (see commit 83762e3 for hotel; same pattern for movie-theater).
 - PWA manifest lives at `public/manifest.json`.
-- Shared Firebase Realtime DB project `roseruthclinic` is used by `hotel/`
-  and `animal-hospital/`, not by the main study app.
+- Shared Firebase Realtime DB project `roseruthclinic` is used by `hotel/`,
+  `animal-hospital/`, and `movie-theater/` (under namespace `movieTheater`),
+  not by the main study app.
 - Port 5173 is also reserved for other local projects per the workspace
   CLAUDE.md — pin a different port in `vite.config.js` if that conflicts.
