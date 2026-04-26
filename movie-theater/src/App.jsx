@@ -159,13 +159,6 @@ export default function App() {
   useEffect(() => { try { localStorage.setItem('mt-voteGroup', voteGroup); } catch {} }, [voteGroup]);
   useEffect(() => { try { localStorage.setItem('mt-voteName', voteName); } catch {} }, [voteName]);
 
-  // If a public user is on a staff-only tab (e.g. after signing out), kick to Home
-  useEffect(() => {
-    if (!currentUser && (view === 'show' || view === 'notifications')) {
-      setView('dashboard');
-    }
-  }, [currentUser, view]);
-
   // poll-creation form (manager only)
   const [pollSelection, setPollSelection] = useState([]);
 
@@ -174,6 +167,13 @@ export default function App() {
   const [toast, setToast] = useState(null);
   // 'public' = customer-facing (no login). 'staff' = login flow / signed in.
   const [mode, setMode] = useState('public');
+
+  // If a public user is on a staff-only tab (e.g. after signing out), kick to Home
+  useEffect(() => {
+    if (!currentUser && (view === 'show' || view === 'notifications')) {
+      setView('dashboard');
+    }
+  }, [currentUser, view]);
 
   // forms
   const [sellSeatId, setSellSeatId] = useState(null);
