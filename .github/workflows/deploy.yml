@@ -57,6 +57,19 @@ jobs:
       - name: Merge hotel build into dist
         run: cp -r hotel/dist dist/hotel
 
+      # Build movie-theater app
+      - name: Install movie-theater dependencies
+        run: npm install
+        working-directory: movie-theater
+
+      - name: Build movie-theater app
+        run: npm run build
+        working-directory: movie-theater
+
+      # Merge movie-theater build into main dist under /movie-theater/
+      - name: Merge movie-theater build into dist
+        run: cp -r movie-theater/dist dist/movie-theater
+
       - uses: actions/configure-pages@v4
 
       - uses: actions/upload-pages-artifact@v3

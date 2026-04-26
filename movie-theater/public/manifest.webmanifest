@@ -1,0 +1,38 @@
+{
+  "name": "Ruth & Rose's Movie Theater",
+  "short_name": "R&R Theater",
+  "description": "Movie theater management for Ruth & Rose's Movie Theater",
+  "start_url": "/seasons-study-app/movie-theater/",
+  "scope": "/seasons-study-app/movie-theater/",
+  "display": "standalone",
+  "background_color": "#fef2f2",
+  "theme_color": "#b91c1c",
+  "orientation": "portrait-primary",
+  "categories": ["entertainment"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

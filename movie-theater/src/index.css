@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .input {
+    @apply w-full border-2 border-gray-200 rounded-xl px-3 py-2 focus:border-red-400 focus:outline-none text-gray-800 bg-white transition-colors;
+  }
+
+  .label {
+    @apply block text-sm font-semibold text-gray-700 mb-1;
+  }
+
+  .btn-red {
+    @apply bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all;
+  }
+
+  .btn-gold {
+    @apply bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white transition-all;
+  }
+
+  .btn-green {
+    @apply bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white transition-all;
+  }
+
+  .btn-blue {
+    @apply bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white transition-all;
+  }
+
+  .btn-purple {
+    @apply bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white transition-all;
+  }
+
+  .btn-gray {
+    @apply bg-gray-500 hover:bg-gray-600 active:bg-gray-700 text-white transition-all;
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
