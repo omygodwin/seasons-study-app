@@ -9,11 +9,21 @@ import { ref, onValue, set, push, remove, update } from 'firebase/database';
 const FB = 'movieTheater';
 
 const SEATS = [
-  { id: '1A', row: 1 },
-  { id: '1B', row: 1 },
-  { id: '2A', row: 2 },
-  { id: '2B', row: 2 },
-  { id: '2C', row: 2 },
+  { id: '1A', row: 1, type: 'beanbag',  label: 'Bean Bag right' },
+  { id: '1B', row: 1, type: 'beanbag',  label: 'Bean Bag left' },
+  { id: '2A', row: 2, type: 'recliner', label: 'Pink Recliner left' },
+  { id: '2B', row: 2, type: 'recliner', label: 'Pink Recliner right' },
+  { id: '2C', row: 2, type: 'couch',    label: 'White Couch' },
+];
+
+const SEAT_TYPE_INFO = {
+  beanbag:  { emoji: '🫘', label: 'Bean Bag' },
+  recliner: { emoji: '🪑', label: 'Recliner' },
+  couch:    { emoji: '🛋️', label: 'Couch' },
+};
+
+const DEFAULT_GROUPS = [
+  { name: 'Godwin Group', members: ['Raegan', 'Rose', 'Ruth', 'Rachel', 'Bobby'] },
 ];
 
 const SEAT_STATUS = {
@@ -62,6 +72,12 @@ const MOVIES = [
   { id: 'wall-e',      title: 'Wall-E',         emoji: '🤖', duration: 98 },
   { id: 'minions',     title: 'Minions',        emoji: '👶', duration: 90 },
   { id: 'shrek',       title: 'Shrek',          emoji: '🧌', duration: 90 },
+  { id: 'last-song',   title: 'The Last Song',  emoji: '🎵', duration: 107 },
+  { id: 'cruella',     title: 'Cruella',        emoji: '🐶', duration: 134 },
+  { id: 'doubtfire',   title: 'Mrs. Doubtfire', emoji: '👵', duration: 125 },
+  { id: 'miracles',    title: 'Miracles From Heaven', emoji: '✨', duration: 109 },
+  { id: 'lilo-stitch', title: 'Lilo & Stitch',  emoji: '👽', duration: 85 },
+  { id: 'hannah-montana', title: 'Hannah Montana', emoji: '🎤', duration: 102 },
 ];
 
 const CONCESSION_CATS = [
@@ -129,6 +145,22 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [showHistory, setShowHistory] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [poll, setPoll] = useState(null);
+  const [votes, setVotes] = useState([]);
+
+  // voter identity (persisted to localStorage so a kid stays "themselves" across reloads)
+  const [voteGroup, setVoteGroup] = useState(() => {
+    try { return localStorage.getItem('mt-voteGroup') || 'Godwin Group'; } catch { return 'Godwin Group'; }
+  });
+  const [voteName, setVoteName] = useState(() => {
+    try { return localStorage.getItem('mt-voteName') || ''; } catch { return ''; }
+  });
+  useEffect(() => { try { localStorage.setItem('mt-voteGroup', voteGroup); } catch {} }, [voteGroup]);
+  useEffect(() => { try { localStorage.setItem('mt-voteName', voteName); } catch {} }, [voteName]);
+
+  // poll-creation form (manager only)
+  const [pollSelection, setPollSelection] = useState([]);
 
   // ui
   const [view, setView] = useState('dashboard');
@@ -203,6 +235,22 @@ export default function App() {
     listen('orders', setOrders);
     listen('notifications', setNotifications);
     listen('showHistory', setShowHistory);
+    listen('poll', setPoll, false);
+    listen('votes', setVotes);
+
+    // groups: seed with Godwin Group if empty
+    const groupsRef = ref(db, `${FB}/groups`);
+    const usGroups = onValue(groupsRef, (snap) => {
+      const val = snap.val();
+      if (!val || Object.keys(val).length === 0) {
+        const init = {};
+        DEFAULT_GROUPS.forEach((g, i) => { init[`g${i}`] = g; });
+        set(groupsRef, init);
+      } else {
+        setGroups(Object.entries(val).map(([id, v]) => ({ id, ...v, members: v.members || [] })));
+      }
+    });
+    unsubs.push(() => usGroups());
 
     return () => unsubs.forEach((u) => u());
   }, []);
@@ -399,6 +447,68 @@ export default function App() {
     set(ref(db, `${FB}/notifications`), null);
   };
 
+  /* ─── Voting actions ─── */
+
+  const addGroup = (name) => {
+    if (!db || !name?.trim()) return;
+    push(ref(db, `${FB}/groups`), { name: name.trim(), members: [] });
+    showToast(`Added group "${name.trim()}"`);
+  };
+
+  const addMember = (groupId, memberName) => {
+    if (!db || !groupId || !memberName?.trim()) return;
+    const g = groups.find((x) => x.id === groupId);
+    if (!g) return;
+    const next = [...(g.members || []), memberName.trim()];
+    update(ref(db, `${FB}/groups/${groupId}`), { members: next });
+    setVoteName(memberName.trim());
+    showToast(`Added ${memberName.trim()}`);
+  };
+
+  const startPoll = (movieIds) => {
+    if (!db || !movieIds || movieIds.length < 2) return;
+    set(ref(db, `${FB}/votes`), null);
+    set(ref(db, `${FB}/poll`), {
+      movieIds,
+      status: 'open',
+      createdAt: Date.now(),
+      startedBy: currentUser?.name || '',
+    });
+    setPollSelection([]);
+    notify('poll-started', `🗳️ Voting started — ${movieIds.length} movies on the ballot!`);
+    showToast('Poll started!');
+  };
+
+  const castVote = (movieId) => {
+    if (!db || !movieId) return;
+    if (!poll || poll.status !== 'open') {
+      showToast('Voting is closed');
+      return;
+    }
+    push(ref(db, `${FB}/votes`), {
+      group: voteGroup,
+      voter: voteName || '',
+      movieId,
+      createdAt: Date.now(),
+    });
+    showToast(`Voted! 🗳️`);
+  };
+
+  const closePoll = () => {
+    if (!db || !poll) return;
+    update(ref(db, `${FB}/poll`), { status: 'closed', closedAt: Date.now() });
+    notify('poll-closed', `📊 Voting closed`);
+    showToast('Voting closed');
+  };
+
+  const clearPoll = () => {
+    if (!db) return;
+    if (!confirm('Clear poll and all votes?')) return;
+    set(ref(db, `${FB}/poll`), null);
+    set(ref(db, `${FB}/votes`), null);
+    showToast('Poll cleared');
+  };
+
   /* ═══════════════════════════════════════════════════════════════════════
      LOGIN SCREEN
      ═══════════════════════════════════════════════════════════════════════ */
@@ -508,6 +618,7 @@ export default function App() {
   const TABS = [
     { id: 'dashboard',    label: 'Dashboard',    emoji: '🏠' },
     { id: 'seats',        label: 'Seats',        emoji: '💺' },
+    { id: 'vote',         label: 'Vote',         emoji: '🗳️' },
     { id: 'concessions',  label: 'Concessions',  emoji: '🍿' },
     { id: 'show',         label: 'Show Control', emoji: '🎬' },
     { id: 'notifications',label: 'Activity',     emoji: '🔔' },
@@ -557,6 +668,7 @@ export default function App() {
       <main className="max-w-5xl mx-auto px-4 py-6">
         {view === 'dashboard' && <DashboardView />}
         {view === 'seats' && <SeatsView />}
+        {view === 'vote' && <VoteView />}
         {view === 'concessions' && <ConcessionsView />}
         {view === 'show' && <ShowView />}
         {view === 'notifications' && <NotificationsView />}
@@ -669,8 +781,10 @@ export default function App() {
   }
 
   function SeatsView() {
-    const row1 = seatList.filter((s) => s.row === 1);
-    const row2 = seatList.filter((s) => s.row === 2);
+    const seat1A = seatList.find((s) => s.id === '1A');
+    const seat1B = seatList.find((s) => s.id === '1B');
+    const recliners = seatList.filter((s) => s.type === 'recliner');
+    const couch = seatList.find((s) => s.type === 'couch');
 
     return (
       <div className="space-y-4">
@@ -679,21 +793,40 @@ export default function App() {
           🎬 SCREEN 🎬
         </div>
 
-        {/* Seat rows */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <div className="space-y-6">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2 text-center">Row 1</div>
-              <div className="flex justify-center gap-3">
-                {row1.map((s) => <SeatTile key={s.id} seat={s} />)}
-              </div>
+        {/* Theater map */}
+        <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 space-y-6">
+          {/* Row 1 — Bean Bags on the floor (in front of the shuffleboard) */}
+          <div>
+            <div className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2 text-center">
+              Row 1 · Bean Bags 🫘
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2 text-center">Row 2</div>
-              <div className="flex justify-center gap-3">
-                {row2.map((s) => <SeatTile key={s.id} seat={s} />)}
-              </div>
+            {/* Shuffleboard backdrop */}
+            <div className="bg-gradient-to-b from-amber-100 to-amber-200 border-2 border-amber-300 rounded-xl py-1.5 text-center text-[11px] text-amber-800 font-semibold tracking-wider mb-2">
+              🎯 Shuffleboard Table (behind)
             </div>
+            {/* Bean bags on the carpet */}
+            <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-2xl p-3 flex items-end justify-center gap-3 sm:gap-6">
+              <SeatTile seat={seat1B} />
+              <SeatTile seat={seat1A} />
+            </div>
+            <div className="text-[10px] text-gray-400 text-center mt-1">1B (left) · 1A (right) — pink bean bags on the carpet</div>
+          </div>
+
+          {/* Row 2 — Living Room */}
+          <div>
+            <div className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2 text-center">
+              Row 2 · Living Room 🛋️
+            </div>
+            <div className="flex flex-wrap justify-center items-end gap-3">
+              {recliners.map((s) => <SeatTile key={s.id} seat={s} />)}
+              {couch && (
+                <div className="flex flex-col items-center">
+                  <div className="text-[10px] text-gray-400 mb-1">— Couch —</div>
+                  <SeatTile seat={couch} />
+                </div>
+              )}
+            </div>
+            <div className="text-[10px] text-gray-400 text-center mt-2">2A & 2B = pink recliners · 2C = white couch</div>
           </div>
         </div>
 
@@ -740,7 +873,9 @@ export default function App() {
   }
 
   function SeatTile({ seat }) {
+    if (!seat) return null;
     const info = SEAT_INFO[seat.status];
+    const typeInfo = SEAT_TYPE_INFO[seat.type] || { emoji: '💺', label: 'Seat' };
     const onTap = () => {
       if (seat.status === SEAT_STATUS.AVAILABLE && can('ticket-booth')) {
         setSellSeatId(seat.id);
@@ -765,11 +900,17 @@ export default function App() {
         onPointerDown={onPressStart}
         onPointerUp={onPressEnd}
         onPointerLeave={onPressEnd}
-        className={`flex flex-col items-center justify-center w-20 h-24 rounded-xl border-2 ${info.color} font-bold transition-all active:scale-95`}
+        title={seat.label || seat.id}
+        className={`flex flex-col items-center justify-center w-24 min-h-[120px] rounded-xl border-2 ${info.color} font-bold transition-all active:scale-95 px-1 py-2`}
       >
-        <span className="text-3xl mb-1">{info.emoji}</span>
-        <span className="text-lg">{seat.id}</span>
-        {seat.customerName && <span className="text-[10px] truncate max-w-full px-1">{seat.customerName}</span>}
+        <span className="text-3xl leading-none mb-1">{typeInfo.emoji}</span>
+        <span className="text-xl leading-tight">{seat.id}</span>
+        <span className="text-[10px] uppercase tracking-wide opacity-70 leading-tight">{typeInfo.label}</span>
+        {seat.customerName ? (
+          <span className="text-[10px] truncate max-w-full mt-1 leading-tight">🎟️ {seat.customerName}</span>
+        ) : (
+          <span className="text-[10px] mt-1 leading-tight opacity-80">{info.label}</span>
+        )}
       </button>
     );
   }
@@ -1030,6 +1171,235 @@ export default function App() {
               ))}
             </div>
           </details>
+        )}
+      </div>
+    );
+  }
+
+  function VoteView() {
+    const myVoterKey = `${voteGroup}::${voteName || 'Anonymous'}`;
+    const latestVotePerVoter = {};
+    votes.forEach((v) => {
+      const key = `${v.group}::${v.voter || 'Anonymous'}`;
+      if (!latestVotePerVoter[key] || (v.createdAt || 0) > (latestVotePerVoter[key].createdAt || 0)) {
+        latestVotePerVoter[key] = v;
+      }
+    });
+    const tallyByMovie = {};
+    Object.values(latestVotePerVoter).forEach((v) => {
+      if (!poll || !poll.movieIds || poll.movieIds.includes(v.movieId)) {
+        tallyByMovie[v.movieId] = (tallyByMovie[v.movieId] || 0) + 1;
+      }
+    });
+    const totalVotes = Object.values(tallyByMovie).reduce((a, b) => a + b, 0);
+    const myVote = latestVotePerVoter[myVoterKey]?.movieId || null;
+
+    const currentGroup = groups.find((g) => g.name === voteGroup) || groups[0];
+    const groupMembers = currentGroup?.members || [];
+
+    const pollMovies = poll?.movieIds
+      ? poll.movieIds.map((id) => MOVIES.find((m) => m.id === id)).filter(Boolean)
+      : [];
+
+    const handleAddGroup = () => {
+      const name = prompt('New group name?');
+      if (name?.trim()) {
+        addGroup(name.trim());
+        setVoteGroup(name.trim());
+      }
+    };
+    const handleAddMember = () => {
+      if (!currentGroup) { showToast('Pick a group first'); return; }
+      const name = prompt(`Add a name to "${currentGroup.name}"?`);
+      if (name?.trim()) addMember(currentGroup.id, name.trim());
+    };
+
+    const sortedPollMovies = pollMovies.slice().sort((a, b) => (tallyByMovie[b.id] || 0) - (tallyByMovie[a.id] || 0));
+    const winnerCount = sortedPollMovies[0] ? (tallyByMovie[sortedPollMovies[0].id] || 0) : 0;
+
+    return (
+      <div className="space-y-4">
+        {/* Identity card */}
+        <div className="bg-white rounded-2xl shadow-md p-4">
+          <h3 className="font-bold text-gray-800 mb-3">🗳️ Who's Voting?</h3>
+
+          <label className="label">Your Group</label>
+          <div className="flex gap-2 mb-3">
+            <select
+              value={voteGroup}
+              onChange={(e) => { setVoteGroup(e.target.value); setVoteName(''); }}
+              className="input flex-1"
+            >
+              {groups.map((g) => <option key={g.id} value={g.name}>{g.name}</option>)}
+              {groups.length === 0 && <option>Loading...</option>}
+            </select>
+            <button onClick={handleAddGroup} className="btn-gold px-3 py-2 rounded-xl font-semibold whitespace-nowrap min-h-[44px]">
+              + Group
+            </button>
+          </div>
+
+          <label className="label">Your Name (optional)</label>
+          <div className="flex gap-2">
+            <select
+              value={voteName}
+              onChange={(e) => setVoteName(e.target.value)}
+              className="input flex-1"
+            >
+              <option value="">🎭 Anonymous</option>
+              {groupMembers.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <button onClick={handleAddMember} className="btn-gold px-3 py-2 rounded-xl font-semibold whitespace-nowrap min-h-[44px]">
+              + Name
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-500 mt-2">
+            Voting as: <span className="font-semibold">{voteName || 'Anonymous'}</span> from <span className="font-semibold">{voteGroup}</span>
+          </p>
+        </div>
+
+        {/* Open poll */}
+        {poll && poll.status === 'open' && (
+          <div className="bg-white rounded-2xl shadow-md p-4">
+            <h3 className="font-bold text-gray-800 mb-1">🍿 What should we watch?</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Tap to vote · {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'} so far
+            </p>
+            <div className="space-y-2">
+              {pollMovies.map((m) => {
+                const count = tallyByMovie[m.id] || 0;
+                const pct = totalVotes ? Math.round((count / totalVotes) * 100) : 0;
+                const isMyVote = myVote === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => castVote(m.id)}
+                    className={`w-full text-left rounded-xl border-2 p-3 transition-all active:scale-[0.99] ${
+                      isMyVote ? 'border-red-500 bg-red-50 ring-2 ring-red-200' : 'border-gray-200 hover:border-red-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{m.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-gray-800 truncate">{m.title}</div>
+                        <div className="text-xs text-gray-500">{m.duration} min</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-red-600 text-lg leading-none">{count}</div>
+                        <div className="text-xs text-gray-500">{pct}%</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-red-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    {isMyVote && (
+                      <div className="text-xs text-red-600 font-semibold mt-1">✓ Your vote</div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {can('manager') && (
+              <div className="flex gap-2 mt-4">
+                <button onClick={closePoll} className="btn-gold flex-1 px-4 py-3 rounded-xl font-semibold min-h-[48px]">
+                  🛑 Close Voting
+                </button>
+                <button onClick={clearPoll} className="btn-gray px-4 py-3 rounded-xl font-semibold min-h-[48px]">
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Closed poll */}
+        {poll && poll.status === 'closed' && (
+          <div className="bg-white rounded-2xl shadow-md p-4">
+            <h3 className="font-bold text-gray-800 mb-1">📊 Voting Results</h3>
+            <p className="text-sm text-gray-500 mb-4">{totalVotes} total {totalVotes === 1 ? 'vote' : 'votes'}</p>
+            <div className="space-y-2">
+              {sortedPollMovies.map((m) => {
+                const count = tallyByMovie[m.id] || 0;
+                const isWinner = count === winnerCount && count > 0;
+                return (
+                  <div key={m.id} className={`rounded-xl border-2 p-3 ${isWinner ? 'border-amber-500 bg-amber-50' : 'border-gray-200'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{m.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-gray-800 truncate">{isWinner && '🏆 '}{m.title}</div>
+                      </div>
+                      <div className="font-bold text-red-600 text-lg">{count}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {can('manager') && (
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <button
+                  onClick={() => {
+                    const winner = sortedPollMovies[0];
+                    if (winner && winnerCount > 0) {
+                      setScheduleMovieId(winner.id);
+                      setView('show');
+                      showToast(`Winner: ${winner.title} — pick a time!`);
+                    } else {
+                      showToast('No votes yet!');
+                    }
+                  }}
+                  className="btn-red flex-1 px-4 py-3 rounded-xl font-semibold min-h-[48px]"
+                >
+                  🎬 Schedule Winner
+                </button>
+                <button onClick={clearPoll} className="btn-gray flex-1 px-4 py-3 rounded-xl font-semibold min-h-[48px]">
+                  Clear & Start Over
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* No poll → manager can start one */}
+        {!poll && (
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            {can('manager') ? (
+              <>
+                <h3 className="font-bold text-gray-800 mb-2">🗳️ Start a New Poll</h3>
+                <p className="text-sm text-gray-500 mb-3">Pick the movies people can vote on:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 max-h-96 overflow-y-auto">
+                  {MOVIES.map((m) => {
+                    const checked = pollSelection.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => setPollSelection((p) => checked ? p.filter((x) => x !== m.id) : [...p, m.id])}
+                        className={`p-2 rounded-xl border-2 text-left transition-all ${
+                          checked ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-red-300'
+                        }`}
+                      >
+                        <div className="text-2xl">{m.emoji}</div>
+                        <div className="font-bold text-xs text-gray-800 truncate">{m.title}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => startPoll(pollSelection)}
+                  disabled={pollSelection.length < 2}
+                  className="btn-red w-full px-4 py-3 rounded-xl font-bold min-h-[48px] disabled:opacity-50"
+                >
+                  🗳️ Start Poll ({pollSelection.length} {pollSelection.length === 1 ? 'movie' : 'movies'})
+                </button>
+                <p className="text-xs text-gray-500 mt-2">Need at least 2 movies to start a poll.</p>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <div className="text-5xl mb-2">🗳️</div>
+                <div className="font-bold text-gray-800">No poll yet</div>
+                <div className="text-sm text-gray-500">Ask the manager to start one!</div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
