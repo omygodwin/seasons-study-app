@@ -159,12 +159,21 @@ export default function App() {
   useEffect(() => { try { localStorage.setItem('mt-voteGroup', voteGroup); } catch {} }, [voteGroup]);
   useEffect(() => { try { localStorage.setItem('mt-voteName', voteName); } catch {} }, [voteName]);
 
+  // If a public user is on a staff-only tab (e.g. after signing out), kick to Home
+  useEffect(() => {
+    if (!currentUser && (view === 'show' || view === 'notifications')) {
+      setView('dashboard');
+    }
+  }, [currentUser, view]);
+
   // poll-creation form (manager only)
   const [pollSelection, setPollSelection] = useState([]);
 
   // ui
   const [view, setView] = useState('dashboard');
   const [toast, setToast] = useState(null);
+  // 'public' = customer-facing (no login). 'staff' = login flow / signed in.
+  const [mode, setMode] = useState('public');
 
   // forms
   const [sellSeatId, setSellSeatId] = useState(null);
@@ -524,7 +533,21 @@ export default function App() {
     }
   };
 
-  if (!isLoggedIn) {
+  // Fall back to DEFAULT_STAFF if Firebase hasn't synced yet (or writes are blocked
+  // by db rules) so the login screen is always usable.
+  const effectiveStaff = staff.length > 0
+    ? staff
+    : DEFAULT_STAFF.map((s, i) => ({ ...s, id: `default-${i}` }));
+
+  const exitToPublic = () => {
+    setMode('public');
+    setLoginStep('pick');
+    setLoginTarget(null);
+    setPinInput('');
+    setPinError('');
+  };
+
+  if (mode === 'staff' && !currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-yellow-50 flex flex-col items-center justify-center p-4">
         <div className="text-center mb-8">
@@ -538,7 +561,7 @@ export default function App() {
             <>
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Who's working today?</h2>
               <div className="space-y-3">
-                {staff.map((s) => (
+                {effectiveStaff.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => { setLoginTarget(s); setLoginStep('pin'); }}
@@ -600,6 +623,15 @@ export default function App() {
               </div>
             </>
           )}
+
+          <div className="mt-5 pt-4 border-t border-gray-100 text-center">
+            <button
+              onClick={exitToPublic}
+              className="text-sm text-gray-500 hover:text-gray-700 active:text-gray-800 font-semibold min-h-[36px] px-3"
+            >
+              ← Back to Theater
+            </button>
+          </div>
         </div>
 
         {toast && (
@@ -615,14 +647,15 @@ export default function App() {
      MAIN APP
      ═══════════════════════════════════════════════════════════════════════ */
 
-  const TABS = [
-    { id: 'dashboard',    label: 'Dashboard',    emoji: '🏠' },
+  const ALL_TABS = [
+    { id: 'dashboard',    label: 'Home',         emoji: '🏠' },
     { id: 'seats',        label: 'Seats',        emoji: '💺' },
     { id: 'vote',         label: 'Vote',         emoji: '🗳️' },
     { id: 'concessions',  label: 'Concessions',  emoji: '🍿' },
-    { id: 'show',         label: 'Show Control', emoji: '🎬' },
-    { id: 'notifications',label: 'Activity',     emoji: '🔔' },
+    { id: 'show',         label: 'Show Control', emoji: '🎬', staffOnly: true },
+    { id: 'notifications',label: 'Activity',     emoji: '🔔', staffOnly: true },
   ];
+  const TABS = ALL_TABS.filter((t) => currentUser || !t.staffOnly);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-yellow-50">
@@ -634,16 +667,28 @@ export default function App() {
             <div className="min-w-0">
               <div className="font-bold leading-tight truncate">R&R Movie Theater</div>
               <div className="text-xs text-amber-200 leading-tight truncate">
-                {currentUser.emoji} {currentUser.name} · {currentUser.roleLabel}
+                {currentUser
+                  ? `${currentUser.emoji} ${currentUser.name} · ${currentUser.roleLabel}`
+                  : '🍿 Now playing!'}
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setCurrentUser(null)}
-            className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-semibold min-h-[40px]"
-          >
-            Switch
-          </button>
+          {currentUser ? (
+            <button
+              onClick={() => { setCurrentUser(null); setMode('public'); setView('dashboard'); }}
+              className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-semibold min-h-[40px] whitespace-nowrap"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+              onClick={() => setMode('staff')}
+              className="bg-red-950/70 hover:bg-black active:bg-black text-amber-200 hover:text-amber-100 px-3 py-2 rounded-lg text-xs font-semibold min-h-[36px] border border-amber-300/40 whitespace-nowrap"
+              title="Staff login"
+            >
+              🔑 Staff
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
@@ -744,22 +789,38 @@ export default function App() {
 
         {/* Quick actions */}
         <div className="bg-white rounded-2xl shadow-md p-4">
-          <h3 className="font-bold text-gray-800 mb-3">Quick Actions</h3>
+          <h3 className="font-bold text-gray-800 mb-3">{currentUser ? 'Quick Actions' : 'What you can do'}</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <button onClick={() => setView('seats')} className="btn-red px-3 py-3 rounded-xl font-semibold min-h-[48px]">
-              🎟️ Sell Tickets
-            </button>
-            <button onClick={() => setView('concessions')} className="btn-gold px-3 py-3 rounded-xl font-semibold min-h-[48px]">
-              🍿 Take Order
-            </button>
-            {can('manager', 'usher') && (
-              <button onClick={() => setView('show')} className="btn-purple px-3 py-3 rounded-xl font-semibold min-h-[48px]">
-                🎬 Show Control
-              </button>
+            {currentUser ? (
+              <>
+                <button onClick={() => setView('seats')} className="btn-red px-3 py-3 rounded-xl font-semibold min-h-[48px]">
+                  🎟️ Sell Tickets
+                </button>
+                <button onClick={() => setView('concessions')} className="btn-gold px-3 py-3 rounded-xl font-semibold min-h-[48px]">
+                  🍿 Take Order
+                </button>
+                {can('manager', 'usher') && (
+                  <button onClick={() => setView('show')} className="btn-purple px-3 py-3 rounded-xl font-semibold min-h-[48px]">
+                    🎬 Show Control
+                  </button>
+                )}
+                <button onClick={() => setView('notifications')} className="btn-blue px-3 py-3 rounded-xl font-semibold min-h-[48px]">
+                  🔔 Activity
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setView('vote')} className="btn-purple px-3 py-3 rounded-xl font-semibold min-h-[48px]">
+                  🗳️ Vote on Movie
+                </button>
+                <button onClick={() => setView('concessions')} className="btn-gold px-3 py-3 rounded-xl font-semibold min-h-[48px]">
+                  🍿 Order Snacks
+                </button>
+                <button onClick={() => setView('seats')} className="btn-red px-3 py-3 rounded-xl font-semibold min-h-[48px]">
+                  💺 See Seats
+                </button>
+              </>
             )}
-            <button onClick={() => setView('notifications')} className="btn-blue px-3 py-3 rounded-xl font-semibold min-h-[48px]">
-              🔔 Activity
-            </button>
           </div>
         </div>
       </div>
@@ -885,6 +946,12 @@ export default function App() {
         cleanSeat(seat.id);
       } else if (seat.status === SEAT_STATUS.BROKEN && can('usher', 'manager')) {
         toggleBroken(seat.id);
+      } else if (!currentUser) {
+        if (seat.status === SEAT_STATUS.AVAILABLE) {
+          showToast(`Ask the Ticket Booth to buy ${seat.id}! 🎟️`);
+        } else if (seat.status === SEAT_STATUS.SOLD) {
+          showToast(`${seat.id} is taken${seat.customerName ? ` by ${seat.customerName}` : ''} 🎟️`);
+        }
       }
     };
     const longPress = useRef(null);
