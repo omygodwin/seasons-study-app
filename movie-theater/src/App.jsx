@@ -159,6 +159,15 @@ export default function App() {
   useEffect(() => { try { localStorage.setItem('mt-voteGroup', voteGroup); } catch {} }, [voteGroup]);
   useEffect(() => { try { localStorage.setItem('mt-voteName', voteName); } catch {} }, [voteName]);
 
+  // Foreground notifications: permission state + dedupe refs
+  const [notifPermission, setNotifPermission] = useState(() =>
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  );
+  const seenOrderKeys = useRef(new Set());
+  const seenSeatKeys = useRef(new Set());
+  const seenShowKey = useRef(null);
+  const notifInitialDone = useRef(false);
+
   // poll-creation form (manager only)
   const [pollSelection, setPollSelection] = useState([]);
 
@@ -276,6 +285,71 @@ export default function App() {
   };
 
   const seatList = SEATS.map((s) => ({ ...s, ...seats[s.id] }));
+
+  // Foreground notifications: watch orders/seats/show for events relevant to me
+  useEffect(() => {
+    if (notifPermission !== 'granted') return;
+    const myName = (currentUser?.name || voteName || '').trim().toLowerCase();
+    const myRole = currentUser?.role;
+
+    // First pass after permission granted: record current state without firing
+    if (!notifInitialDone.current) {
+      orders.forEach((o) => seenOrderKeys.current.add(`${o.id}:${o.status}`));
+      seatList.forEach((s) => seenSeatKeys.current.add(`${s.id}:${s.status}:${s.customerName || ''}`));
+      if (currentShow) seenShowKey.current = `${currentShow.movieId}:${currentShow.status}`;
+      notifInitialDone.current = true;
+      return;
+    }
+
+    // Order transitions
+    orders.forEach((o) => {
+      const key = `${o.id}:${o.status}`;
+      if (seenOrderKeys.current.has(key)) return;
+      seenOrderKeys.current.add(key);
+      const cust = (o.customerName || '').trim().toLowerCase();
+      // Customer's own order updates
+      if (cust && cust === myName) {
+        if (o.status === 'PREPARING') fireNotif('👨‍🍳 Your snacks are being made!', 'Hang tight!');
+        if (o.status === 'READY') fireNotif('🍿 Your snacks are ready!', o.seat ? `Coming to seat ${o.seat}` : 'Pick up at the counter');
+        if (o.status === 'DELIVERED') fireNotif('📦 Order delivered!', 'Enjoy!');
+      }
+      // Staff role alerts
+      if ((myRole === 'concessions' || myRole === 'manager') && o.status === 'PENDING') {
+        fireNotif('🆕 New order!', `${o.customerName || 'Customer'}: $${o.total || 0}`);
+      }
+      if ((myRole === 'usher' || myRole === 'manager') && o.status === 'READY' && o.seat) {
+        fireNotif('🚀 Order ready to deliver', `${o.customerName || 'Customer'} → seat ${o.seat}`);
+      }
+    });
+
+    // Seat: customer notified when their seat is reserved
+    seatList.forEach((s) => {
+      const key = `${s.id}:${s.status}:${s.customerName || ''}`;
+      if (seenSeatKeys.current.has(key)) return;
+      seenSeatKeys.current.add(key);
+      const cust = (s.customerName || '').trim().toLowerCase();
+      if (cust && cust === myName && s.status === SEAT_STATUS.SOLD) {
+        fireNotif('🎟️ Seat reserved!', `Your seat: ${s.id}`);
+      }
+    });
+
+    // Show transitions
+    if (currentShow) {
+      const key = `${currentShow.movieId}:${currentShow.status}`;
+      if (key !== seenShowKey.current) {
+        seenShowKey.current = key;
+        if (currentShow.status === SHOW_STATUS.STARTED) {
+          const mySeat = seatList.find((s) => (s.customerName || '').trim().toLowerCase() === myName && s.status === SEAT_STATUS.SOLD);
+          const body = mySeat ? `Your seat: ${mySeat.id}` : 'Showtime!';
+          fireNotif(`🎬 ${currentShow.title} is starting!`, body);
+        } else if (currentShow.status === SHOW_STATUS.SELLING) {
+          fireNotif('🎟️ Tickets on sale!', `${currentShow.title} at ${currentShow.startTime}`);
+        }
+      }
+    } else {
+      seenShowKey.current = null;
+    }
+  }, [orders, seatList, currentShow, notifPermission, currentUser, voteName]);
 
   const sellSeat = (seatId, customerName) => {
     if (!db || !customerName.trim()) return;
@@ -454,6 +528,43 @@ export default function App() {
     if (!db) return;
     if (!confirm('Clear all notifications?')) return;
     set(ref(db, `${FB}/notifications`), null);
+  };
+
+  /* ─── Foreground notifications ─── */
+
+  const requestNotifPermission = async () => {
+    if (typeof Notification === 'undefined') {
+      showToast('Notifications not supported on this device');
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      setNotifPermission('granted');
+      showToast('🔔 Already enabled!');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      showToast('Blocked — enable notifications in browser settings');
+      return;
+    }
+    const result = await Notification.requestPermission();
+    setNotifPermission(result);
+    if (result === 'granted') {
+      showToast('🔔 Notifications enabled!');
+      try {
+        new Notification("🎬 You're all set!", {
+          body: "We'll alert you about your orders and shows.",
+          icon: 'icon-192.png',
+        });
+      } catch {}
+    }
+  };
+
+  const fireNotif = (title, body) => {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'granted') return;
+    try {
+      new Notification(title, { body, icon: 'icon-192.png', tag: title });
+    } catch {}
   };
 
   /* ─── Voting actions ─── */
@@ -744,6 +855,24 @@ export default function App() {
 
     return (
       <div className="space-y-4">
+        {/* Notification opt-in banner — only shows if permission is "default" */}
+        {notifPermission === 'default' && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex items-center gap-3 shadow-md">
+            <span className="text-3xl">🔔</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-gray-800">Get notified!</div>
+              <div className="text-sm text-gray-600">
+                {currentUser
+                  ? `We'll alert you about new orders and ${currentUser.roleLabel} tasks.`
+                  : "Pick your name in the Vote tab and we'll alert you when your snacks are ready or your show starts."}
+              </div>
+            </div>
+            <button onClick={requestNotifPermission} className="btn-red px-3 py-2 rounded-xl font-semibold whitespace-nowrap min-h-[44px]">
+              Enable
+            </button>
+          </div>
+        )}
+
         {/* Now showing card */}
         <div className="bg-white rounded-2xl shadow-md border-4 border-red-300 overflow-hidden">
           {currentShow ? (
@@ -1323,6 +1452,26 @@ export default function App() {
           <p className="text-xs text-gray-500 mt-2">
             Voting as: <span className="font-semibold">{voteName || 'Anonymous'}</span> from <span className="font-semibold">{voteGroup}</span>
           </p>
+
+          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
+            <span className="text-2xl">🔔</span>
+            <div className="flex-1 min-w-0 text-sm">
+              {notifPermission === 'granted' ? (
+                <span className="font-semibold text-emerald-700">Notifications on — we'll ping you about your orders!</span>
+              ) : notifPermission === 'denied' ? (
+                <span className="text-gray-500">Notifications blocked. Enable them in your browser settings.</span>
+              ) : notifPermission === 'unsupported' ? (
+                <span className="text-gray-500">Notifications not supported on this device.</span>
+              ) : (
+                <span className="text-gray-700">Get notified when your snacks are ready or show starts.</span>
+              )}
+            </div>
+            {notifPermission === 'default' && (
+              <button onClick={requestNotifPermission} className="btn-red px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap min-h-[40px]">
+                Enable
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Open poll */}
