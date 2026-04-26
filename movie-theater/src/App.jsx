@@ -167,24 +167,30 @@ const blankShowSeats = () => {
   return s;
 };
 
-// Default daily schedule: 8 movies, each gets 3-4 spread-out showtimes including specific times.
+// Default daily schedule — featured movies are Raegan's "What to watch" list + a few more.
+// Every movie gets the four CORE showtimes (1:45, 2:00, 2:15, 2:30 PM) plus 2-4 extras
+// to spread across the day.
+const CORE_SHOWTIME_IDX = [7, 8, 9, 10]; // 1:45, 2:00, 2:15, 2:30 PM
+const FEATURED_DEFAULTS = [
+  // [movieId, [extra showtime indexes into SHOWTIMES, beyond the core 4]]
+  ['last-song',      [4, 16, 22]],       // The Last Song          + 1:00, 5:00, 8:00
+  ['cruella',        [2, 15, 21]],       // Cruella                + 12:00, 4:30, 7:30
+  ['doubtfire',      [3, 13, 18]],       // Mrs. Doubtfire         + 12:30, 3:30, 6:00
+  ['miracles',       [5, 12, 19]],       // Miracles From Heaven   + 1:15, 3:00, 6:30
+  ['lilo-stitch',    [6, 14, 20, 23]],   // Lilo & Stitch          + 1:30, 4:00, 7:00, 8:30
+  ['hannah-montana', [11, 17]],          // Hannah Montana         + 2:45, 5:30
+  ['frozen',         [13, 19]],          // Frozen                 + 3:30, 6:30
+  ['toy-story',      [11, 22]],          // Toy Story              + 2:45, 8:00
+];
+
 const buildDefaultSchedule = (date) => {
-  const slots = [
-    // movie index : showtime indexes (into SHOWTIMES)
-    { movieIdx: 0, times: [2, 6, 14, 20] },   // Frozen        12:00, 1:30, 4:00, 7:00
-    { movieIdx: 1, times: [3, 9, 15, 21] },   // Toy Story     12:30, 2:15, 4:30, 7:30
-    { movieIdx: 2, times: [4, 10, 16, 22] },  // Finding Nemo  1:00, 2:30, 5:00, 8:00
-    { movieIdx: 3, times: [5, 11, 17] },      // Lion King     1:15, 2:45, 5:30
-    { movieIdx: 4, times: [7, 12, 18] },      // Moana         1:45, 3:00, 6:00
-    { movieIdx: 5, times: [8, 13, 19] },      // Encanto       2:00, 3:30, 6:30
-    { movieIdx: 6, times: [6, 15, 22] },      // Inside Out    1:30, 4:30, 8:00
-    { movieIdx: 7, times: [9, 14, 23] },      // Ratatouille   2:15, 4:00, 8:30
-  ];
   const sched = {};
-  slots.forEach(({ movieIdx, times }) => {
-    const movie = MOVIES[movieIdx];
+  FEATURED_DEFAULTS.forEach(([movieId, extraTimeIdxs]) => {
+    const movie = MOVIES.find((m) => m.id === movieId);
     if (!movie) return;
-    times.forEach((tIdx) => {
+    // Every movie gets the core 4 showtimes plus its uniques. Dedupe + sort.
+    const timeIdxs = Array.from(new Set([...CORE_SHOWTIME_IDX, ...extraTimeIdxs])).sort((a, b) => a - b);
+    timeIdxs.forEach((tIdx) => {
       const t = SHOWTIMES[tIdx];
       if (!t) return;
       const showId = `${date}-${movie.id}-${t.m}`;
@@ -550,8 +556,13 @@ export default function App() {
     if (!db) return;
     const today = todayISO();
     const seed = buildDefaultSchedule(today);
-    update(ref(db, `${FB}/schedule`), seed);
-    notify('schedule-seeded', `🎬 Today's schedule generated (${Object.keys(seed).length} showings)`);
+    // Atomically remove every existing show for today, then write the new seed.
+    // (update() merges — without nulling the old keys, stale showings hang around.)
+    const updates = {};
+    todayShows.forEach((s) => { updates[s.id] = null; });
+    Object.entries(seed).forEach(([id, val]) => { updates[id] = val; });
+    update(ref(db, `${FB}/schedule`), updates);
+    notify('schedule-seeded', `🎬 Today's schedule reset (${Object.keys(seed).length} showings)`);
     showToast(`Generated ${Object.keys(seed).length} showings!`);
   };
 
