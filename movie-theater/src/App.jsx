@@ -64,7 +64,7 @@ const ROLES = [
 ];
 
 const MOVIES = [
-  { id: 'frozen',         title: 'Frozen',               emoji: '❄️', duration: 102 },
+  { id: 'spider-man',     title: 'Spider-Man',           emoji: '🕷️', duration: 121 },
   { id: 'toy-story',      title: 'Toy Story',            emoji: '🧸', duration: 81 },
   { id: 'nemo',           title: 'Finding Nemo',         emoji: '🐠', duration: 100 },
   { id: 'lion-king',      title: 'The Lion King',        emoji: '🦁', duration: 88 },
@@ -179,7 +179,7 @@ const FEATURED_DEFAULTS = [
   ['miracles',       [5, 12, 19]],       // Miracles From Heaven   + 1:15, 3:00, 6:30
   ['lilo-stitch',    [6, 14, 20, 23]],   // Lilo & Stitch          + 1:30, 4:00, 7:00, 8:30
   ['hannah-montana', [11, 17]],          // Hannah Montana         + 2:45, 5:30
-  ['frozen',         [13, 19]],          // Frozen                 + 3:30, 6:30
+  ['spider-man',     [13, 19]],          // Spider-Man              + 3:30, 6:30
   ['toy-story',      [11, 22]],          // Toy Story              + 2:45, 8:00
 ];
 
@@ -1023,13 +1023,15 @@ export default function App() {
 
         {/* Tabs */}
         <nav className="bg-red-950/80 overflow-x-auto">
-          <div className="max-w-5xl mx-auto flex">
+          <div className="max-w-5xl mx-auto flex gap-1.5 p-1.5">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setView(t.id)}
-                className={`flex-1 min-w-[88px] px-3 py-3 text-sm font-semibold whitespace-nowrap transition-colors min-h-[48px] ${
-                  view === t.id ? 'bg-amber-500 text-white' : 'text-amber-100 hover:bg-red-800'
+                className={`flex-1 min-w-[88px] px-3 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors min-h-[44px] ${
+                  view === t.id
+                    ? 'bg-amber-500 text-white shadow-md'
+                    : 'bg-red-900/40 text-amber-100 hover:bg-red-800 active:bg-red-700'
                 }`}
               >
                 <span className="mr-1">{t.emoji}</span>
@@ -1041,16 +1043,16 @@ export default function App() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
-        {view === 'home' && <NowPlayingView />}
-        {view === 'seats' && <SeatsView />}
-        {view === 'vote' && <VoteView />}
-        {view === 'concessions' && <ConcessionsView />}
-        {view === 'schedule' && <ScheduleView />}
-        {view === 'notifications' && <NotificationsView />}
+        {view === 'home' && NowPlayingView()}
+        {view === 'seats' && SeatsView()}
+        {view === 'vote' && VoteView()}
+        {view === 'concessions' && ConcessionsView()}
+        {view === 'schedule' && ScheduleView()}
+        {view === 'notifications' && NotificationsView()}
       </main>
 
       {/* Pick-seats modal */}
-      {seatPickerShowId && schedule[seatPickerShowId] && <PickSeatsModal />}
+      {seatPickerShowId && schedule[seatPickerShowId] && PickSeatsModal()}
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-2xl z-50 font-semibold">
