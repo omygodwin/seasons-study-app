@@ -5,23 +5,19 @@
 <title>Need a Bracelet?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Patrick+Hand&family=Caveat:wght@500;700&family=Schoolbell&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Bubbles&family=Patrick+Hand&display=swap" rel="stylesheet">
 <style>
   @page { size: 8.5in 11in; margin: 0; }
 
   :root {
     --pink:    #ff66b2;
-    --hotpink: #ff2d87;
     --purple:  #9b51e0;
     --blue:    #2db6ff;
     --green:   #43c95b;
     --yellow:  #ffd23f;
-    --orange:  #ff8a3d;
     --red:     #ef3e3e;
     --silver:  #b8bcc4;
-    --ink:     #2a2540;
-    --paper:   #fffdf6;
-    --line:    #b9d6ee;
+    --ink:     #1f1d2b;
   }
 
   * { box-sizing: border-box; }
@@ -30,209 +26,68 @@
   body {
     font-family: "Patrick Hand", "Comic Sans MS", system-ui, sans-serif;
     color: var(--ink);
-    background: #efe9da;
+    background: #eee;
   }
 
-  /* Notebook-paper page with red margin line and blue rules */
   .page {
     width: 8.5in;
     height: 11in;
     margin: 0 auto;
-    padding: 0.7in 0.55in 0.55in 0.85in;
-    background:
-      /* red margin line */
-      linear-gradient(to right, transparent 0.7in, #f4b8b8 0.7in, #f4b8b8 calc(0.7in + 2px), transparent calc(0.7in + 2px)),
-      /* horizontal rule lines */
-      repeating-linear-gradient(to bottom, transparent 0 0.34in, var(--line) 0.34in, var(--line) calc(0.34in + 1px)),
-      var(--paper);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 0 0 1px #ddd;
+    padding: 0.75in;
+    background: #fff;
   }
 
-  /* Doodles scattered around the page */
-  .doodle {
-    position: absolute;
-    pointer-events: none;
-    user-select: none;
-    line-height: 1;
-  }
-
-  /* Tape pieces */
-  .tape {
-    position: absolute;
-    width: 90px; height: 22px;
-    background: rgba(255, 235, 130, 0.75);
-    border: 1px dashed rgba(0,0,0,0.15);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  }
-
-  /* Big wobbly title */
   h1.title {
-    font-family: "Gochi Hand", "Comic Sans MS", cursive;
-    text-align: center;
-    font-size: 110px;
-    line-height: 0.95;
-    margin: 0;
-    letter-spacing: 1px;
-    -webkit-text-stroke: 1.5px var(--ink);
-    position: relative;
-    z-index: 2;
+    font-family: "Rubik Bubbles", "Comic Sans MS", cursive;
+    font-size: 130px;
+    line-height: 1;
+    margin: 0 0 30px;
+    letter-spacing: 2px;
   }
   h1 .l { display: inline-block; }
-  /* hand-wobble each letter a little */
-  h1 .l:nth-child(odd)  { transform: rotate(-4deg) translateY(-2px); }
-  h1 .l:nth-child(even) { transform: rotate(5deg) translateY(2px); }
-  h1 .l:nth-child(3n)   { transform: rotate(-7deg) translateY(-3px); }
-  h1 .l:nth-child(5n)   { transform: rotate(8deg)  translateY(4px); }
+  h1 .l:nth-child(1) { color: var(--red); }
+  h1 .l:nth-child(2) { color: var(--yellow); }
+  h1 .l:nth-child(3) { color: var(--green); }
+  h1 .l:nth-child(4) { color: var(--blue); }
+  h1 .l:nth-child(5) { color: var(--purple); }
+  h1 .l:nth-child(6) { color: var(--pink); }
+  h1 .l:nth-child(7) { color: var(--red); }
+  h1 .l:nth-child(8) { color: var(--yellow); }
+  h1 .l:nth-child(9) { color: var(--green); }
+  h1 .l:nth-child(10){ color: var(--blue); }
+  h1 .l:nth-child(11){ color: var(--purple); }
+  h1 .l:nth-child(12){ color: var(--pink); }
+  h1 .l:nth-child(13){ color: var(--red); }
 
-  h1 .l:nth-child(1)  { color: var(--red); }
-  h1 .l:nth-child(2)  { color: var(--orange); }
-  h1 .l:nth-child(3)  { color: var(--yellow); }
-  h1 .l:nth-child(4)  { color: var(--green); }
-  h1 .l:nth-child(5)  { color: var(--blue); }
-  h1 .l:nth-child(6)  { color: var(--purple); }
-  h1 .l:nth-child(7)  { color: var(--hotpink); }
-  h1 .l:nth-child(8)  { color: var(--red); }
-  h1 .l:nth-child(9)  { color: var(--orange); }
-  h1 .l:nth-child(10) { color: var(--green); }
-  h1 .l:nth-child(11) { color: var(--blue); }
-  h1 .l:nth-child(12) { color: var(--purple); }
-  h1 .l:nth-child(13) { color: var(--hotpink); }
-  h1 .l:nth-child(14) { color: var(--red); }
+  .line {
+    font-size: 38px;
+    line-height: 1.3;
+    margin: 14px 0;
+  }
+  .line.indent { margin-left: 1in; }
+  .line.center-ish { margin-left: 1.6in; }
 
-  .subtitle {
-    font-family: "Caveat", cursive;
-    text-align: center;
-    font-size: 40px;
-    margin: 0 0 14px;
-    color: var(--purple);
-    transform: rotate(-2deg);
-    font-weight: 700;
+  .beads {
+    font-size: 30px;
+    line-height: 1.6;
+    margin-top: 28px;
   }
+  .beads .label { font-weight: bold; }
 
-  /* Info chunks — written like notes in a notebook */
-  .note {
-    font-family: "Patrick Hand", cursive;
-    font-size: 32px;
-    line-height: 1.05;
-    margin: 6px 0;
-    position: relative;
-    z-index: 2;
-  }
-  .note .underline {
-    background-image: linear-gradient(to right, var(--hotpink) 0, var(--hotpink) 100%);
-    background-position: 0 100%;
-    background-repeat: no-repeat;
-    background-size: 100% 4px;
-    padding-bottom: 2px;
-  }
-  .note .squiggle {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 8'><path d='M0,4 Q10,0 20,4 T40,4 T60,4 T80,4' stroke='%23ff2d87' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
-    background-position: 0 100%;
-    background-repeat: repeat-x;
-    background-size: 80px 8px;
-    padding-bottom: 6px;
-  }
-
-  .arrow {
-    display: inline-block;
-    font-family: "Caveat", cursive;
-    font-size: 42px;
-    color: var(--blue);
-    transform: rotate(-6deg);
-    margin: 0 4px;
-  }
-
-  .price-bubble {
-    display: inline-block;
-    font-family: "Gochi Hand", cursive;
-    font-size: 64px;
-    color: var(--ink);
-    background: var(--yellow);
-    border: 3px solid var(--ink);
-    border-radius: 50%;
-    width: 130px; height: 130px;
-    line-height: 124px;
-    text-align: center;
-    transform: rotate(-8deg);
-    box-shadow: 4px 4px 0 var(--ink);
-    margin: 6px 14px 6px 0;
-  }
-
-  .row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 8px 0;
-    position: relative;
-    z-index: 2;
-  }
-
-  .promise {
-    font-family: "Caveat", cursive;
-    font-size: 36px;
-    line-height: 1.1;
-    color: var(--ink);
-    background: #fff5fa;
-    border: 3px dashed var(--hotpink);
-    border-radius: 22px;
-    padding: 10px 18px;
-    margin: 12px 0 14px;
-    transform: rotate(-1deg);
-    text-align: center;
-    position: relative;
-    z-index: 2;
-  }
-  .promise b { color: var(--hotpink); }
-
-  .beads-title {
-    font-family: "Gochi Hand", cursive;
-    font-size: 44px;
-    text-align: center;
-    margin: 6px 0 4px;
-    color: var(--ink);
-    text-decoration: underline wavy var(--purple);
-    text-underline-offset: 8px;
-  }
-
-  .beads-block {
-    margin: 6px 0 10px;
-    position: relative;
-    z-index: 2;
-  }
-  .beads-block h3 {
-    font-family: "Caveat", cursive;
-    font-size: 36px;
-    margin: 0 0 4px;
-    color: var(--purple);
-    transform: rotate(-1.5deg);
-    display: inline-block;
-  }
-  .swatches {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 18px;
-    align-items: center;
-  }
   .swatch {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-family: "Patrick Hand", cursive;
-    font-size: 22px;
+    gap: 5px;
+    margin-right: 4px;
   }
-  .swatch:nth-child(odd) { transform: rotate(-2deg); }
-  .swatch:nth-child(even){ transform: rotate(2deg); }
-
   .bead {
+    display: inline-block;
+    width: 22px; height: 22px;
     border-radius: 50%;
-    border: 2.5px solid var(--ink);
-    box-shadow: inset -4px -5px 8px rgba(0,0,0,.25), 1px 2px 0 var(--ink);
+    border: 2px solid var(--ink);
+    box-shadow: inset -3px -4px 6px rgba(0,0,0,.25);
+    vertical-align: middle;
   }
-  .bead.lg { width: 38px; height: 38px; }
-  .bead.sm { width: 26px; height: 26px; }
-
   .bead.red    { background: radial-gradient(circle at 30% 30%, #ff8a8a, var(--red)); }
   .bead.green  { background: radial-gradient(circle at 30% 30%, #8af3b6, var(--green)); }
   .bead.pink   { background: radial-gradient(circle at 30% 30%, #ffb1d2, var(--pink)); }
@@ -241,122 +96,46 @@
   .bead.silver { background: radial-gradient(circle at 30% 30%, #ffffff, var(--silver)); }
   .bead.purple { background: radial-gradient(circle at 30% 30%, #d4b1ff, var(--purple)); }
   .bead.white  { background: radial-gradient(circle at 30% 30%, #ffffff, #ececec); }
-
-  .signature {
-    font-family: "Caveat", cursive;
-    font-size: 36px;
-    text-align: right;
-    color: var(--hotpink);
-    transform: rotate(-3deg);
-    margin-top: 6px;
-  }
-
-  /* Bead string at top — slightly droopy */
-  .string {
-    text-align: center;
-    margin: 0 0 -6px;
-    transform: rotate(-1.5deg);
-  }
-  .string .b {
-    display: inline-block;
-    width: 26px; height: 26px; border-radius: 50%;
-    border: 2px solid var(--ink);
-    box-shadow: inset -3px -4px 6px rgba(0,0,0,.25), 0 2px 2px rgba(0,0,0,.15);
-    margin: 0 3px;
-    vertical-align: middle;
-  }
-  .string .b:nth-child(2n)  { transform: translateY(4px); }
-  .string .b:nth-child(3n)  { transform: translateY(-3px); }
-
-  @media print {
-    body { background: #fff; }
-  }
 </style>
 </head>
 <body>
   <div class="page">
 
-    <!-- Tape pieces -->
-    <div class="tape" style="top:18px; left:60px; transform:rotate(-8deg);"></div>
-    <div class="tape" style="top:18px; right:60px; transform:rotate(7deg);"></div>
-
-    <!-- Doodles -->
-    <div class="doodle" style="top:140px; left:24px; font-size:42px; transform:rotate(-18deg);">🌈</div>
-    <div class="doodle" style="top:230px; right:30px; font-size:36px; transform:rotate(15deg);">⭐</div>
-    <div class="doodle" style="top:300px; left:30px; font-size:30px;">💖</div>
-    <div class="doodle" style="top:380px; right:40px; font-size:34px; transform:rotate(-10deg);">✨</div>
-    <div class="doodle" style="bottom:340px; left:20px; font-size:30px; transform:rotate(20deg);">🌸</div>
-    <div class="doodle" style="bottom:160px; right:20px; font-size:38px; transform:rotate(-12deg);">💕</div>
-    <div class="doodle" style="bottom:60px; left:40px; font-size:32px; transform:rotate(8deg);">🦋</div>
-    <div class="doodle" style="top:520px; right:34px; font-size:28px;">🌟</div>
-
-    <!-- Bead string across the top -->
-    <div class="string">
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ff8a8a, var(--red))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffe98a, var(--yellow))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #8af3b6, var(--green))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #9ee6ff, var(--blue))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #d4b1ff, var(--purple))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffb1d2, var(--pink))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffffff, var(--silver))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ff8a8a, var(--red))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffe98a, var(--yellow))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #8af3b6, var(--green))"></span>
-      <span class="b" style="background:radial-gradient(circle at 30% 30%, #9ee6ff, var(--blue))"></span>
-    </div>
-
     <h1 class="title">
       <span class="l">N</span><span class="l">E</span><span class="l">E</span><span class="l">D</span>
       &nbsp;<span class="l">A</span>
       <br/>
-      <span class="l">B</span><span class="l">R</span><span class="l">A</span><span class="l">C</span><span class="l">E</span><span class="l">L</span><span class="l">E</span><span class="l">T</span><span class="l">?</span><span class="l">!</span>
+      <span class="l">B</span><span class="l">R</span><span class="l">A</span><span class="l">C</span><span class="l">E</span><span class="l">L</span><span class="l">E</span><span class="l">T</span>
     </h1>
 
-    <p class="subtitle">~ handmade just for YOU ~</p>
+    <p class="line">Go to Liza Love's Locker</p>
 
-    <p class="note">
-      Go to <span class="underline">Liza Love's locker</span> <span class="arrow">⟶</span>
+    <p class="line center-ish">$1 each</p>
+
+    <p class="line" style="margin-top: 36px;">
+      Will be made in less than two days and delivered to your locker
     </p>
 
-    <div class="row">
-      <span class="price-bubble">$1<br/><span style="font-size:22px;">each!</span></span>
-      <span class="note" style="font-family:'Caveat',cursive; font-size:38px; color:var(--green); transform:rotate(-3deg); display:inline-block;">
-        super cheap!! 💸
-      </span>
+    <div class="beads">
+      <p>
+        <span class="label">Big Beads =</span>
+        <span class="swatch"><span class="bead red"></span>Red</span>,
+        <span class="swatch"><span class="bead green"></span>Green</span>,
+        <span class="swatch"><span class="bead pink"></span>Pink</span>,
+        <span class="swatch"><span class="bead blue"></span>Blue</span>,
+        <span class="swatch"><span class="bead yellow"></span>Yellow</span>,
+        <span class="swatch"><span class="bead silver"></span>Silver</span>
+      </p>
+      <p>
+        <span class="label">Small beads =</span>
+        <span class="swatch"><span class="bead red"></span>Red</span>,
+        <span class="swatch"><span class="bead pink"></span>Pink</span>,
+        <span class="swatch"><span class="bead blue"></span>Blue</span>,
+        <span class="swatch"><span class="bead green"></span>Green</span>,
+        <span class="swatch"><span class="bead purple"></span>Purple</span>,
+        <span class="swatch"><span class="bead white"></span>White</span>
+      </p>
     </div>
-
-    <div class="promise">
-      ⭐ Made in <b>less than 2 days</b> &amp; delivered<br/>
-      right to <u>your</u> locker!! ⭐
-    </div>
-
-    <h2 class="beads-title">🎨 Pick your beads! 🎨</h2>
-
-    <div class="beads-block">
-      <h3>Big Beads ⟶</h3>
-      <div class="swatches">
-        <div class="swatch"><span class="bead lg red"></span>red</div>
-        <div class="swatch"><span class="bead lg green"></span>green</div>
-        <div class="swatch"><span class="bead lg pink"></span>pink</div>
-        <div class="swatch"><span class="bead lg blue"></span>blue</div>
-        <div class="swatch"><span class="bead lg yellow"></span>yellow</div>
-        <div class="swatch"><span class="bead lg silver"></span>silver ✨</div>
-      </div>
-    </div>
-
-    <div class="beads-block">
-      <h3>Small Beads ⟶</h3>
-      <div class="swatches">
-        <div class="swatch"><span class="bead sm red"></span>red</div>
-        <div class="swatch"><span class="bead sm pink"></span>pink</div>
-        <div class="swatch"><span class="bead sm blue"></span>blue</div>
-        <div class="swatch"><span class="bead sm green"></span>green</div>
-        <div class="swatch"><span class="bead sm purple"></span>purple</div>
-        <div class="swatch"><span class="bead sm white"></span>white</div>
-      </div>
-    </div>
-
-    <p class="signature">~ from Liza Love 💖</p>
 
   </div>
 </body>
