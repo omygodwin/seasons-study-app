@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Need a Bracelet?</title>
+<style>
+  @page { size: 8.5in 11in; margin: 0; }
+
+  :root {
+    --pink:   #ff5fa2;
+    --hotpink:#ff2d87;
+    --purple: #a259ff;
+    --blue:   #2dc6ff;
+    --green:  #3ddc84;
+    --yellow: #ffd23f;
+    --red:    #ff4d4d;
+    --silver: #c9ccd1;
+    --white:  #ffffff;
+    --ink:    #2a1a4a;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", "Marker Felt", system-ui, sans-serif;
+    color: var(--ink);
+    background: #f4f4f4;
+  }
+
+  .page {
+    width: 8.5in;
+    height: 11in;
+    margin: 0 auto;
+    padding: 0.5in;
+    background:
+      radial-gradient(circle at 12% 8%,  rgba(255,95,162,.18) 0 14%, transparent 15%),
+      radial-gradient(circle at 88% 6%,  rgba(45,198,255,.18) 0 12%, transparent 13%),
+      radial-gradient(circle at 92% 92%, rgba(61,220,132,.18) 0 14%, transparent 15%),
+      radial-gradient(circle at 6% 95%,  rgba(162,89,255,.18) 0 13%, transparent 14%),
+      linear-gradient(180deg, #fff7fb 0%, #fffaf0 100%);
+    position: relative;
+    overflow: hidden;
+    border: 6px dashed var(--hotpink);
+    border-radius: 24px;
+  }
+
+  /* Decorative bead string across the top */
+  .string {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: -8px 0 6px;
+  }
+  .string .b {
+    width: 26px; height: 26px; border-radius: 50%;
+    box-shadow: inset -3px -4px 6px rgba(0,0,0,.2), 0 2px 3px rgba(0,0,0,.15);
+  }
+
+  h1.title {
+    text-align: center;
+    font-size: 96px;
+    line-height: 0.95;
+    margin: 4px 0 0;
+    letter-spacing: 2px;
+    -webkit-text-stroke: 2px var(--ink);
+    text-shadow:
+      4px 4px 0 var(--yellow),
+      8px 8px 0 var(--pink);
+  }
+  h1 .l { display: inline-block; }
+  h1 .l:nth-child(1){ color: var(--red); }
+  h1 .l:nth-child(2){ color: var(--yellow); }
+  h1 .l:nth-child(3){ color: var(--green); }
+  h1 .l:nth-child(4){ color: var(--blue); }
+  h1 .l:nth-child(5){ color: var(--purple); }
+  h1 .l:nth-child(6){ color: var(--hotpink); }
+  h1 .l:nth-child(7){ color: var(--red); }
+  h1 .l:nth-child(8){ color: var(--blue); }
+
+  .subtitle {
+    text-align: center;
+    font-size: 28px;
+    margin: 14px 0 18px;
+    color: var(--purple);
+  }
+
+  .info-row {
+    display: flex;
+    gap: 18px;
+    margin: 14px 0 18px;
+  }
+  .card {
+    flex: 1;
+    background: var(--white);
+    border: 4px solid var(--ink);
+    border-radius: 18px;
+    padding: 16px 18px;
+    box-shadow: 6px 6px 0 var(--ink);
+    text-align: center;
+  }
+  .card .label {
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--hotpink);
+    margin-bottom: 6px;
+  }
+  .card .value {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .card.price { background: var(--yellow); }
+  .card.locker { background: #e7f6ff; }
+
+  .promise {
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: #fff;
+    border: 4px solid var(--ink);
+    border-radius: 18px;
+    padding: 14px 18px;
+    margin: 6px 0 18px;
+    text-align: center;
+    font-size: 24px;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .promise .star { font-size: 26px; }
+
+  .beads-section h2 {
+    text-align: center;
+    font-size: 30px;
+    margin: 6px 0 10px;
+    color: var(--ink);
+  }
+
+  .beads-block {
+    background: var(--white);
+    border: 4px solid var(--ink);
+    border-radius: 18px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .beads-block h3 {
+    margin: 0 0 10px;
+    font-size: 24px;
+    color: var(--purple);
+  }
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 18px;
+    align-items: center;
+    justify-content: center;
+  }
+  .swatch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+  }
+  .bead {
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    box-shadow: inset -4px -5px 8px rgba(0,0,0,.25), 0 2px 3px rgba(0,0,0,.15);
+  }
+  .bead.lg { width: 38px; height: 38px; }
+  .bead.sm { width: 24px; height: 24px; }
+
+  .bead.red    { background: radial-gradient(circle at 30% 30%, #ff8a8a, var(--red)); }
+  .bead.green  { background: radial-gradient(circle at 30% 30%, #8af3b6, var(--green)); }
+  .bead.pink   { background: radial-gradient(circle at 30% 30%, #ffb1d2, var(--pink)); }
+  .bead.blue   { background: radial-gradient(circle at 30% 30%, #9ee6ff, var(--blue)); }
+  .bead.yellow { background: radial-gradient(circle at 30% 30%, #ffe98a, var(--yellow)); }
+  .bead.silver { background: radial-gradient(circle at 30% 30%, #ffffff, var(--silver)); }
+  .bead.purple { background: radial-gradient(circle at 30% 30%, #d4b1ff, var(--purple)); }
+  .bead.white  { background: radial-gradient(circle at 30% 30%, #ffffff, #ececec); }
+
+  .footer {
+    text-align: center;
+    font-size: 22px;
+    color: var(--ink);
+    margin-top: 6px;
+  }
+  .footer .heart { color: var(--hotpink); }
+
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="string">
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ff8a8a, var(--red))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffe98a, var(--yellow))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #8af3b6, var(--green))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #9ee6ff, var(--blue))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #d4b1ff, var(--purple))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffb1d2, var(--pink))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffffff, var(--silver))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ff8a8a, var(--red))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #ffe98a, var(--yellow))"></span>
+      <span class="b" style="background:radial-gradient(circle at 30% 30%, #8af3b6, var(--green))"></span>
+    </div>
+
+    <h1 class="title">
+      <span class="l">N</span><span class="l">E</span><span class="l">E</span><span class="l">D</span>
+      &nbsp;
+      <span class="l">A</span>
+      <br/>
+      <span class="l">B</span><span class="l">R</span><span class="l">A</span><span class="l">C</span><span class="l">E</span><span class="l">L</span><span class="l">E</span><span class="l">T</span><span class="l">?</span>
+    </h1>
+
+    <p class="subtitle">✨ Handmade just for you ✨</p>
+
+    <div class="info-row">
+      <div class="card locker">
+        <div class="label">Order at</div>
+        <div class="value">Liza Love's<br/>Locker</div>
+      </div>
+      <div class="card price">
+        <div class="label">Price</div>
+        <div class="value">$1<br/>each</div>
+      </div>
+    </div>
+
+    <div class="promise">
+      <span class="star">⭐</span> Made in less than <b>2 days</b> &amp; delivered straight to your locker! <span class="star">⭐</span>
+    </div>
+
+    <div class="beads-section">
+      <h2>🎨 Pick Your Beads 🎨</h2>
+
+      <div class="beads-block">
+        <h3>Big Beads</h3>
+        <div class="swatches">
+          <div class="swatch"><span class="bead lg red"></span>Red</div>
+          <div class="swatch"><span class="bead lg green"></span>Green</div>
+          <div class="swatch"><span class="bead lg pink"></span>Pink</div>
+          <div class="swatch"><span class="bead lg blue"></span>Blue</div>
+          <div class="swatch"><span class="bead lg yellow"></span>Yellow</div>
+          <div class="swatch"><span class="bead lg silver"></span>Silver</div>
+        </div>
+      </div>
+
+      <div class="beads-block">
+        <h3>Small Beads</h3>
+        <div class="swatches">
+          <div class="swatch"><span class="bead sm red"></span>Red</div>
+          <div class="swatch"><span class="bead sm pink"></span>Pink</div>
+          <div class="swatch"><span class="bead sm blue"></span>Blue</div>
+          <div class="swatch"><span class="bead sm green"></span>Green</div>
+          <div class="swatch"><span class="bead sm purple"></span>Purple</div>
+          <div class="swatch"><span class="bead sm white"></span>White</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="footer">Made with <span class="heart">♥</span> by Liza Love</p>
+
+  </div>
+</body>
+</html>
