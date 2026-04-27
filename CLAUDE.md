@@ -59,6 +59,21 @@ hotel/                      # Independent Vite app → dist/hotel/
 movie-theater/              # Independent Vite app → dist/movie-theater/
 ```
 
+### movie-theater specifics
+
+- Data model differs from hotel/animal-hospital: each `schedule/{showId}` has its
+  own `seats: {1A, 1B, 2A, 2B, 2C}` map (no global `seats` collection). Today's
+  schedule auto-seeds from `FEATURED_DEFAULTS` if empty; manager can regenerate
+  via Schedule tab → "Generate Default" (atomically clears old shows first).
+- 5 seat statuses: `available | sold | seated | dirty | broken`. `seated` is the
+  30-min-early arrival flow — customers tap "🪑 Take Seat" on their own ticket
+  card in the Now Playing view to flip `sold` → `seated`.
+- Public is the default landing (no login wall). Small `🔑 Staff` button switches
+  `mode` to 'staff' for the PIN login flow.
+- Login screen falls back to hardcoded `DEFAULT_STAFF` and `DEFAULT_GROUPS`
+  constants when Firebase reads return empty — so login stays usable even if
+  rules temporarily block writes.
+
 ## Study-app conventions
 
 - Each `*StudyApp.jsx` follows the same pattern: tab state, flashcard state
@@ -80,5 +95,14 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 - Shared Firebase Realtime DB project `roseruthclinic` is used by `hotel/`,
   `animal-hospital/`, and `movie-theater/` (under namespace `movieTheater`),
   not by the main study app.
+- Firebase RTDB rules (Console → roseruthclinic → Realtime Database → Rules) must
+  stay `{".read": true, ".write": true}`. Default test-mode rules use a 30-day
+  timestamp expiry that silently breaks ALL writes — watch for `permission_denied`
+  warnings in the browser console when seeds/writes don't take effect.
+- Worktree gotcha: `main` is owned by the primary worktree at
+  `C:/Users/bgodwin/Documents/GitHub/seasons-study-app`. From feature worktrees,
+  branch via `git checkout -b foo origin/main` — `git checkout main` errors
+  with "already used by worktree".
 - Port 5173 is also reserved for other local projects per the workspace
   CLAUDE.md — pin a different port in `vite.config.js` if that conflicts.
+- `movie-theater/` dev server pinned to port 5188 in `.claude/launch.json`.
