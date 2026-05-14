@@ -4,6 +4,7 @@ import EgyptStudyApp from './EgyptStudyApp';
 import RocksStudyApp from './RocksStudyApp';
 import VocabStudyApp from './VocabStudyApp';
 import LatinVocabStudyApp from './LatinVocabStudyApp';
+import MiddleAgesStudyApp from './MiddleAgesStudyApp';
 import TournamentApp from './tournament/TournamentApp';
 
 function getRouteFromHash() {
@@ -22,6 +23,7 @@ const RAEGAN_TOPICS = [
   { id: 'egypt', label: 'Ancient Egypt', emoji: '🏺' },
   { id: 'rocks', label: 'Rocks & Minerals', emoji: '🪨' },
   { id: 'latin', label: 'Latin Vocab', emoji: '🏛️' },
+  { id: 'middleages', label: 'Middle Ages (Western Civ)', emoji: '🏰' },
 ];
 const RAEGAN_TOPIC_IDS = RAEGAN_TOPICS.map((t) => t.id);
 
@@ -196,6 +198,7 @@ export default function App() {
       {studyTopic === 'egypt' && <EgyptStudyApp />}
       {studyTopic === 'rocks' && <RocksStudyApp />}
       {studyTopic === 'latin' && <LatinVocabStudyApp />}
+      {studyTopic === 'middleages' && <MiddleAgesStudyApp />}
       {studyTopic === 'vocab' && <VocabStudyApp />}
     </div>
   );
