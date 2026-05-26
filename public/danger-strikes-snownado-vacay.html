@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Danger Strikes — Snow-nado Vacay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  @page { size: 8.5in 11in; margin: 0.7in; }
+
+  :root {
+    --ink:   #1c1c1c;
+    --muted: #6b6b6b;
+    --rule:  #cfcfcf;
+    --sfx:   #444;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #e9e9ec; }
+
+  body {
+    font-family: "Special Elite", "Courier New", monospace;
+    color: var(--ink);
+    line-height: 1.5;
+    font-size: 13.5px;
+  }
+
+  /* On-screen "paper" wrapper. Print drops the gray + shadow. */
+  .sheet {
+    max-width: 7.1in;
+    margin: 24px auto;
+    background: #fff;
+    padding: 0.7in;
+    box-shadow: 0 2px 14px rgba(0,0,0,.18);
+  }
+
+  .toolbar {
+    max-width: 7.1in;
+    margin: 18px auto 0;
+    text-align: right;
+  }
+  .toolbar button {
+    font-family: "Patrick Hand", system-ui, sans-serif;
+    font-size: 18px;
+    padding: 7px 18px;
+    border: 2px solid var(--ink);
+    background: #ffd23f;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .toolbar button:hover { background: #ffdf6b; }
+
+  header.titleblock {
+    text-align: center;
+    border-bottom: 3px double var(--ink);
+    padding-bottom: 14px;
+    margin-bottom: 8px;
+  }
+  .series-label, .episode-label {
+    font-family: "Patrick Hand", system-ui, sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  h1.series {
+    font-family: "Patrick Hand", system-ui, sans-serif;
+    font-size: 46px;
+    line-height: 1;
+    margin: 2px 0 10px;
+    letter-spacing: 1px;
+  }
+  h2.episode {
+    font-family: "Patrick Hand", system-ui, sans-serif;
+    font-size: 30px;
+    line-height: 1;
+    margin: 4px 0 0;
+  }
+  .episode-no {
+    font-family: "Patrick Hand", system-ui, sans-serif;
+    font-size: 15px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .intro {
+    font-style: italic;
+    text-align: center;
+    margin: 16px auto 4px;
+    max-width: 90%;
+  }
+
+  /* A dialogue line: SPEAKER + text, kept together across page breaks. */
+  .line {
+    margin: 9px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .speaker {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .paren { font-style: italic; color: var(--sfx); }
+
+  /* Sound effects / stage directions on their own centered line. */
+  .sfx {
+    text-align: center;
+    font-style: italic;
+    color: var(--sfx);
+    margin: 12px 0;
+  }
+
+  /* Scene headings / narrator time-cues. */
+  .scene {
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 20px 0 10px;
+    text-transform: uppercase;
+    font-size: 12.5px;
+  }
+  .scene::before, .scene::after { content: "— "; color: var(--muted); }
+  .scene::after { content: " —"; }
+
+  /* Big "COMMERCIAL BREAK" divider. */
+  .break {
+    text-align: center;
+    margin: 22px 0;
+    padding: 8px 0;
+    border-top: 1px dashed var(--rule);
+    border-bottom: 1px dashed var(--rule);
+    font-family: "Patrick Hand", system-ui, sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+  .break small {
+    display: block;
+    font-family: "Special Elite", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  .legend {
+    margin-top: 26px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .legend b { color: var(--ink); }
+
+  .end {
+    text-align: center;
+    font-family: "Patrick Hand", system-ui, sans-serif;
+    font-size: 26px;
+    margin: 26px 0 4px;
+    letter-spacing: 2px;
+  }
+
+  @media print {
+    html, body { background: #fff; }
+    .toolbar { display: none; }
+    .sheet { max-width: none; margin: 0; padding: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="toolbar"><button onclick="window.print()">Print this script</button></div>
+
+  <main class="sheet">
+
+    <header class="titleblock">
+      <div class="series-label">Title of Radio Series</div>
+      <h1 class="series">Danger Strikes</h1>
+      <div class="episode-label">Title of Episode</div>
+      <h2 class="episode">Snow-nado Vacay</h2>
+      <div class="episode-no">Episode 12</div>
+    </header>
+
+    <p class="intro">
+      Welcome to the radio station of <b>Danger Strikes</b>! Today's show — we get to
+      do <b>Snow-nado Vacay</b>! Enjoy episode 12!
+    </p>
+
+    <p class="scene">Today our story starts at 21 Baker St.</p>
+
+    <p class="line"><span class="speaker">BB:</span> Mom, I can handle them, it's only a few days.</p>
+    <p class="line"><span class="speaker">TL:</span> I know, but I'm worried about you guys.</p>
+    <p class="line"><span class="speaker">Dad:</span> Carrie, it's just a few days. Anyway, it's time to leave or we'll miss our plane.</p>
+    <p class="line"><span class="speaker">TL:</span> No mommy, I don't want you to leave!</p>
+    <p class="line"><span class="speaker">BB:</span> It's ok, Lulu. It's only a few days.</p>
+    <p class="line"><span class="speaker">MG:</span> AuAu, will we get candy?</p>
+    <p class="line"><span class="speaker">BB:</span> Shh. Duh.</p>
+    <p class="sfx">(Door closing)</p>
+
+    <p class="scene">Next Morning</p>
+
+    <p class="line"><span class="speaker">TL:</span> The phone is ringing. <span class="paren">(ringing: "rinnngs")</span></p>
+    <p class="line"><span class="speaker">BB:</span> Ok. Hello?</p>
+    <p class="line"><span class="speaker">MG:</span> Sweeties, I'm 20 min away, be ready.</p>
+    <p class="line"><span class="speaker">BB:</span> Ok, come to the house, but we might not be there cause we will be at a friend's house.</p>
+    <p class="line"><span class="speaker">MG:</span> Ok, bye sweeties.</p>
+    <p class="line"><span class="speaker">All:</span> Bye!</p>
+    <p class="line"><span class="speaker">BB:</span> Lulu, go grab your coat, I'll get Claire.</p>
+    <p class="line"><span class="speaker">TL:</span> Ok.</p>
+    <p class="sfx">(Door closing)</p>
+
+    <p class="line"><span class="speaker">TL:</span> Oh, it's getting a little chilly. And where are we going?</p>
+    <p class="line"><span class="speaker">BB:</span> Idk, we are almost there.</p>
+    <p class="line"><span class="speaker">TL:</span> And where are we going anyway?</p>
+    <p class="line"><span class="speaker">BB:</span> Caroline's house.</p>
+    <p class="line"><span class="speaker">TL:</span> Ok.</p>
+    <p class="line"><span class="speaker">TL:</span> Ohh! It's snowing! I love snow!</p>
+    <p class="line"><span class="speaker">BB:</span> Let's hurry, we don't want to get stuck.</p>
+
+    <p class="scene">10 min later</p>
+
+    <p class="line"><span class="speaker">TL:</span> AuAu, I think we should go ask if we could stay with someone.</p>
+    <p class="line"><span class="speaker">BB:</span> Ok.</p>
+    <p class="line"><span class="speaker">BB:</span> How about we go there?</p>
+    <p class="sfx">(Knock knock)</p>
+
+    <p class="line"><span class="speaker">MG:</span> Coming!</p>
+    <p class="sfx">(Door opens)</p>
+    <p class="line"><span class="speaker">MG:</span> Oh, sweeties, you shouldn't be out in the weather! Come in! Come in!</p>
+    <p class="sfx">(Door closes)</p>
+    <p class="line"><span class="speaker">TL:</span> AuAu, why are heads of animals on the wall?</p>
+    <p class="line"><span class="speaker">MG:</span> AuAu, I thought you said we could get candy?</p>
+    <p class="line"><span class="speaker">MG:</span> Oh, sweeties, I have candy. Come here. <span class="paren">(Rumbling, ruppers)</span></p>
+
+    <div class="break">
+      COMMERCIAL BREAK
+      <small>Washing machine · clicking · radio speaker — BB</small>
+    </div>
+
+    <p class="line"><span class="speaker">Radio:</span> Ladies and gents, this is the moment you've been waiting for! Ohh, it is the first snownado in history! Ohh!</p>
+    <p class="line"><span class="speaker">MG:</span> Oh, we're in for a big one. Let's go to bed.</p>
+    <p class="line"><span class="speaker">TL:</span> AuAu, what about mommy and daddy?</p>
+    <p class="line"><span class="speaker">BB:</span> Ok, I'll call them.</p>
+    <p class="sfx">(ringg, ringg)</p>
+    <p class="line"><span class="speaker">BB:</span> Oh, they're not picking up. <span class="paren">(voice shaking)</span> I... I'm sure we'll be ok.</p>
+    <p class="line"><span class="speaker">MG:</span> <span class="paren">(crying)</span></p>
+    <p class="line"><span class="speaker">BB:</span> It's ok, bruh.</p>
+
+    <div class="break">
+      COMMERCIAL BREAK
+      <small>Vacuums</small>
+    </div>
+
+    <p class="scene">12:00 p.m.</p>
+    <p class="sfx">(Thump, thump — loud. All wake up and run downstairs.)</p>
+
+    <p class="line"><span class="speaker">MG:</span> What is going on down here, sweeties? It's Christmas tomorrow, you should be upstairs.</p>
+    <p class="line"><span class="speaker">BB:</span> I think someone's coming down the chimney!</p>
+    <p class="line"><span class="speaker">All:</span> <span class="paren">(opera singing)</span> "Santa!"</p>
+    <p class="sfx">(Muffled thump)</p>
+    <p class="line"><span class="speaker">MG:</span> Are you Santa?</p>
+    <p class="line"><span class="speaker">TL:</span> Aw, you're not Santa.</p>
+    <p class="line"><span class="speaker">MG:</span> Who... are you? Get out of my house!</p>
+    <p class="line"><span class="speaker">BB:</span> Oh wait, that's our mom and dad!</p>
+    <p class="line"><span class="speaker">MG:</span> I'm so sorry. I have some hot cocoa in the kitchen. You guys sit down, you must be freezing.</p>
+    <p class="sfx">(Door closing)</p>
+    <p class="line"><span class="speaker">Mom:</span> Oh sweeties <span class="paren">(sniff)</span>, I'm so glad you're ok.</p>
+    <p class="line"><span class="speaker">TL:</span> It's ok, mommy.</p>
+    <p class="line"><span class="speaker">BB:</span> Wait, we never heard how you got here!</p>
+
+    <p class="scene">The next morning</p>
+
+    <p class="line"><span class="speaker">BB:</span> The snowstorm hit the plane and the emergency door opened.</p>
+    <p class="line"><span class="speaker">TL:</span> Our seats were right next to it and the wind blew us out. Then, because of the high wind, we fell down onto a roof and went down the chimney.</p>
+    <p class="line"><span class="speaker">Dad:</span> Wait, I just realized — we left you at our house and now you're here. Grandma came too.</p>
+    <p class="line"><span class="speaker">BB:</span> Our friend Caroline invited us over, but we got lost so we had to come here.</p>
+    <p class="line"><span class="speaker">TL:</span> That's not how it went. We didn't want to hang out with grandma, so we came here.</p>
+    <p class="line"><span class="speaker">BB:</span> LULU!</p>
+    <p class="line"><span class="speaker">Boy:</span> Girls...</p>
+    <p class="line"><span class="speaker">MG:</span> AuAu, no more snow!</p>
+    <p class="line"><span class="speaker">BB:</span> We can go home now!</p>
+    <p class="line"><span class="speaker">All:</span> Yee haw! Bye!</p>
+    <p class="sfx">(Crunching sounds)</p>
+    <p class="line"><span class="speaker">MG:</span> AuAu, can we sing?</p>
+    <p class="line"><span class="speaker">BB:</span> Sure.</p>
+    <p class="sfx">(Crunching song)</p>
+    <p class="sfx">(Door opens)</p>
+    <p class="line"><span class="speaker">Girls:</span> Hi grandma!</p>
+    <p class="line"><span class="speaker">Boy:</span> Girls, are we going to do that again?</p>
+    <p class="line"><span class="speaker">Girls:</span> No.</p>
+    <p class="line"><span class="speaker">MG:</span> It's been a long day. We should get some sleep.</p>
+
+    <p class="end">~ The End ~</p>
+
+    <p class="legend">
+      <b>Speaker key</b> (kept from the original script): <b>BB</b>, <b>TL</b>, <b>MG</b>,
+      <b>Dad</b>, <b>Mom</b>, <b>All</b>, <b>Boy</b>, <b>Girls</b>, <b>Radio</b>.
+      Sounds and stage directions are shown in <i>italics</i>.
+    </p>
+
+  </main>
+
+</body>
+</html>
