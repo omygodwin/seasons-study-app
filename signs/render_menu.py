@@ -175,8 +175,11 @@ for ic, nm, ds in foods:
 sb_y = fy + 40
 scx = colL + colw/2
 rr([colL, sb_y, colL+colw, sb_y+440], rad=24, fill=GOLD, outline=NAVY, width=6)
-rr([scx-205, sb_y+34, scx+205, sb_y+98], rad=32, fill=RED)
-tracked(scx, sb_y+66, "DAD'S DAY SPECIAL", fb(15), WHITE, 3)
+_tag = "DAD'S DAY SPECIAL"; _tf = fb(15); _trk = 3
+_tw = sum(_tf.getlength(c) for c in _tag) + _trk*(len(_tag)-1)
+_half = _tw/2 + 50
+rr([scx-_half, sb_y+30, scx+_half, sb_y+102], rad=36, fill=NAVY)
+tracked(scx, sb_y+66, _tag, _tf, GOLD, _trk)
 d.text((scx, sb_y+170), "Buy 1 Beer,", font=fb(22), fill=NAVY, anchor="mm")
 segs=[("Get 1 ", NAVY),("HALF OFF", RED)]
 fbig=fb(22); tw=sum(fbig.getlength(t) for t,_ in segs); xx=scx-tw/2
