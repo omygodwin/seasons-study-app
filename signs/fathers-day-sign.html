@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The RG Sports Bar — Father's Day Sign</title>
+<style>
+  /* ---- Print setup: US Letter, portrait, full-bleed color ---- */
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-family: "Trebuchet MS", "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  body {
+    background: #4b5563;
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  /* The sign itself = exactly one Letter page (8.5 x 11in) */
+  .sign {
+    width: 8.5in;
+    height: 11in;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 0%, #1e3a5f 0%, #0b1f33 60%, #061421 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.55in 0.55in 0.5in;
+  }
+
+  /* Decorative top + bottom stripes */
+  .stripe-top, .stripe-bottom {
+    position: absolute;
+    left: 0; right: 0;
+    height: 0.22in;
+    background: linear-gradient(90deg, #c8102e 0 33%, #f5c518 33% 66%, #1d7a46 66% 100%);
+  }
+  .stripe-top { top: 0; }
+  .stripe-bottom { bottom: 0; }
+
+  /* ---- Logo / brand ---- */
+  .brand { margin-top: 0.25in; }
+  .brand .the {
+    font-size: 26px;
+    letter-spacing: 10px;
+    color: #f5c518;
+    font-weight: bold;
+  }
+  .brand .rg {
+    font-size: 150px;
+    line-height: 0.9;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow: 0 0 18px rgba(245,197,24,0.55);
+  }
+  .brand .rg span { color: #f5c518; }
+  .brand .name {
+    font-size: 30px;
+    letter-spacing: 6px;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .brand .rule {
+    width: 60%;
+    height: 3px;
+    margin: 14px auto 0;
+    background: linear-gradient(90deg, transparent, #f5c518, transparent);
+  }
+
+  /* ---- Headline ---- */
+  .headline { margin-top: 0.32in; }
+  .headline .happy {
+    font-size: 34px;
+    color: #f5c518;
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+  .headline .fathers {
+    font-size: 76px;
+    font-weight: 900;
+    line-height: 0.95;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  .headline .day {
+    font-size: 76px;
+    font-weight: 900;
+    line-height: 0.95;
+    color: #c8102e;
+    -webkit-text-stroke: 2px #fff;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+  }
+
+  /* ---- Special box ---- */
+  .special {
+    margin-top: 0.34in;
+    width: 92%;
+    background: #f5c518;
+    color: #0b1f33;
+    border: 5px solid #fff;
+    border-radius: 18px;
+    padding: 18px 20px 22px;
+    box-shadow: 0 8px 0 rgba(0,0,0,0.25);
+  }
+  .special .tag {
+    display: inline-block;
+    background: #c8102e;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    padding: 5px 18px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .special .deal {
+    font-size: 44px;
+    font-weight: 900;
+    line-height: 1.02;
+    margin-top: 12px;
+    text-transform: uppercase;
+  }
+  .special .deal em {
+    font-style: normal;
+    color: #c8102e;
+  }
+  .special .sub {
+    font-size: 21px;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+  .special .fine {
+    font-size: 13px;
+    margin-top: 12px;
+    color: #4b3a00;
+  }
+
+  /* ---- Footer ---- */
+  .footer {
+    margin-top: auto;
+    width: 100%;
+  }
+  .footer .when {
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+  .footer .cheers {
+    font-size: 16px;
+    color: #f5c518;
+    margin-top: 6px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Print button — hidden when printing */
+  .toolbar {
+    position: fixed;
+    top: 12px; right: 12px;
+    z-index: 10;
+  }
+  .toolbar button {
+    font-size: 15px;
+    font-weight: bold;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #f5c518;
+    color: #0b1f33;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  }
+  @media print {
+    .toolbar { display: none; }
+    body { padding: 0; background: #fff; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar"><button onclick="window.print()">🖨️ Print this sign</button></div>
+
+  <div class="sign">
+    <div class="stripe-top"></div>
+
+    <div class="brand">
+      <div class="the">THE</div>
+      <div class="rg">R<span>G</span></div>
+      <div class="name">Sports Bar</div>
+      <div class="rule"></div>
+    </div>
+
+    <div class="headline">
+      <div class="happy">Happy</div>
+      <div class="fathers">Father's</div>
+      <div class="day">Day</div>
+    </div>
+
+    <div class="special">
+      <div class="tag">Dad's Day Special</div>
+      <div class="deal"><em>Buy 1</em> Beer,<br>Get 1 <em>Half Off</em></div>
+      <div class="sub">🍗 Free wings with any entrée for Dad!</div>
+      <div class="fine">Valid Father's Day only • Dine-in • One special per guest</div>
+    </div>
+
+    <div class="footer">
+      <div class="when">Sunday, June 21, 2026 • Doors Open 11 AM</div>
+      <div class="cheers">Cheers to all the Dads! 🍻</div>
+    </div>
+
+    <div class="stripe-bottom"></div>
+  </div>
+</body>
+</html>
