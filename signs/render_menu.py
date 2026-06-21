@@ -165,7 +165,6 @@ fy = top + 160
 foods = [
     (ic_wings,  "Boneless Wings",  "Buffalo or BBQ, tossed to order"),
     (ic_tenders,"Chicken Tenders", "Hand-breaded & crispy"),
-    (ic_burger, "Cheeseburgers",   "Juicy, on a toasted bun"),
     (ic_brat,   "Brats",           "Grilled, served on a bun"),
     (ic_beans,  "Green Beans",     "Fresh side"),
 ]
