@@ -183,10 +183,14 @@
 
   /* ---- Finale trophy lift ---- */
   .trophy{
-    font-size:clamp(4.5rem,min(20vw,24vh),12rem);
-    line-height:1;margin:1vh 0 1.4vh;
-    filter:drop-shadow(0 14px 20px rgba(0,0,0,.42));
+    margin:1vh 0 1.4vh;
     animation:lift 2.6s ease-in-out infinite;
+  }
+  .trophy svg{
+    display:block;
+    height:clamp(6.5rem,min(24vw,26vh),12.5rem);
+    width:auto;
+    filter:drop-shadow(0 14px 20px rgba(0,0,0,.42));
   }
   @keyframes lift{
     0%,100%{transform:translateY(0) rotate(-3deg)}
@@ -433,7 +437,44 @@
     <section class="slide" style="--accent:var(--yellow)">
       <div class="eyebrow">The Final Whistle</div>
       <h1 class="title">Lift the Cup</h1>
-      <div class="trophy">🏆</div>
+      <div class="trophy" role="img" aria-label="World Cup trophy">
+        <svg viewBox="0 0 200 340" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="wc-gold" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fff3cb"/>
+              <stop offset=".38" stop-color="#f4cd63"/>
+              <stop offset=".72" stop-color="#cf9a2e"/>
+              <stop offset="1" stop-color="#a5741c"/>
+            </linearGradient>
+            <linearGradient id="wc-goldDark" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#cf9a2e"/>
+              <stop offset="1" stop-color="#8f6417"/>
+            </linearGradient>
+            <radialGradient id="wc-globe" cx=".38" cy=".3" r=".85">
+              <stop offset="0" stop-color="#fff0b0"/>
+              <stop offset=".55" stop-color="#ecb845"/>
+              <stop offset="1" stop-color="#a8761b"/>
+            </radialGradient>
+          </defs>
+          <!-- base pedestal with malachite green bands -->
+          <ellipse cx="100" cy="300" rx="54" ry="13" fill="url(#wc-goldDark)"/>
+          <ellipse cx="100" cy="291" rx="54" ry="13" fill="url(#wc-gold)"/>
+          <ellipse cx="100" cy="282" rx="45" ry="10" fill="#0a6b3d"/>
+          <ellipse cx="100" cy="272" rx="45" ry="10" fill="url(#wc-gold)"/>
+          <ellipse cx="100" cy="264" rx="35" ry="8" fill="#0a6b3d"/>
+          <ellipse cx="100" cy="255" rx="35" ry="8" fill="url(#wc-gold)"/>
+          <!-- twisting body: two figures holding the world aloft -->
+          <path d="M100 122 C70 126,55 156,66 188 C74 214,88 228,92 252 L108 252 C112 228,126 214,134 188 C145 156,130 126,100 122 Z" fill="url(#wc-gold)"/>
+          <path d="M100 122 C118 128,128 152,122 182 C117 206,106 222,104 252 L108 252 C112 228,126 214,134 188 C145 156,130 126,100 122 Z" fill="url(#wc-goldDark)" opacity=".5"/>
+          <path d="M100 126 C93 152,107 176,97 202 C91 222,101 236,100 250" fill="none" stroke="#fff3cb" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>
+          <!-- the world held aloft -->
+          <circle cx="100" cy="80" r="42" fill="url(#wc-globe)" stroke="#8a6014" stroke-width="1.5"/>
+          <ellipse cx="100" cy="80" rx="16" ry="42" fill="none" stroke="#8a6014" stroke-width="1.3" opacity=".55"/>
+          <line x1="58" y1="80" x2="142" y2="80" stroke="#8a6014" stroke-width="1.3" opacity=".55"/>
+          <ellipse cx="100" cy="80" rx="42" ry="16" fill="none" stroke="#8a6014" stroke-width="1.1" opacity=".4"/>
+          <ellipse cx="88" cy="66" rx="10" ry="6" fill="#fff7d8" opacity=".55"/>
+        </svg>
+      </div>
       <div class="champ">World Champions!</div>
       <div class="goal">Add up the points 🧮</div>
       <div class="rules" style="max-width:26ch">
