@@ -207,6 +207,16 @@
     box-shadow:0 9px 0 rgba(0,0,0,.24);
     margin-bottom:2.2vh;
   }
+  .scorelink{
+    display:inline-flex;align-items:center;gap:.5em;
+    margin-top:2.2vh;position:relative;z-index:16;
+    background:var(--lime);color:var(--ink);text-decoration:none;
+    font-weight:800;text-transform:uppercase;letter-spacing:.04em;
+    font-size:clamp(1rem,min(2.6vw,2.8vh),1.5rem);
+    padding:.6em 1.3em;border-radius:999px;
+    box-shadow:0 8px 0 rgba(0,0,0,.22);
+  }
+  .scorelink:active{transform:translateY(2px);box-shadow:0 6px 0 rgba(0,0,0,.22)}
 
   /* ---- Chrome: dots, nav, wordmark ---- */
   .wordmark{
@@ -482,6 +492,7 @@
         <div class="rule"><span class="em">🙌</span><span>Champions <b>lift the Cup</b> high</span></div>
         <div class="rule"><span class="em">🎉</span><span>Everyone does a big <b>celebration</b>!</span></div>
       </div>
+      <a class="scorelink" href="scoreboard.html">📊 Open the Live Scoreboard</a>
     </section>
 
   </div>

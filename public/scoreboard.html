@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>World Cup Games Night — Scoreboard</title>
+<!-- Add to Home Screen: launch full-screen with no Safari chrome (reliable on iPad) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scoreboard">
+<meta name="theme-color" content="#053b21">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch:#0a6b3d;
+    --pitch-dark:#074a2a;
+    --pitch-deep:#053b21;
+    --lime:#d7ff3e;
+    --yellow:#ffd23f;
+    --ruth:#ff2e7e;
+    --ruth-deep:#c01152;
+    --rose:#19c56a;
+    --rose-deep:#0a8a4a;
+    --ink:#052013;
+    --panel:rgba(0,0,0,.26);
+    --line:rgba(255,255,255,.14);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    font-family:'Outfit',system-ui,sans-serif;
+    color:#fff;-webkit-font-smoothing:antialiased;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 60px, transparent 60px 120px),
+      radial-gradient(120% 80% at 50% 0%, var(--pitch) 0%, var(--pitch-dark) 55%, var(--pitch-deep) 100%);
+    background-attachment:fixed;
+    padding:max(18px,env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:760px;margin:0 auto}
+
+  /* ---- Header ---- */
+  .top{text-align:center;margin-bottom:18px}
+  .eyebrow{font-weight:800;letter-spacing:.26em;text-transform:uppercase;
+    font-size:.72rem;color:var(--lime);margin-bottom:6px}
+  h1{font-family:'Anton','Arial Narrow',Impact,sans-serif;font-weight:400;
+    text-transform:uppercase;font-size:clamp(2.2rem,9vw,3.4rem);line-height:.92;
+    text-shadow:0 4px 0 rgba(0,0,0,.25)}
+
+  /* ---- Standings hero ---- */
+  .hero{background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    padding:18px 16px;margin-bottom:16px}
+  .scoreline{display:flex;align-items:stretch;gap:10px}
+  .side{flex:1;text-align:center;border-radius:14px;padding:12px 8px;
+    background:rgba(255,255,255,.05);border:2px solid transparent}
+  .side.ruth{border-color:var(--ruth)}
+  .side.rose{border-color:var(--rose)}
+  .side.lead{background:rgba(255,255,255,.12)}
+  .side .crest{font-size:1.8rem;line-height:1}
+  .side .tname{font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;text-transform:uppercase;
+    font-size:1.15rem;letter-spacing:.02em;margin-top:2px}
+  .side .flag{font-size:1.5rem;line-height:1.1;min-height:1.6rem}
+  .side .cty{font-size:.72rem;font-weight:700;text-transform:uppercase;
+    letter-spacing:.06em;color:rgba(255,255,255,.7);min-height:1rem}
+  .side .score{font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;font-size:3.4rem;line-height:1;margin-top:4px}
+  .side.ruth .score{color:var(--ruth)}
+  .side.rose .score{color:var(--rose)}
+  .mid{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;color:var(--ink);flex:0 0 auto}
+  .mid .vs{background:var(--yellow);border-radius:999px;padding:.2em .6em;font-size:1rem}
+  .bar{height:12px;border-radius:999px;overflow:hidden;display:flex;margin-top:14px;
+    background:rgba(255,255,255,.08)}
+  .bar .b-ruth{background:var(--ruth)}
+  .bar .b-rose{background:var(--rose)}
+  .status{text-align:center;margin-top:12px;font-weight:800;font-size:1rem;
+    min-height:1.4rem}
+  .status .champ{display:inline-block;background:var(--yellow);color:var(--ink);
+    font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;text-transform:uppercase;letter-spacing:.02em;
+    font-size:1.15rem;padding:.28em .9em;border-radius:12px;transform:rotate(-1.5deg)}
+
+  /* ---- Section label ---- */
+  .seclabel{font-weight:800;letter-spacing:.2em;text-transform:uppercase;
+    font-size:.72rem;color:var(--lime);margin:22px 4px 10px}
+
+  /* ---- Team country cards ---- */
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:560px){.teams{grid-template-columns:1fr}}
+  .tcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .tcard .thead{display:flex;align-items:center;gap:10px;padding:11px 14px;color:#fff}
+  .tcard.ruth .thead{background:var(--ruth)}
+  .tcard.rose .thead{background:var(--rose-deep)}
+  .tcard .thead .crest{font-size:1.5rem}
+  .tcard .thead h3{font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;font-weight:400;text-transform:uppercase;
+    font-size:1.35rem;letter-spacing:.02em;flex:1}
+  .tcard .thead .cnt{font-weight:800;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+    background:rgba(255,255,255,.22);padding:4px 9px;border-radius:999px}
+  .tbody{padding:12px 14px}
+  .players{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .players span{background:rgba(255,255,255,.08);border:1px solid var(--line);
+    border-radius:999px;padding:4px 10px;font-size:.85rem;font-weight:600;text-transform:capitalize}
+  .ctybtn{width:100%;min-height:48px;border:2px dashed var(--line);background:rgba(255,255,255,.04);
+    color:#fff;border-radius:12px;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    font-weight:800;font-size:1rem}
+  .ctybtn .cflag{font-size:1.6rem;line-height:1}
+  .ctybtn.set{border-style:solid}
+  .tcard.ruth .ctybtn.set{border-color:var(--ruth)}
+  .tcard.rose .ctybtn.set{border-color:var(--rose)}
+  .ctybtn .hintarrow{opacity:.5;font-size:.8rem;font-weight:700}
+
+  /* ---- Events ---- */
+  .events{display:flex;flex-direction:column;gap:10px}
+  .ev{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:11px 13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .ev .no{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:var(--lime);
+    color:var(--ink);font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;font-size:1.15rem;
+    display:flex;align-items:center;justify-content:center}
+  .ev .ename{flex:1 1 120px;font-weight:700;font-size:1.05rem}
+  .ev .pick{display:flex;gap:6px;flex:0 0 auto}
+  .wbtn{min-height:44px;padding:0 12px;border-radius:10px;border:2px solid var(--line);
+    background:rgba(255,255,255,.05);color:#fff;font-family:inherit;font-weight:800;
+    font-size:.9rem;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .wbtn small{font-size:.72rem;font-weight:700;opacity:.85}
+  .wbtn.ruth.on{background:var(--ruth);border-color:var(--ruth);color:#fff}
+  .wbtn.rose.on{background:var(--rose);border-color:var(--rose);color:var(--ink)}
+  .wbtn.tie.on{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+  .wbtn.on{box-shadow:0 4px 0 rgba(0,0,0,.22)}
+
+  /* ---- Footer controls ---- */
+  .foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}
+  .foot a,.foot button{font-family:inherit;font-weight:800;font-size:.92rem;cursor:pointer;
+    text-decoration:none;border-radius:999px;padding:.7em 1.2em;min-height:44px;
+    display:inline-flex;align-items:center;gap:8px;border:2px solid var(--line);
+    background:rgba(255,255,255,.06);color:#fff}
+  .foot a.primary{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+  .foot .reset{border-color:rgba(255,120,120,.5);color:#ffb3b3}
+
+  /* ---- Country modal ---- */
+  .modal{position:fixed;inset:0;z-index:50;display:none;
+    align-items:flex-end;justify-content:center;
+    background:rgba(0,0,0,.55);backdrop-filter:blur(3px);
+    padding:0 12px calc(12px + env(safe-area-inset-bottom))}
+  .modal.open{display:flex}
+  .sheet{width:100%;max-width:560px;max-height:82vh;overflow:auto;
+    background:var(--pitch-dark);border:1px solid var(--line);
+    border-radius:20px 20px 14px 14px;padding:16px}
+  .sheet h4{font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;font-weight:400;text-transform:uppercase;
+    font-size:1.4rem;text-align:center;margin-bottom:4px}
+  .sheet .sub{text-align:center;color:rgba(255,255,255,.7);font-size:.82rem;
+    font-weight:600;margin-bottom:14px}
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+  .cbtn{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;
+    color:#fff;cursor:pointer;font-family:inherit;padding:10px 4px;text-align:center}
+  .cbtn .cf{font-size:1.9rem;line-height:1.1}
+  .cbtn .cn{font-size:.74rem;font-weight:700;margin-top:3px}
+  .cbtn:disabled{opacity:.32;cursor:not-allowed}
+  .cbtn.clear{grid-column:1/-1;font-weight:800;color:#ffb3b3;border-color:rgba(255,120,120,.4)}
+  .sheet .close{width:100%;margin-top:12px;min-height:46px;border-radius:12px;border:none;
+    background:var(--lime);color:var(--ink);font-family:inherit;font-weight:800;cursor:pointer;font-size:1rem}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="eyebrow">⚽ World Cup Games Night ⚽</div>
+      <h1>Live Scoreboard</h1>
+    </div>
+
+    <!-- STANDINGS HERO -->
+    <div class="hero">
+      <div class="scoreline">
+        <div class="side ruth" id="sideRuth">
+          <div class="crest">👑</div>
+          <div class="tname">Team Ruth</div>
+          <div class="flag" id="flagRuth">🏳️</div>
+          <div class="cty" id="ctyRuth">No country yet</div>
+          <div class="score" id="scoreRuth">0</div>
+        </div>
+        <div class="mid"><span class="vs">VS</span></div>
+        <div class="side rose" id="sideRose">
+          <div class="crest">🌹</div>
+          <div class="tname">Team Rose</div>
+          <div class="flag" id="flagRose">🏳️</div>
+          <div class="cty" id="ctyRose">No country yet</div>
+          <div class="score" id="scoreRose">0</div>
+        </div>
+      </div>
+      <div class="bar"><div class="b-ruth" id="barRuth" style="width:50%"></div><div class="b-rose" id="barRose" style="width:50%"></div></div>
+      <div class="status" id="status">Assign each squad a country, then tap the winner of each event.</div>
+    </div>
+
+    <!-- TEAMS + COUNTRY PICK -->
+    <div class="seclabel">Squads &amp; Countries</div>
+    <div class="teams" id="teams"></div>
+
+    <!-- EVENTS -->
+    <div class="seclabel">Events — tap the winner</div>
+    <div class="events" id="events"></div>
+
+    <!-- CONTROLS -->
+    <div class="foot">
+      <a class="primary" href="world-cup.html">‹ Back to the deck</a>
+      <button class="reset" id="reset">↺ Reset the night</button>
+    </div>
+  </div>
+
+  <!-- COUNTRY MODAL -->
+  <div class="modal" id="modal">
+    <div class="sheet">
+      <h4 id="modalTitle">Pick a country</h4>
+      <div class="sub" id="modalSub"></div>
+      <div class="cgrid" id="cgrid"></div>
+      <button class="close" id="modalClose">Done</button>
+    </div>
+  </div>
+
+<script>
+  const TEAMS = {
+    ruth:{name:'Team Ruth', crest:'👑', cls:'ruth', players:['Elise','Charlie','Charlie','Virginia']},
+    rose:{name:'Team Rose', crest:'🌹', cls:'rose', players:['Helen','Liza','Keaton','Claire','Margaret']}
+  };
+  const EVENTS = ['Header Toss','Sock Code','Blindfold Goal','Musical Soccer Balls',
+    'Human Foosball','Spoon Ball Relay','Soccer Bowling','Volcano','Soccer Golf'];
+  const COUNTRIES = [
+    {n:'Argentina',f:'🇦🇷'},{n:'Brazil',f:'🇧🇷'},{n:'France',f:'🇫🇷'},{n:'England',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+    {n:'Spain',f:'🇪🇸'},{n:'Germany',f:'🇩🇪'},{n:'Portugal',f:'🇵🇹'},{n:'Netherlands',f:'🇳🇱'},
+    {n:'Italy',f:'🇮🇹'},{n:'USA',f:'🇺🇸'},{n:'Mexico',f:'🇲🇽'},{n:'Japan',f:'🇯🇵'},
+    {n:'Croatia',f:'🇭🇷'},{n:'Belgium',f:'🇧🇪'},{n:'Morocco',f:'🇲🇦'},{n:'Norway',f:'🇳🇴'},
+    {n:'Switzerland',f:'🇨🇭'},{n:'Uruguay',f:'🇺🇾'},{n:'Canada',f:'🇨🇦'},{n:'Australia',f:'🇦🇺'},
+    {n:'South Korea',f:'🇰🇷'},{n:'Colombia',f:'🇨🇴'}
+  ];
+  const KEY = 'wcgn-scoreboard-v1';
+
+  function blank(){ return {v:1, country:{ruth:null, rose:null}, results:EVENTS.map(()=>null)}; }
+  function load(){
+    try{ const s=JSON.parse(localStorage.getItem(KEY));
+      if(s && s.results && s.results.length===EVENTS.length) return s;
+    }catch(e){}
+    return blank();
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  let state = load();
+
+  const flagOf = n => (COUNTRIES.find(c=>c.n===n)||{}).f || '🏳️';
+
+  function scores(){
+    let ruth=0, rose=0;
+    state.results.forEach(r=>{ if(r==='ruth'){ruth++} else if(r==='rose'){rose++} else if(r==='tie'){ruth++;rose++} });
+    return {ruth, rose};
+  }
+
+  // ---- build static team cards ----
+  const teamsWrap = document.getElementById('teams');
+  Object.entries(TEAMS).forEach(([id,t])=>{
+    const card = document.createElement('div');
+    card.className = 'tcard '+t.cls;
+    card.innerHTML =
+      '<div class="thead"><span class="crest">'+t.crest+'</span>'+
+      '<h3>'+t.name+'</h3><span class="cnt">'+t.players.length+' players</span></div>'+
+      '<div class="tbody"><div class="players">'+
+      t.players.map(p=>'<span>'+p+'</span>').join('')+'</div>'+
+      '<button class="ctybtn" data-team="'+id+'"><span class="cflag">🏳️</span>'+
+      '<span class="clabel">Choose country</span><span class="hintarrow">▾</span></button></div>';
+    teamsWrap.appendChild(card);
+  });
+
+  // ---- build events ----
+  const evWrap = document.getElementById('events');
+  EVENTS.forEach((name,i)=>{
+    const row = document.createElement('div');
+    row.className='ev';
+    row.innerHTML =
+      '<span class="no">'+(i+1)+'</span><span class="ename">'+name+'</span>'+
+      '<span class="pick">'+
+      '<button class="wbtn ruth" data-ev="'+i+'" data-win="ruth"><small>👑</small>Ruth</button>'+
+      '<button class="wbtn tie"  data-ev="'+i+'" data-win="tie">Tie</button>'+
+      '<button class="wbtn rose" data-ev="'+i+'" data-win="rose"><small>🌹</small>Rose</button>'+
+      '</span>';
+    evWrap.appendChild(row);
+  });
+
+  // ---- render dynamic state ----
+  function render(){
+    // country labels
+    ['ruth','rose'].forEach(id=>{
+      const cn = state.country[id];
+      document.getElementById('flag'+cap(id)).textContent = cn?flagOf(cn):'🏳️';
+      document.getElementById('cty'+cap(id)).textContent = cn||'No country yet';
+      const btn = document.querySelector('.ctybtn[data-team="'+id+'"]');
+      btn.querySelector('.cflag').textContent = cn?flagOf(cn):'🏳️';
+      btn.querySelector('.clabel').textContent = cn||'Choose country';
+      btn.classList.toggle('set', !!cn);
+    });
+    // scores
+    const s = scores();
+    document.getElementById('scoreRuth').textContent = s.ruth;
+    document.getElementById('scoreRose').textContent = s.rose;
+    const tot = Math.max(s.ruth+s.rose,1);
+    document.getElementById('barRuth').style.width = (s.ruth/tot*100)+'%';
+    document.getElementById('barRose').style.width = (s.rose/tot*100)+'%';
+    document.getElementById('sideRuth').classList.toggle('lead', s.ruth>s.rose);
+    document.getElementById('sideRose').classList.toggle('lead', s.rose>s.ruth);
+    // event buttons
+    document.querySelectorAll('.wbtn').forEach(b=>{
+      b.classList.toggle('on', state.results[+b.dataset.ev]===b.dataset.win);
+    });
+    // status
+    const done = state.results.filter(r=>r!==null).length;
+    const status = document.getElementById('status');
+    if(done===EVENTS.length){
+      let msg, cty;
+      if(s.ruth>s.rose){ msg='Team Ruth are World Champions!'; cty=state.country.ruth; }
+      else if(s.rose>s.ruth){ msg='Team Rose are World Champions!'; cty=state.country.rose; }
+      else { msg="It's a draw — share the Cup!"; cty=null; }
+      status.innerHTML = '<span class="champ">🏆 '+msg+(cty?' '+flagOf(cty):'')+'</span>';
+    } else if(done===0){
+      status.textContent = 'Assign each squad a country, then tap the winner of each event.';
+    } else {
+      let lead;
+      if(s.ruth>s.rose) lead='Team Ruth lead';
+      else if(s.rose>s.ruth) lead='Team Rose lead';
+      else lead='All square';
+      status.textContent = lead+' · '+done+' of '+EVENTS.length+' events scored';
+    }
+  }
+  const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+
+  // ---- interactions ----
+  evWrap.addEventListener('click', e=>{
+    const b = e.target.closest('.wbtn'); if(!b) return;
+    const i = +b.dataset.ev, w = b.dataset.win;
+    state.results[i] = (state.results[i]===w) ? null : w;  // tap again to clear
+    save(); render();
+  });
+
+  // country modal
+  const modal = document.getElementById('modal');
+  const cgrid = document.getElementById('cgrid');
+  let pickTeam = null;
+  teamsWrap.addEventListener('click', e=>{
+    const b = e.target.closest('.ctybtn'); if(!b) return;
+    openModal(b.dataset.team);
+  });
+  function openModal(team){
+    pickTeam = team;
+    document.getElementById('modalTitle').textContent = 'Pick a country for '+TEAMS[team].name;
+    document.getElementById('modalSub').textContent = 'Tap a nation to represent this squad';
+    const other = team==='ruth'?'rose':'ruth';
+    const taken = state.country[other];
+    cgrid.innerHTML = COUNTRIES.map(c=>{
+      const dis = c.n===taken ? ' disabled' : '';
+      const sel = c.n===state.country[team] ? ' style="outline:2px solid var(--lime)"' : '';
+      return '<button class="cbtn" data-c="'+c.n+'"'+dis+sel+'><div class="cf">'+c.f+'</div><div class="cn">'+c.n+'</div></button>';
+    }).join('') + '<button class="cbtn clear" data-c="">✕ Clear country</button>';
+    modal.classList.add('open');
+  }
+  function closeModal(){ modal.classList.remove('open'); pickTeam=null; }
+  cgrid.addEventListener('click', e=>{
+    const b = e.target.closest('.cbtn'); if(!b || b.disabled) return;
+    state.country[pickTeam] = b.dataset.c || null;
+    save(); render(); closeModal();
+  });
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+  // reset
+  document.getElementById('reset').addEventListener('click', ()=>{
+    if(confirm('Reset all countries and results for a fresh game night?')){
+      state = blank(); save(); render();
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>
