@@ -181,19 +181,28 @@
     padding:.25em .7em;border-radius:999px;
   }
 
-  /* ---- Finale podium ---- */
-  .podium{display:flex;align-items:flex-end;gap:1.2vw;margin:2vh 0 3vh}
-  .step{
-    width:clamp(3.4rem,9vw,6rem);
-    border-radius:14px 14px 0 0;
-    display:flex;flex-direction:column;justify-content:flex-start;align-items:center;
-    padding-top:.6rem;font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;color:var(--ink);
-    box-shadow:0 10px 0 rgba(0,0,0,.25);
+  /* ---- Finale trophy lift ---- */
+  .trophy{
+    font-size:clamp(4.5rem,min(20vw,24vh),12rem);
+    line-height:1;margin:1vh 0 1.4vh;
+    filter:drop-shadow(0 14px 20px rgba(0,0,0,.42));
+    animation:lift 2.6s ease-in-out infinite;
   }
-  .step .medal{font-size:clamp(1.4rem,4vw,2.6rem);margin-bottom:.2rem}
-  .step.s1{height:clamp(8rem,22vh,15rem);background:var(--yellow)}
-  .step.s2{height:clamp(6rem,17vh,11rem);background:#e6e6e6}
-  .step.s3{height:clamp(4.5rem,13vh,8.5rem);background:var(--orange)}
+  @keyframes lift{
+    0%,100%{transform:translateY(0) rotate(-3deg)}
+    50%{transform:translateY(-1.4vh) rotate(3deg)}
+  }
+  .champ{
+    display:inline-block;
+    font-family:'Anton','Arial Narrow','Helvetica Neue',Impact,sans-serif;
+    text-transform:uppercase;letter-spacing:.03em;
+    font-size:clamp(1.4rem,min(5.5vw,6vh),3.2rem);
+    color:var(--ink);background:var(--yellow);
+    padding:.28em 1em;border-radius:16px;
+    transform:rotate(-2deg);
+    box-shadow:0 9px 0 rgba(0,0,0,.24);
+    margin-bottom:2.2vh;
+  }
 
   /* ---- Chrome: dots, nav, wordmark ---- */
   .wordmark{
@@ -250,6 +259,7 @@
   }
   @media (prefers-reduced-motion:reduce){
     .slide.active{animation:none}
+    .trophy{animation:none}
   }
 </style>
 </head>
@@ -421,16 +431,14 @@
 
     <!-- 11 FINALE -->
     <section class="slide" style="--accent:var(--yellow)">
-      <div class="eyebrow">The Big Finish</div>
-      <h1 class="title">Medal<br>Ceremony</h1>
-      <div class="podium">
-        <div class="step s2"><span class="medal">🥈</span>2</div>
-        <div class="step s1"><span class="medal">🥇</span>1</div>
-        <div class="step s3"><span class="medal">🥉</span>3</div>
-      </div>
+      <div class="eyebrow">The Final Whistle</div>
+      <h1 class="title">Lift the Cup</h1>
+      <div class="trophy">🏆</div>
+      <div class="champ">World Champions!</div>
       <div class="goal">Add up the points 🧮</div>
-      <div class="rules" style="max-width:24ch">
-        <div class="rule"><span class="em">🏆</span><span>Most points <b>lifts the Cup</b></span></div>
+      <div class="rules" style="max-width:26ch">
+        <div class="rule"><span class="em">🥇</span><span>Most points are the <b>World Champions</b></span></div>
+        <div class="rule"><span class="em">🙌</span><span>Champions <b>lift the Cup</b> high</span></div>
         <div class="rule"><span class="em">🎉</span><span>Everyone does a big <b>celebration</b>!</span></div>
       </div>
     </section>
