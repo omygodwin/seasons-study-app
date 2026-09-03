@@ -61,21 +61,25 @@ const RIVERS = [
   },
 ];
 
+/* All 11 swatches on this tab have to be told apart at a glance, so each one
+ * owns a distinct hue. Rose's worksheet key colored North America, Australia
+ * and Antarctica in three shades of blue, which read as the same color on a
+ * phone — only the continents keep a color close to her crayons. */
 const CONTINENTS = [
-  { id: 'northamerica', name: 'North America', color: '#3b82f6', fact: 'The continent we live on.' },
-  { id: 'southamerica', name: 'South America', color: '#84cc16', fact: 'Home of the Amazon rainforest.' },
-  { id: 'europe', name: 'Europe', color: '#a97142', fact: 'Joined to Asia — together they are Eurasia.' },
-  { id: 'asia', name: 'Asia', color: '#ef4444', fact: 'The largest continent.' },
-  { id: 'africa', name: 'Africa', color: '#f9a8d4', fact: 'Home of the Nile, the longest river on Earth.' },
-  { id: 'australia', name: 'Australia', color: '#38bdf8', fact: 'The smallest continent.' },
-  { id: 'antarctica', name: 'Antarctica', color: '#bae6fd', fact: 'The frozen continent at the South Pole.' },
+  { id: 'northamerica', name: 'North America', color: '#2563eb', fact: 'The continent we live on.' },
+  { id: 'southamerica', name: 'South America', color: '#16a34a', fact: 'Home of the Amazon rainforest.' },
+  { id: 'europe', name: 'Europe', color: '#92400e', fact: 'Joined to Asia — together they are Eurasia.' },
+  { id: 'asia', name: 'Asia', color: '#dc2626', fact: 'The largest continent.' },
+  { id: 'africa', name: 'Africa', color: '#ec4899', fact: 'Home of the Nile, the longest river on Earth.' },
+  { id: 'australia', name: 'Australia', color: '#f59e0b', fact: 'The smallest continent.' },
+  { id: 'antarctica', name: 'Antarctica', color: '#94a3b8', fact: 'The frozen continent at the South Pole.' },
 ];
 
 const OCEANS = [
-  { id: 'pacific', name: 'Pacific', color: '#0284c7', fact: 'The biggest ocean — west of the United States.' },
-  { id: 'atlantic', name: 'Atlantic', color: '#0369a1', fact: 'Between the Americas and Europe/Africa.' },
-  { id: 'indian', name: 'Indian', color: '#0891b2', fact: 'South of Asia, east of Africa.' },
-  { id: 'arctic', name: 'Arctic', color: '#38bdf8', fact: 'The frozen ocean at the North Pole.' },
+  { id: 'pacific', name: 'Pacific', color: '#1e3a8a', fact: 'The biggest ocean — west of the United States.' },
+  { id: 'atlantic', name: 'Atlantic', color: '#0d9488', fact: 'Between the Americas and Europe/Africa.' },
+  { id: 'indian', name: 'Indian', color: '#7c3aed', fact: 'South of Asia, east of Africa.' },
+  { id: 'arctic', name: 'Arctic', color: '#22d3ee', fact: 'The frozen ocean at the North Pole.' },
 ];
 
 /* The fill-in-the-blanks exactly as they appear on the study sheet. */
@@ -463,7 +467,7 @@ function WorldMap({ progress, setProgress }) {
                 key={c.id}
                 d={CONTINENT_PATHS[c.id].join('')}
                 fillRule="evenodd"
-                fill={wrong === c.id ? '#fda4af' : on ? c.color : '#e8eaee'}
+                fill={wrong === c.id ? '#fda4af' : on ? c.color : '#eef1f5'}
                 stroke="#1e293b"
                 strokeWidth="1"
                 vectorEffect="non-scaling-stroke"
@@ -498,11 +502,14 @@ function WorldMap({ progress, setProgress }) {
                 view={WORLD_VIEW}
                 onClick={() => handleTarget(o, 'ocean')}
                 title={on ? o.name : 'Which ocean is this?'}
-                style={wrong === o.id ? { animation: 'geo-shake .5s' } : undefined}
+                style={{
+                  ...(on ? { borderColor: o.color, color: o.color } : null),
+                  ...(wrong === o.id ? { animation: 'geo-shake .5s' } : null),
+                }}
                 className={`pointer-events-auto min-h-[26px] border-2 ${
                   on
-                    ? 'border-sky-600 bg-white text-sky-800'
-                    : 'border-dashed border-sky-500/80 bg-white/70 text-sky-600 hover:bg-white'
+                    ? 'bg-white'
+                    : 'border-dashed border-slate-500/70 bg-white/70 text-slate-600 hover:bg-white'
                 }`}
               >
                 {on ? o.name : '?'}
