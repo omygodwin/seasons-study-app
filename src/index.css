@@ -2,3 +2,106 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   Printable blank study maps (Geography topic → Print tab).
+   These classes are styled the same on screen and on paper so the on-screen
+   preview is exactly what comes out of the printer.
+   --------------------------------------------------------------------------- */
+
+.print-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 12px;
+  color: #334155;
+}
+
+.print-title {
+  margin: 0.5rem 0 0.75rem;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: underline;
+  color: #0f172a;
+}
+
+.print-key {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 640px) {
+  .print-key {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.print-key-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.print-swatch {
+  flex: none;
+  width: 26px;
+  height: 18px;
+  border: 1.5px solid #000;
+  border-radius: 3px;
+}
+
+.print-eq {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.print-line {
+  flex: 1;
+  height: 18px;
+  border-bottom: 1.5px solid #000;
+}
+
+.print-note {
+  margin-top: 0.75rem;
+  text-align: center;
+  font-size: 12px;
+  color: #334155;
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0.5in;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  /* Chrome/Safari drop background fills unless asked not to. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-sheet {
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
