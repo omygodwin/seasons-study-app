@@ -242,7 +242,7 @@ function Feedback({ message }) {
 function RiverMap({ progress, setProgress }) {
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
-  const [hints, setHints] = useState(true);
+  const [hints, setHints] = useState(false);
   const [wrong, setWrong] = useState(null);
   const [message, setMessage] = useState(null);
 
@@ -390,7 +390,7 @@ function RiverMap({ progress, setProgress }) {
 function WorldMap({ progress, setProgress }) {
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
-  const [hints, setHints] = useState(true);
+  const [hints, setHints] = useState(false);
   const [wrong, setWrong] = useState(null);
   const [message, setMessage] = useState(null);
 
@@ -563,6 +563,18 @@ function RiverFacts() {
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState(new Set());
   const [review, setReview] = useState(new Set());
+  // Answers stay hidden until asked for - this page is for studying, not reading.
+  const [revealedRows, setRevealedRows] = useState(new Set());
+  const [showAllAnswers, setShowAllAnswers] = useState(false);
+  const [showReference, setShowReference] = useState(false);
+
+  const toggleRow = (i) =>
+    setRevealedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
 
   const card = RIVER_FACTS[order[index]];
   const next = () => {
@@ -665,20 +677,56 @@ function RiverFacts() {
       </div>
 
       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h3 className="mb-3 text-lg font-bold text-slate-800">📜 The whole sheet</h3>
-        <ul className="space-y-2 text-sm text-slate-700">
-          {RIVER_FACTS.map((f) => (
-            <li key={f.clue} className="flex flex-wrap items-baseline gap-x-2 border-b border-slate-100 pb-2">
-              <span>{f.clue.replace(/______/g, '_____')}</span>
-              <span className="font-bold text-teal-700">{f.answer}</span>
-            </li>
-          ))}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-lg font-bold text-slate-800">📜 The whole sheet</h3>
+          <button
+            type="button"
+            onClick={() => {
+              setShowAllAnswers((v) => !v);
+              setRevealedRows(new Set());
+            }}
+            className="min-h-[44px] rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200"
+          >
+            {showAllAnswers ? '🙈 Hide answers' : '👀 Show answers'}
+          </button>
+        </div>
+        <ul className="space-y-1 text-sm text-slate-700">
+          {RIVER_FACTS.map((f, i) => {
+            const open = showAllAnswers || revealedRows.has(i);
+            return (
+              <li key={f.clue} className="border-b border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => toggleRow(i)}
+                  className="flex min-h-[44px] w-full flex-wrap items-baseline gap-x-2 py-2 text-left"
+                >
+                  <span>{f.clue.replace(/______/g, '_____')}</span>
+                  {open ? (
+                    <span className="font-bold text-teal-700">{f.answer}</span>
+                  ) : (
+                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-400">
+                      tap
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h3 className="mb-3 text-lg font-bold text-slate-800">🌊 Know each river</h3>
-        <ul className="space-y-2">
+        <button
+          type="button"
+          onClick={() => setShowReference((v) => !v)}
+          className="flex min-h-[44px] w-full items-center justify-between gap-2 text-left"
+        >
+          <h3 className="text-lg font-bold text-slate-800">🌊 Know each river</h3>
+          <span className="text-sm font-bold text-slate-500">
+            {showReference ? 'Hide' : 'Show'}
+          </span>
+        </button>
+        <ul className={`space-y-2 ${showReference ? 'mt-3' : 'hidden'}`}>
           {RIVERS.map((r) => (
             <li key={r.id} className="flex items-center gap-3 border-b border-slate-100 pb-2 text-sm">
               <span
