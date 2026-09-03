@@ -3,9 +3,23 @@ import SeasonsStudyApp from './SeasonsStudyApp';
 import EgyptStudyApp from './EgyptStudyApp';
 import RocksStudyApp from './RocksStudyApp';
 import VocabStudyApp from './VocabStudyApp';
+import GeographyStudyApp from './GeographyStudyApp';
 import LatinVocabStudyApp from './LatinVocabStudyApp';
 import MiddleAgesStudyApp from './MiddleAgesStudyApp';
 import TournamentApp from './tournament/TournamentApp';
+
+const TOPIC_KEY = 'studyTopic';
+
+// Two kids share this app, so it reopens on whichever topic was used last.
+function getSavedTopic(valid) {
+  try {
+    const saved = localStorage.getItem(TOPIC_KEY);
+    if (saved && valid.includes(saved)) return saved;
+  } catch {
+    /* private mode / storage disabled */
+  }
+  return 'seasons';
+}
 
 function getRouteFromHash() {
   const hash = window.location.hash.replace('#', '');
@@ -14,6 +28,7 @@ function getRouteFromHash() {
 }
 
 const ROSE_TOPICS = [
+  { id: 'geography', label: 'Maps & Rivers', emoji: '🗺️' },
   { id: 'vocab', label: 'Vocab Words', emoji: '📚' },
 ];
 const ROSE_TOPIC_IDS = ROSE_TOPICS.map((t) => t.id);
@@ -29,11 +44,21 @@ const RAEGAN_TOPIC_IDS = RAEGAN_TOPICS.map((t) => t.id);
 
 export default function App() {
   const [route, setRoute] = useState(getRouteFromHash);
-  const [studyTopic, setStudyTopic] = useState('seasons');
+  const [studyTopic, setStudyTopic] = useState(() =>
+    getSavedTopic([...ROSE_TOPIC_IDS, ...RAEGAN_TOPIC_IDS]),
+  );
   const [roseOpen, setRoseOpen] = useState(false);
   const [raeganOpen, setRaeganOpen] = useState(false);
   const roseRef = useRef(null);
   const raeganRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TOPIC_KEY, studyTopic);
+    } catch {
+      /* private mode / storage disabled */
+    }
+  }, [studyTopic]);
 
   useEffect(() => {
     function handleHashChange() {
@@ -76,7 +101,7 @@ export default function App() {
 
   return (
     <div>
-      <nav className="bg-gray-800 p-4 text-white flex justify-center items-center sticky top-0 z-20 flex-wrap gap-2">
+      <nav className="no-print sticky top-0 z-20 flex flex-wrap items-center justify-center gap-2 border-b border-white/10 bg-slate-900/95 px-4 py-3 text-white shadow-lg backdrop-blur">
         <div className="relative" ref={raeganRef}>
           <button
             type="button"
@@ -86,8 +111,10 @@ export default function App() {
             }}
             aria-haspopup="menu"
             aria-expanded={raeganOpen}
-            className={`px-4 py-3 min-h-[44px] rounded font-semibold flex items-center gap-2 ${
-              raeganActive ? 'bg-emerald-600' : 'bg-gray-600 hover:bg-gray-700 active:bg-gray-700'
+            className={`flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2.5 font-bold transition ${
+              raeganActive
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-900/40'
+                : 'bg-white/10 text-slate-100 hover:bg-white/20 active:bg-white/20'
             }`}
           >
             <span>🌟 Raegan</span>
@@ -108,7 +135,7 @@ export default function App() {
           {raeganOpen && (
             <div
               role="menu"
-              className="absolute right-0 sm:right-auto sm:left-0 mt-2 min-w-[16rem] rounded-lg bg-gray-900 shadow-2xl ring-1 ring-black/40 overflow-hidden z-30"
+              className="absolute right-0 z-30 mt-2 min-w-[16rem] overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl sm:left-0 sm:right-auto"
             >
               {RAEGAN_TOPICS.map((topic) => {
                 const active = studyTopic === topic.id;
@@ -120,10 +147,10 @@ export default function App() {
                       setStudyTopic(topic.id);
                       setRaeganOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-3 min-h-[44px] flex items-center gap-3 font-semibold ${
+                    className={`flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left font-semibold ${
                       active
-                        ? 'bg-emerald-600 text-white'
-                        : 'text-gray-100 hover:bg-gray-700 active:bg-gray-700'
+                        ? 'bg-emerald-500 text-white'
+                        : 'text-slate-100 hover:bg-white/10 active:bg-white/10'
                     }`}
                   >
                     <span aria-hidden="true">{topic.emoji}</span>
@@ -144,8 +171,10 @@ export default function App() {
             }}
             aria-haspopup="menu"
             aria-expanded={roseOpen}
-            className={`px-4 py-3 min-h-[44px] rounded font-semibold flex items-center gap-2 ${
-              roseActive ? 'bg-purple-600' : 'bg-gray-600 hover:bg-gray-700 active:bg-gray-700'
+            className={`flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2.5 font-bold transition ${
+              roseActive
+                ? 'bg-fuchsia-500 text-white shadow-md shadow-fuchsia-900/40'
+                : 'bg-white/10 text-slate-100 hover:bg-white/20 active:bg-white/20'
             }`}
           >
             <span>🌹 Rose</span>
@@ -166,7 +195,7 @@ export default function App() {
           {roseOpen && (
             <div
               role="menu"
-              className="absolute right-0 sm:right-auto sm:left-0 mt-2 min-w-[14rem] rounded-lg bg-gray-900 shadow-2xl ring-1 ring-black/40 overflow-hidden z-30"
+              className="absolute right-0 z-30 mt-2 min-w-[14rem] overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl sm:left-0 sm:right-auto"
             >
               {ROSE_TOPICS.map((topic) => {
                 const active = studyTopic === topic.id;
@@ -178,10 +207,10 @@ export default function App() {
                       setStudyTopic(topic.id);
                       setRoseOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-3 min-h-[44px] flex items-center gap-3 font-semibold ${
+                    className={`flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left font-semibold ${
                       active
-                        ? 'bg-purple-600 text-white'
-                        : 'text-gray-100 hover:bg-gray-700 active:bg-gray-700'
+                        ? 'bg-fuchsia-500 text-white'
+                        : 'text-slate-100 hover:bg-white/10 active:bg-white/10'
                     }`}
                   >
                     <span aria-hidden="true">{topic.emoji}</span>
@@ -200,6 +229,7 @@ export default function App() {
       {studyTopic === 'latin' && <LatinVocabStudyApp />}
       {studyTopic === 'middleages' && <MiddleAgesStudyApp />}
       {studyTopic === 'vocab' && <VocabStudyApp />}
+      {studyTopic === 'geography' && <GeographyStudyApp />}
     </div>
   );
 }

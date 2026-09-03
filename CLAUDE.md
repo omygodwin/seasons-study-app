@@ -51,13 +51,31 @@ src/
   EgyptStudyApp.jsx         # Ancient Egypt topic
   RocksStudyApp.jsx         # Rocks & Minerals topic
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
+  GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
-  data/                     # Tournament data
+  data/                     # Tournament data + generated map path data
+scripts/                    # Map data generation (see scripts/README.md)
 animal-hospital/            # Independent Vite app → dist/hospital/
 hotel/                      # Independent Vite app → dist/hotel/
 movie-theater/              # Independent Vite app → dist/movie-theater/
 ```
+
+### Geography topic specifics
+
+- `src/data/mapPaths.js` is **generated** from Natural Earth data — do not
+  hand-edit. Regenerate with `scripts/gen_maps.py`; see `scripts/README.md`.
+- Maps are SVG; labels and the ocean tap-targets are HTML positioned over the
+  SVG as a percentage of the `viewBox`, so they stay legible at phone widths
+  instead of scaling down with the drawing. Rivers use
+  `vector-effect="non-scaling-stroke"` for the same reason, and carry a wide
+  transparent hit stroke so thin lines are still tappable.
+- The world `viewBox` is inset — see `scripts/README.md` for why.
+- Map progress lives in `GeographyStudyApp` itself, not the tab components, so
+  switching tabs doesn't wipe it.
+- The Print tab renders blank uncolored maps for printing. Print rules live in
+  `src/index.css`; anything that shouldn't print gets `className="no-print"`
+  (including the nav in `App.jsx`).
 
 ### movie-theater specifics
 
@@ -84,6 +102,8 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   3. Add `{studyTopic === 'foo' && <FooStudyApp />}` render branch
 - Touch-first nav: nav buttons use `min-h-[44px]`; the Rose dropdown closes on
   outside tap or Escape. Preserve these when editing nav.
+- The selected topic is remembered in `localStorage` (`studyTopic`) so the app
+  reopens on whichever child used it last.
 - No test framework — verify with `npm run build` and manual browser check.
 
 ## Gotchas
