@@ -17,8 +17,8 @@ Sub-apps build independently:
 
 ```bash
 cd animal-hospital && npm ci && npm run build       # → animal-hospital/dist
-cd hotel && npm install && npm run build            # → hotel/dist
-cd movie-theater && npm install && npm run build    # → movie-theater/dist
+cd hotel && npm ci && npm run build                 # → hotel/dist
+cd movie-theater && npm ci && npm run build         # → movie-theater/dist
 ```
 
 ## Deployment
@@ -116,9 +116,12 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 
 ## Gotchas
 
-- The `animal-hospital` build uses `npm ci` (lockfile-strict); `hotel/` and
-  `movie-theater/` use `npm install` because their lockfiles are intentionally
-  absent (see commit 83762e3 for hotel; same pattern for movie-theater).
+- All four apps commit a lockfile and install with `npm ci`. `hotel/` and
+  `movie-theater/` previously had no lockfile (commit 83762e3, to dodge an
+  esbuild version clash), which forced `npm install` to re-resolve the whole
+  tree from the registry on every deploy — that was the difference between an
+  80-second and a 14-minute deploy. Lockfiles were regenerated and the clash
+  did not recur; keep them committed and keep the installs on `npm ci`.
 - PWA manifest lives at `public/manifest.json`.
 - Shared Firebase Realtime DB project `roseruthclinic` is used by `hotel/`,
   `animal-hospital/`, and `movie-theater/` (under namespace `movieTheater`),
