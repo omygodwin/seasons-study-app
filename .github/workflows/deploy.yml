@@ -13,6 +13,12 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Every app installs with `npm ci` against a committed lockfile. `npm install`
+# without one has to re-resolve the whole dependency tree from the registry on
+# every run, which is what made deploys swing between 80s and 14 minutes.
+env:
+  NPM_FLAGS: --prefer-offline --no-audit --no-fund
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -26,14 +32,21 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          # All four lockfiles, so the cached ~/.npm covers every app and is
+          # invalidated when any of them changes.
+          cache-dependency-path: |
+            package-lock.json
+            animal-hospital/package-lock.json
+            hotel/package-lock.json
+            movie-theater/package-lock.json
 
       # Build main study app
-      - run: npm ci
+      - run: npm ci $NPM_FLAGS
       - run: npm run build
 
       # Build animal hospital app
       - name: Install hospital dependencies
-        run: npm ci
+        run: npm ci $NPM_FLAGS
         working-directory: animal-hospital
 
       - name: Build hospital app
@@ -46,7 +59,7 @@ jobs:
 
       # Build hotel app
       - name: Install hotel dependencies
-        run: npm install
+        run: npm ci $NPM_FLAGS
         working-directory: hotel
 
       - name: Build hotel app
@@ -59,7 +72,7 @@ jobs:
 
       # Build movie-theater app
       - name: Install movie-theater dependencies
-        run: npm install
+        run: npm ci $NPM_FLAGS
         working-directory: movie-theater
 
       - name: Build movie-theater app
