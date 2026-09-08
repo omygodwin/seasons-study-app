@@ -52,6 +52,7 @@ src/
   RocksStudyApp.jsx         # Rocks & Minerals topic
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
   GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
+  MorningRoutineApp.jsx     # Rose's morning routine checklist (not a study topic)
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
@@ -76,6 +77,19 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 - The Print tab renders blank uncolored maps for printing. Print rules live in
   `src/index.css`; anything that shouldn't print gets `className="no-print"`
   (including the nav in `App.jsx`).
+
+### Morning Routine specifics
+
+- `MorningRoutineApp.jsx` is a checklist, not a study topic, so it skips the
+  flashcard/quiz pattern the `*StudyApp` files share. It still sits in Rose's
+  dropdown as a dated topic and still uses the tabs + Print tab conventions.
+- The step times are computed BACKWARDS from the leave time, so the only value
+  worth editing is `minutes` on each step in `STEPS`; every displayed time
+  follows from those and the leave time she picks.
+- Today's checked steps live in `localStorage` under `roseMorningRoutine`
+  (`{date, leaveTime, done}`). The `date` is a **local** date — using a UTC one
+  would roll the list over in the evening and wipe it mid-day. The saved
+  `leaveTime` persists across days; `done` only survives while the date matches.
 
 ### movie-theater specifics
 
