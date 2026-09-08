@@ -293,7 +293,7 @@ export default function MorningRoutineApp() {
           <span>Name: ______________________</span>
           <span>Date: ____________</span>
         </div>
-        <h3 className="print-title">Morning Routine 💖🏀</h3>
+        <h3 className="print-title">September Morning Routine 💖🏀</h3>
         <ul className="space-y-2">
           {schedule.map((step) => (
             <li key={step.id} className="flex items-center gap-3 border-b border-slate-200 py-2">
@@ -320,10 +320,10 @@ export default function MorningRoutineApp() {
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-sky-50 p-4 font-sans">
       <div className="mx-auto max-w-3xl">
         <header className="no-print mb-6 text-center">
-          <h1 className="bg-gradient-to-r from-pink-400 to-sky-400 bg-clip-text text-4xl font-bold text-transparent">
-            Morning Routine
+          <h1 className="bg-gradient-to-r from-pink-400 to-sky-400 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
+            September Morning Routine
           </h1>
-          <h2 className="text-lg text-slate-600">September · tea, skincare, and out the door 💖🏀</h2>
+          <h2 className="text-lg text-slate-600">Tea, skincare, and out the door 💖🏀</h2>
         </header>
 
         <div className="no-print mb-6 flex flex-wrap justify-center gap-2">
