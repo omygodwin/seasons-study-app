@@ -42,14 +42,14 @@ const STEPS = [
     id: 'breakfast',
     label: 'Breakfast',
     emoji: '🥞',
-    minutes: 20,
+    minutes: 15,
     note: 'Something with protein so you still have legs at practice.',
   },
   {
     id: 'blowdry',
     label: 'Blow dry hair',
     emoji: '💨',
-    minutes: 10,
+    minutes: 15,
     note: 'Finish on the cool shot — it sets the style.',
   },
   {
