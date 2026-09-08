@@ -42,7 +42,7 @@ const STEPS = [
     id: 'breakfast',
     label: 'Breakfast',
     emoji: '🥞',
-    minutes: 15,
+    minutes: 20,
     note: 'Something with protein so you still have legs at practice.',
   },
   {
@@ -56,14 +56,14 @@ const STEPS = [
     id: 'skincare',
     label: 'Skincare',
     emoji: '🧴',
-    minutes: 8,
+    minutes: 10,
     note: 'Cleanse → serum → moisturizer → SPF. Sunscreen every single day.',
   },
   {
     id: 'shoes',
     label: 'Shoes & socks',
     emoji: '👟',
-    minutes: 3,
+    minutes: 5,
     note: 'Sports socks if it is a practice day.',
   },
   {
@@ -77,7 +77,7 @@ const STEPS = [
 
 const TOTAL_MINUTES = STEPS.reduce((sum, step) => sum + step.minutes, 0);
 const STORAGE_KEY = 'roseMorningRoutine';
-const DEFAULT_LEAVE = '07:45';
+const DEFAULT_LEAVE = '07:30';
 
 /* Local date, not UTC — at 11pm Central a UTC date would already be tomorrow
  * and would wipe the checklist mid-evening. */
@@ -90,7 +90,7 @@ function todayKey() {
 
 function parseTime(value) {
   const [h, m] = value.split(':').map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return 7 * 60 + 45;
+  if (Number.isNaN(h) || Number.isNaN(m)) return 7 * 60 + 30;
   return h * 60 + m;
 }
 
@@ -171,24 +171,24 @@ export default function MorningRoutineApp() {
               type="time"
               value={leaveTime}
               onChange={(e) => setLeaveTime(e.target.value)}
-              className="min-h-[44px] rounded-xl border-2 border-pink-200 bg-pink-50 px-3 font-bold text-pink-700 focus:border-pink-400 focus:outline-none"
+              className="min-h-[44px] rounded-xl border-2 border-pink-200 bg-pink-50 px-3 font-bold text-pink-500 focus:border-pink-300 focus:outline-none"
             />
           </label>
-          <p className="text-sm font-semibold text-sky-700">
+          <p className="text-sm font-semibold text-sky-600">
             ☀️ Wake up at {schedule[0].time} ({TOTAL_MINUTES} min routine)
           </p>
         </div>
 
         <div className="mt-4">
           <div className="mb-1 flex items-baseline justify-between text-sm font-bold">
-            <span className="text-pink-600">
+            <span className="text-pink-500">
               {done.size} / {STEPS.length} done
             </span>
-            <span className="text-sky-600">{percent}%</span>
+            <span className="text-sky-500">{percent}%</span>
           </div>
-          <div className="h-4 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-4 w-full overflow-hidden rounded-full bg-pink-50">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-pink-400 to-sky-400 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-pink-300 to-sky-300 transition-all duration-500"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -196,12 +196,12 @@ export default function MorningRoutineApp() {
 
         <p className="mt-3 text-center text-sm font-semibold text-slate-600">
           {finished ? (
-            <span className="text-pink-600">
+            <span className="text-pink-500">
               🏆 Whole routine done — glowing and out the door. Have the best day! 💖
             </span>
           ) : (
             <>
-              Next up: {nextStep.emoji} <span className="text-sky-700">{nextStep.label}</span> at{' '}
+              Next up: {nextStep.emoji} <span className="text-sky-600">{nextStep.label}</span> at{' '}
               {nextStep.time}
             </>
           )}
@@ -220,17 +220,17 @@ export default function MorningRoutineApp() {
                 aria-pressed={isDone}
                 className={`flex min-h-[64px] w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition ${
                   isDone
-                    ? 'border-pink-200 bg-pink-50'
+                    ? 'border-pink-100 bg-pink-50'
                     : isNext
-                      ? 'border-sky-400 bg-white shadow-lg ring-2 ring-sky-200'
-                      : 'border-slate-200 bg-white shadow-sm hover:border-sky-200'
+                      ? 'border-sky-300 bg-white shadow-lg ring-2 ring-sky-100'
+                      : 'border-pink-100 bg-white shadow-sm hover:border-sky-200'
                 }`}
               >
                 <span
                   className={`flex h-9 w-9 flex-none items-center justify-center rounded-full border-2 text-lg font-bold ${
                     isDone
-                      ? 'border-pink-400 bg-pink-400 text-white'
-                      : 'border-slate-300 text-slate-400'
+                      ? 'border-pink-300 bg-pink-200 text-pink-600'
+                      : 'border-pink-200 text-slate-400'
                   }`}
                   aria-hidden="true"
                 >
@@ -254,7 +254,7 @@ export default function MorningRoutineApp() {
                 <span className="flex-none text-right">
                   <span
                     className={`block text-sm font-bold ${
-                      isDone ? 'text-pink-400' : 'text-sky-700'
+                      isDone ? 'text-pink-300' : 'text-sky-600'
                     }`}
                   >
                     {step.time}
@@ -273,7 +273,7 @@ export default function MorningRoutineApp() {
         <button
           type="button"
           onClick={() => setDone(new Set())}
-          className="min-h-[44px] rounded-full bg-slate-500 px-6 font-semibold text-white hover:bg-slate-600"
+          className="min-h-[44px] rounded-full border-2 border-pink-200 bg-white px-6 font-semibold text-pink-500 hover:bg-pink-50"
         >
           🔄 Start Over
         </button>
@@ -320,7 +320,7 @@ export default function MorningRoutineApp() {
     <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-sky-50 p-4 font-sans">
       <div className="mx-auto max-w-3xl">
         <header className="no-print mb-6 text-center">
-          <h1 className="bg-gradient-to-r from-pink-500 to-sky-500 bg-clip-text text-4xl font-bold text-transparent">
+          <h1 className="bg-gradient-to-r from-pink-400 to-sky-400 bg-clip-text text-4xl font-bold text-transparent">
             Morning Routine
           </h1>
           <h2 className="text-lg text-slate-600">September · tea, skincare, and out the door 💖🏀</h2>
@@ -334,8 +334,8 @@ export default function MorningRoutineApp() {
               onClick={() => setActiveTab(t.id)}
               className={`min-h-[44px] rounded-lg px-4 font-semibold transition-transform duration-200 ${
                 activeTab === t.id
-                  ? 'scale-110 bg-gradient-to-r from-pink-500 to-sky-500 text-white shadow-md'
-                  : 'bg-white text-pink-600 shadow-sm hover:bg-pink-50'
+                  ? 'scale-110 border-2 border-pink-200 bg-gradient-to-r from-pink-100 to-sky-100 text-slate-700 shadow-md'
+                  : 'border-2 border-transparent bg-white/70 text-slate-500 shadow-sm hover:bg-pink-50'
               }`}
             >
               {t.name}
