@@ -177,12 +177,20 @@ export const SCHOOL_ROUTINE = {
       note: 'Homework in, folders in, lunch and water bottle in.',
     },
     {
+      id: 'shoes',
+      color: 'cyan',
+      label: 'Shoes & socks',
+      emoji: '👟',
+      minutes: 5,
+      note: 'Laces tied — sports socks if it is a practice day.',
+    },
+    {
       id: 'leave',
       color: 'rose',
       label: 'Leave',
       emoji: '🚪',
       minutes: 0,
-      note: 'Shoes on, door open. Go get it. 💪',
+      note: 'Everything is packed and on. Go get it. 💪',
     },
   ],
 };
