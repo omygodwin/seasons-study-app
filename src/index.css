@@ -119,6 +119,16 @@
     page-break-after: always;
   }
 
+  /* Sized for an 8.5x11 sheet read from across the room, not for a screen. */
+  .print-title {
+    font-size: 26px;
+  }
+
+  .print-head,
+  .print-note {
+    font-size: 13px;
+  }
+
   .print-sheet:last-child {
     break-after: auto;
     page-break-after: auto;

@@ -229,7 +229,7 @@ export default function RoutineApp({ routine }) {
    * below, so Ctrl+P from either tab prints the sheet and never the
    * interactive checklist. Print rules live in src/index.css. */
   const renderSheet = () => (
-    <div className="print-sheet mx-auto max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow">
+    <div className="print-sheet mx-auto max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow print:flex print:min-h-[9.5in] print:max-w-none print:flex-col">
       <div className="print-head">
         <span>Name: ______________________</span>
         <span>{sheetStyle === 'week' ? 'Week of: ____________' : 'Date: ____________'}</span>
@@ -237,44 +237,49 @@ export default function RoutineApp({ routine }) {
       <h3 className="print-title">{sheetTitle}</h3>
 
       {sheetStyle === 'week' ? (
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border border-slate-500 p-2 text-left text-sm">Step</th>
-              <th className="border border-slate-500 p-2 text-sm">Time</th>
-              {WEEKDAYS.map((day) => (
-                <th key={day} className="w-10 border border-slate-500 p-2 text-sm">
-                  {day}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {schedule.map((step) => (
-              <tr key={step.id}>
-                <td className="border border-slate-500 p-2 font-bold">
-                  <span aria-hidden="true">{step.emoji}</span> {step.label}
-                </td>
-                <td className="whitespace-nowrap border border-slate-500 p-2 text-center text-sm font-semibold">
-                  {step.time}
-                </td>
+        <div className="print:flex print:flex-1 print:flex-col">
+          <table className="w-full border-collapse print:flex-1">
+            <thead>
+              <tr>
+                <th className="border border-slate-500 p-3 text-left text-sm print:text-base">Step</th>
+                <th className="border border-slate-500 p-3 text-sm print:text-base">Time</th>
                 {WEEKDAYS.map((day) => (
-                  <td key={day} className="h-9 border border-slate-500" />
+                  <th key={day} className="w-12 border border-slate-500 p-3 text-sm print:text-base">
+                    {day}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {schedule.map((step) => (
+                <tr key={step.id}>
+                  <td className="border border-slate-500 p-3 font-bold print:text-lg">
+                    <span aria-hidden="true">{step.emoji}</span> {step.label}
+                  </td>
+                  <td className="whitespace-nowrap border border-slate-500 p-3 text-center text-sm font-semibold print:text-base">
+                    {step.time}
+                  </td>
+                  {WEEKDAYS.map((day) => (
+                    <td key={day} className="h-9 border border-slate-500" />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
-        <ul>
+        <ul className="print:flex print:flex-1 print:flex-col">
           {schedule.map((step) => (
-            <li key={step.id} className="flex items-center gap-4 border-b border-slate-300 py-3">
-              <span className="h-7 w-7 flex-none rounded border-2 border-slate-900" />
-              <span className="text-2xl" aria-hidden="true">
+            <li
+              key={step.id}
+              className="flex items-center gap-4 border-b border-slate-300 py-3 print:flex-1"
+            >
+              <span className="h-7 w-7 flex-none rounded border-2 border-slate-900 print:h-10 print:w-10" />
+              <span className="text-2xl print:text-4xl" aria-hidden="true">
                 {step.emoji}
               </span>
-              <span className="flex-1 text-lg font-bold">{step.label}</span>
-              <span className="whitespace-nowrap text-base font-semibold text-slate-700">
+              <span className="flex-1 text-lg font-bold print:text-2xl">{step.label}</span>
+              <span className="whitespace-nowrap text-base font-semibold text-slate-700 print:text-xl">
                 {step.time}
               </span>
             </li>

@@ -96,6 +96,10 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   while everything on screen sits inside `.no-print`. `.print-page` on the
   outer wrapper drops the gradient and full-page height for paper. The Print
   tab's own button just calls `window.print()`.
+- The sheet is laid out for an 8.5x11 page: `print:` variants drop the screen
+  max-width, enlarge the type, and let the rows (or the week grid's table)
+  flex to fill the page height. Check changes against a real Letter render —
+  `page.pdf({format: 'Letter'})` — not just a print-media screenshot.
 - Today's checked steps live in `localStorage` under the routine's
   `storageKey` (`{date, leaveTime, done}`). The `date` is a **local** date — using a UTC one
   would roll the list over in the evening and wipe it mid-day. The saved
