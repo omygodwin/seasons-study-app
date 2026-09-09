@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 
 /* One routine, rendered from a config in routines.js — the checklist, the
  * schedule and the printable sheet are the same for every routine, only the
@@ -7,24 +7,78 @@ import React, { useState, useEffect, useMemo } from 'react';
  * `minutes` is how long each step usually takes. The schedule is built
  * BACKWARDS from the time she has to leave, so changing the leave time moves
  * every other time with it — no math on a school morning. */
-const WEEKDAYS = ['M', 'T', 'W', 'Th', 'F'];
+/* One accent per step, so the list reads as a row of colors instead of nine
+ * identical cards. Written out in full because Tailwind only keeps the class
+ * names it can literally see in the source — no `bg-${color}-100` shortcuts.
+ * They stay pale: the pink-and-blue frame is still the loudest thing here. */
+const ACCENTS = {
+  pink: {
+    bubble: "bg-pink-100",
+    stripe: "border-l-pink-300",
+    num: "border-pink-200 text-pink-500",
+  },
+  rose: {
+    bubble: "bg-rose-100",
+    stripe: "border-l-rose-300",
+    num: "border-rose-200 text-rose-500",
+  },
+  orange: {
+    bubble: "bg-orange-100",
+    stripe: "border-l-orange-300",
+    num: "border-orange-200 text-orange-500",
+  },
+  amber: {
+    bubble: "bg-amber-100",
+    stripe: "border-l-amber-300",
+    num: "border-amber-200 text-amber-600",
+  },
+  green: {
+    bubble: "bg-green-100",
+    stripe: "border-l-green-300",
+    num: "border-green-200 text-green-600",
+  },
+  teal: {
+    bubble: "bg-teal-100",
+    stripe: "border-l-teal-300",
+    num: "border-teal-200 text-teal-600",
+  },
+  sky: {
+    bubble: "bg-sky-100",
+    stripe: "border-l-sky-300",
+    num: "border-sky-200 text-sky-600",
+  },
+  blue: {
+    bubble: "bg-blue-100",
+    stripe: "border-l-blue-300",
+    num: "border-blue-200 text-blue-500",
+  },
+  purple: {
+    bubble: "bg-purple-100",
+    stripe: "border-l-purple-300",
+    num: "border-purple-200 text-purple-500",
+  },
+};
+const DEFAULT_ACCENT = ACCENTS.pink;
+const accentFor = (step) => ACCENTS[step.color] ?? DEFAULT_ACCENT;
+
+const WEEKDAYS = ["M", "T", "W", "Th", "F"];
 const SHEET_STYLES = [
-  { id: 'day', name: '📄 One day' },
-  { id: 'week', name: '🗓️ Whole week' },
+  { id: "day", name: "📄 One day" },
+  { id: "week", name: "🗓️ Whole week" },
 ];
 /* Local date, not UTC — at 11pm Central a UTC date would already be tomorrow
  * and would wipe the checklist mid-evening. */
 function todayKey() {
   const d = new Date();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
 function parseTime(value, fallback) {
-  const [h, m] = String(value).split(':').map(Number);
+  const [h, m] = String(value).split(":").map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) {
-    const [fh, fm] = fallback.split(':').map(Number);
+    const [fh, fm] = fallback.split(":").map(Number);
     return fh * 60 + fm;
   }
   return h * 60 + m;
@@ -35,7 +89,7 @@ function formatTime(totalMinutes) {
   const hour24 = Math.floor(wrapped / 60);
   const minute = wrapped % 60;
   const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-  return `${hour12}:${String(minute).padStart(2, '0')} ${hour24 < 12 ? 'AM' : 'PM'}`;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${hour24 < 12 ? "AM" : "PM"}`;
 }
 
 // Checked-off steps are kept for today only, so the list is fresh every morning.
@@ -46,8 +100,12 @@ function loadSaved(storageKey, defaultLeave) {
     if (!raw) return null;
     const saved = JSON.parse(raw);
     return {
-      leaveTime: typeof saved.leaveTime === 'string' ? saved.leaveTime : defaultLeave,
-      done: saved.date === todayKey() && Array.isArray(saved.done) ? saved.done : [],
+      leaveTime:
+        typeof saved.leaveTime === "string" ? saved.leaveTime : defaultLeave,
+      done:
+        saved.date === todayKey() && Array.isArray(saved.done)
+          ? saved.done
+          : [],
     };
   } catch {
     /* private mode / storage disabled / bad JSON */
@@ -56,15 +114,23 @@ function loadSaved(storageKey, defaultLeave) {
 }
 
 export default function RoutineApp({ routine }) {
-  const { steps, storageKey, defaultLeave, title, subtitle, sheetTitle, doneMessage } = routine;
+  const {
+    steps,
+    storageKey,
+    defaultLeave,
+    title,
+    subtitle,
+    sheetTitle,
+    doneMessage,
+  } = routine;
   const totalMinutes = useMemo(
     () => steps.reduce((sum, step) => sum + step.minutes, 0),
     [steps],
   );
 
   const [saved] = useState(() => loadSaved(storageKey, defaultLeave));
-  const [activeTab, setActiveTab] = useState('checklist');
-  const [sheetStyle, setSheetStyle] = useState('day');
+  const [activeTab, setActiveTab] = useState("checklist");
+  const [sheetStyle, setSheetStyle] = useState("day");
   const [leaveTime, setLeaveTime] = useState(saved?.leaveTime ?? defaultLeave);
   const [done, setDone] = useState(() => new Set(saved?.done ?? []));
 
@@ -119,8 +185,8 @@ export default function RoutineApp({ routine }) {
             />
           </label>
           <p className="text-sm font-semibold text-sky-600">
-            {schedule[0].emoji} {schedule[0].label} at {schedule[0].time} ({totalMinutes} min
-            routine)
+            {schedule[0].emoji} {schedule[0].label} at {schedule[0].time} (
+            {totalMinutes} min routine)
           </p>
         </div>
 
@@ -133,7 +199,7 @@ export default function RoutineApp({ routine }) {
           </div>
           <div className="h-4 w-full overflow-hidden rounded-full bg-pink-50">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-pink-300 to-sky-300 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-pink-300 via-purple-300 to-sky-300 transition-all duration-500"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -144,7 +210,8 @@ export default function RoutineApp({ routine }) {
             <span className="text-pink-500">{doneMessage}</span>
           ) : (
             <>
-              Next up: {nextStep.emoji} <span className="text-sky-600">{nextStep.label}</span> at{' '}
+              Next up: {nextStep.emoji}{" "}
+              <span className="text-sky-600">{nextStep.label}</span> at{" "}
               {nextStep.time}
             </>
           )}
@@ -155,55 +222,65 @@ export default function RoutineApp({ routine }) {
         {schedule.map((step, index) => {
           const isDone = done.has(step.id);
           const isNext = !finished && step.id === nextStep.id;
+          const accent = accentFor(step);
           return (
             <li key={step.id}>
               <button
                 type="button"
                 onClick={() => toggleStep(step.id)}
                 aria-pressed={isDone}
-                className={`flex min-h-[64px] w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition ${
+                className={`flex min-h-[64px] w-full items-center gap-3 rounded-2xl border-2 border-l-8 p-3 text-left transition ${accent.stripe} ${
                   isDone
-                    ? 'border-pink-100 bg-pink-50'
+                    ? "border-pink-100 bg-pink-50"
                     : isNext
-                      ? 'border-sky-300 bg-white shadow-lg ring-2 ring-sky-100'
-                      : 'border-pink-100 bg-white shadow-sm hover:border-sky-200'
+                      ? "border-sky-300 bg-white shadow-lg ring-2 ring-sky-100"
+                      : "border-pink-100 bg-white shadow-sm hover:border-sky-200"
                 }`}
               >
                 <span
-                  className={`flex h-9 w-9 flex-none items-center justify-center rounded-full border-2 text-lg font-bold ${
+                  className={`flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 text-sm font-bold ${
                     isDone
-                      ? 'border-pink-300 bg-pink-200 text-pink-600'
-                      : 'border-pink-200 text-slate-400'
+                      ? "border-pink-300 bg-pink-200 text-pink-600"
+                      : accent.num
                   }`}
                   aria-hidden="true"
                 >
-                  {isDone ? '✓' : index + 1}
+                  {isDone ? "✓" : index + 1}
                 </span>
-                <span className="text-3xl" aria-hidden="true">
+                <span
+                  className={`flex h-12 w-12 flex-none items-center justify-center rounded-2xl text-3xl ${
+                    isDone ? "bg-pink-100" : accent.bubble
+                  }`}
+                  aria-hidden="true"
+                >
                   {step.emoji}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span
                     className={`block text-lg font-bold ${
-                      isDone ? 'text-pink-400 line-through' : 'text-slate-800'
+                      isDone ? "text-pink-400 line-through" : "text-slate-800"
                     }`}
                   >
                     {step.label}
                   </span>
-                  <span className={`block text-sm ${isDone ? 'text-pink-300' : 'text-slate-500'}`}>
+                  <span
+                    className={`block text-sm ${isDone ? "text-pink-300" : "text-slate-500"}`}
+                  >
                     {step.note}
                   </span>
                 </span>
                 <span className="flex-none text-right">
                   <span
                     className={`block text-sm font-bold ${
-                      isDone ? 'text-pink-300' : 'text-sky-600'
+                      isDone ? "text-pink-300" : "text-sky-600"
                     }`}
                   >
                     {step.time}
                   </span>
                   {step.minutes > 0 && (
-                    <span className="block text-xs text-slate-400">{step.minutes} min</span>
+                    <span className="block text-xs text-slate-400">
+                      {step.minutes} min
+                    </span>
                   )}
                 </span>
               </button>
@@ -232,19 +309,30 @@ export default function RoutineApp({ routine }) {
     <div className="print-sheet mx-auto max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow print:flex print:min-h-[9.5in] print:max-w-none print:flex-col">
       <div className="print-head">
         <span>Name: ______________________</span>
-        <span>{sheetStyle === 'week' ? 'Week of: ____________' : 'Date: ____________'}</span>
+        <span>
+          {sheetStyle === "week"
+            ? "Week of: ____________"
+            : "Date: ____________"}
+        </span>
       </div>
       <h3 className="print-title">{sheetTitle}</h3>
 
-      {sheetStyle === 'week' ? (
+      {sheetStyle === "week" ? (
         <div className="print:flex print:flex-1 print:flex-col">
           <table className="w-full border-collapse print:flex-1">
             <thead>
               <tr>
-                <th className="border border-slate-500 p-3 text-left text-sm print:text-base">Step</th>
-                <th className="border border-slate-500 p-3 text-sm print:text-base">Time</th>
+                <th className="border border-slate-500 p-3 text-left text-sm print:text-base">
+                  Step
+                </th>
+                <th className="border border-slate-500 p-3 text-sm print:text-base">
+                  Time
+                </th>
                 {WEEKDAYS.map((day) => (
-                  <th key={day} className="w-12 border border-slate-500 p-3 text-sm print:text-base">
+                  <th
+                    key={day}
+                    className="w-12 border border-slate-500 p-3 text-sm print:text-base"
+                  >
                     {day}
                   </th>
                 ))}
@@ -253,7 +341,9 @@ export default function RoutineApp({ routine }) {
             <tbody>
               {schedule.map((step) => (
                 <tr key={step.id}>
-                  <td className="border border-slate-500 p-3 font-bold print:text-lg">
+                  <td
+                    className={`border border-l-8 border-slate-500 p-3 font-bold print:text-lg ${accentFor(step).stripe}`}
+                  >
                     <span aria-hidden="true">{step.emoji}</span> {step.label}
                   </td>
                   <td className="whitespace-nowrap border border-slate-500 p-3 text-center text-sm font-semibold print:text-base">
@@ -272,13 +362,15 @@ export default function RoutineApp({ routine }) {
           {schedule.map((step) => (
             <li
               key={step.id}
-              className="flex items-center gap-4 border-b border-slate-300 py-3 print:flex-1"
+              className={`flex items-center gap-4 border-b border-l-8 border-slate-300 py-3 pl-3 print:flex-1 ${accentFor(step).stripe}`}
             >
               <span className="h-7 w-7 flex-none rounded border-2 border-slate-900 print:h-10 print:w-10" />
               <span className="text-2xl print:text-4xl" aria-hidden="true">
                 {step.emoji}
               </span>
-              <span className="flex-1 text-lg font-bold print:text-2xl">{step.label}</span>
+              <span className="flex-1 text-lg font-bold print:text-2xl">
+                {step.label}
+              </span>
               <span className="whitespace-nowrap text-base font-semibold text-slate-700 print:text-xl">
                 {step.time}
               </span>
@@ -287,7 +379,9 @@ export default function RoutineApp({ routine }) {
         </ul>
       )}
 
-      <p className="print-note">Out the door by {formatTime(parseTime(leaveTime, defaultLeave))} ✨</p>
+      <p className="print-note">
+        Out the door by {formatTime(parseTime(leaveTime, defaultLeave))} ✨
+      </p>
     </div>
   );
 
@@ -301,8 +395,8 @@ export default function RoutineApp({ routine }) {
             onClick={() => setSheetStyle(style.id)}
             className={`min-h-[44px] rounded-full border-2 px-4 font-semibold ${
               sheetStyle === style.id
-                ? 'border-pink-200 bg-pink-50 text-pink-500'
-                : 'border-transparent bg-white/70 text-slate-500 hover:bg-pink-50'
+                ? "border-pink-200 bg-pink-50 text-pink-500"
+                : "border-transparent bg-white/70 text-slate-500 hover:bg-pink-50"
             }`}
           >
             {style.name}
@@ -317,9 +411,9 @@ export default function RoutineApp({ routine }) {
         </button>
       </div>
       <p className="text-center text-sm text-slate-500">
-        {sheetStyle === 'week'
-          ? 'One sheet covers Monday to Friday — a box to tick per day.'
-          : 'One day per sheet, with room to tick each step off.'}{' '}
+        {sheetStyle === "week"
+          ? "One sheet covers Monday to Friday — a box to tick per day."
+          : "One day per sheet, with room to tick each step off."}{" "}
         Times follow the leave time on the Checklist tab.
       </p>
       {renderSheet()}
@@ -327,15 +421,15 @@ export default function RoutineApp({ routine }) {
   );
 
   const tabs = [
-    { id: 'checklist', name: '✅ Checklist' },
-    { id: 'print', name: '🖨️ Print' },
+    { id: "checklist", name: "✅ Checklist" },
+    { id: "print", name: "🖨️ Print" },
   ];
 
   return (
-    <div className="print-page min-h-screen bg-gradient-to-b from-pink-50 via-white to-sky-50 p-4 font-sans">
+    <div className="print-page min-h-screen bg-gradient-to-b from-pink-50 via-purple-50 to-sky-50 p-4 font-sans">
       <div className="no-print mx-auto max-w-3xl">
         <header className="no-print mb-6 text-center">
-          <h1 className="bg-gradient-to-r from-pink-400 to-sky-400 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
+          <h1 className="bg-gradient-to-r from-pink-400 via-purple-400 to-sky-400 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
             {title}
           </h1>
           <h2 className="text-lg text-slate-600">{subtitle}</h2>
@@ -349,8 +443,8 @@ export default function RoutineApp({ routine }) {
               onClick={() => setActiveTab(t.id)}
               className={`min-h-[44px] rounded-lg px-4 font-semibold transition-transform duration-200 ${
                 activeTab === t.id
-                  ? 'scale-110 border-2 border-pink-200 bg-gradient-to-r from-pink-100 to-sky-100 text-slate-700 shadow-md'
-                  : 'border-2 border-transparent bg-white/70 text-slate-500 shadow-sm hover:bg-pink-50'
+                  ? "scale-110 border-2 border-pink-200 bg-gradient-to-r from-pink-100 via-purple-100 to-sky-100 text-slate-700 shadow-md"
+                  : "border-2 border-transparent bg-white/70 text-slate-500 shadow-sm hover:bg-pink-50"
               }`}
             >
               {t.name}
@@ -358,8 +452,8 @@ export default function RoutineApp({ routine }) {
           ))}
         </div>
 
-        {activeTab === 'checklist' && renderChecklist()}
-        {activeTab === 'print' && renderPrintTab()}
+        {activeTab === "checklist" && renderChecklist()}
+        {activeTab === "print" && renderPrintTab()}
       </div>
 
       {/* The paper copy. Hidden on screen, so what prints is the same sheet

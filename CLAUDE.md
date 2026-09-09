@@ -88,6 +88,10 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 - Adding a routine means adding a config to `routines/routines.js` and one
   `<RoutineApp routine={...} />` branch — do not copy `RoutineApp.jsx`. Every
   routine needs its own `storageKey`, or two routines share one day's ticks.
+- Each step's `color` names an entry in `ACCENTS` (RoutineApp.jsx), which
+  tints its emoji bubble, number and left stripe on screen and on paper. The
+  class strings are written out in full because Tailwind only keeps class
+  names it can see literally — `bg-${color}-100` would be purged.
 - The step times are computed BACKWARDS from the leave time, so the only value
   worth editing is `minutes` on each step; every displayed time follows from
   those and the leave time she picks.
