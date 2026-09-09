@@ -52,7 +52,9 @@ src/
   RocksStudyApp.jsx         # Rocks & Minerals topic
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
   GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
-  MorningRoutineApp.jsx     # Rose's morning routine checklist (not a study topic)
+  routines/                 # Rose's checklists (not study topics)
+    RoutineApp.jsx          # One config-driven routine: checklist + printable sheet
+    routines.js             # MORNING_ROUTINE, SCHOOL_ROUTINE step lists
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
@@ -78,21 +80,24 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   `src/index.css`; anything that shouldn't print gets `className="no-print"`
   (including the nav in `App.jsx`).
 
-### Morning Routine specifics
+### Routine specifics
 
-- `MorningRoutineApp.jsx` is a checklist, not a study topic, so it skips the
-  flashcard/quiz pattern the `*StudyApp` files share. It still sits in Rose's
-  dropdown as a dated topic and still uses the tabs + Print tab conventions.
+- Routines are checklists, not study topics, so they skip the flashcard/quiz
+  pattern the `*StudyApp` files share. They still sit in Rose's dropdown as
+  dated topics and still use the tabs + Print tab conventions.
+- Adding a routine means adding a config to `routines/routines.js` and one
+  `<RoutineApp routine={...} />` branch — do not copy `RoutineApp.jsx`. Every
+  routine needs its own `storageKey`, or two routines share one day's ticks.
 - The step times are computed BACKWARDS from the leave time, so the only value
-  worth editing is `minutes` on each step in `STEPS`; every displayed time
-  follows from those and the leave time she picks.
+  worth editing is `minutes` on each step; every displayed time follows from
+  those and the leave time she picks.
 - Printing works from either tab: the blank sheet is always rendered in a
   `.print-only` wrapper (the mirror of `.no-print`, added in `src/index.css`)
   while everything on screen sits inside `.no-print`. `.print-page` on the
   outer wrapper drops the gradient and full-page height for paper. The Print
   tab's own button just calls `window.print()`.
-- Today's checked steps live in `localStorage` under `roseMorningRoutine`
-  (`{date, leaveTime, done}`). The `date` is a **local** date — using a UTC one
+- Today's checked steps live in `localStorage` under the routine's
+  `storageKey` (`{date, leaveTime, done}`). The `date` is a **local** date — using a UTC one
   would roll the list over in the evening and wipe it mid-day. The saved
   `leaveTime` persists across days; `done` only survives while the date matches.
 

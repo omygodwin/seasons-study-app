@@ -1,89 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
-/* Rose's morning routine — her own list, in her own order, in her colors.
- *
- * This is a checklist rather than a study topic, so it doesn't follow the
- * flashcard/quiz pattern the *StudyApp files share. What it does share: tabs,
- * a printable tab, and touch-first 44px targets.
+/* One routine, rendered from a config in routines.js — the checklist, the
+ * schedule and the printable sheet are the same for every routine, only the
+ * steps and the wording differ.
  *
  * `minutes` is how long each step usually takes. The schedule is built
  * BACKWARDS from the time she has to leave, so changing the leave time moves
  * every other time with it — no math on a school morning. */
-const STEPS = [
-  {
-    id: 'wake',
-    label: 'Wake up',
-    emoji: '☀️',
-    minutes: 5,
-    note: 'Feet on the floor. Snooze steals the whole routine.',
-  },
-  {
-    id: 'tea',
-    label: 'Get tea',
-    emoji: '🍵',
-    minutes: 5,
-    note: 'Start it first — it can steep while you shower.',
-  },
-  {
-    id: 'shower',
-    label: 'Shower',
-    emoji: '🚿',
-    minutes: 15,
-    note: 'Warm, not hot. Hot water is hard on your skin.',
-  },
-  {
-    id: 'change',
-    label: 'Change',
-    emoji: '👚',
-    minutes: 5,
-    note: 'Outfit picked last night = 5 free minutes this morning.',
-  },
-  {
-    id: 'breakfast',
-    label: 'Breakfast',
-    emoji: '🥞',
-    minutes: 15,
-    note: 'Something with protein so you still have legs at practice.',
-  },
-  {
-    id: 'blowdry',
-    label: 'Blow dry hair',
-    emoji: '💨',
-    minutes: 15,
-    note: 'Finish on the cool shot — it sets the style.',
-  },
-  {
-    id: 'skincare',
-    label: 'Skincare',
-    emoji: '🧴',
-    minutes: 10,
-    note: 'Cleanse → serum → moisturizer → SPF. Sunscreen every single day.',
-  },
-  {
-    id: 'shoes',
-    label: 'Shoes & socks',
-    emoji: '👟',
-    minutes: 5,
-    note: 'Sports socks if it is a practice day.',
-  },
-  {
-    id: 'leave',
-    label: 'Leave',
-    emoji: '🎒',
-    minutes: 0,
-    note: 'Bag, water bottle, tea. Go have a great day. 💖',
-  },
-];
-
-const TOTAL_MINUTES = STEPS.reduce((sum, step) => sum + step.minutes, 0);
 const WEEKDAYS = ['M', 'T', 'W', 'Th', 'F'];
 const SHEET_STYLES = [
   { id: 'day', name: '📄 One day' },
   { id: 'week', name: '🗓️ Whole week' },
 ];
-const STORAGE_KEY = 'roseMorningRoutine';
-const DEFAULT_LEAVE = '07:30';
-
 /* Local date, not UTC — at 11pm Central a UTC date would already be tomorrow
  * and would wipe the checklist mid-evening. */
 function todayKey() {
@@ -93,9 +21,12 @@ function todayKey() {
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
-function parseTime(value) {
-  const [h, m] = value.split(':').map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return 7 * 60 + 30;
+function parseTime(value, fallback) {
+  const [h, m] = String(value).split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) {
+    const [fh, fm] = fallback.split(':').map(Number);
+    return fh * 60 + fm;
+  }
   return h * 60 + m;
 }
 
@@ -108,13 +39,14 @@ function formatTime(totalMinutes) {
 }
 
 // Checked-off steps are kept for today only, so the list is fresh every morning.
-function loadSaved() {
+// Each routine has its own storage key, so ticking one never touches the other.
+function loadSaved(storageKey, defaultLeave) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return null;
     const saved = JSON.parse(raw);
     return {
-      leaveTime: typeof saved.leaveTime === 'string' ? saved.leaveTime : DEFAULT_LEAVE,
+      leaveTime: typeof saved.leaveTime === 'string' ? saved.leaveTime : defaultLeave,
       done: saved.date === todayKey() && Array.isArray(saved.done) ? saved.done : [],
     };
   } catch {
@@ -123,35 +55,41 @@ function loadSaved() {
   }
 }
 
-export default function MorningRoutineApp() {
-  const [saved] = useState(loadSaved);
+export default function RoutineApp({ routine }) {
+  const { steps, storageKey, defaultLeave, title, subtitle, sheetTitle, doneMessage } = routine;
+  const totalMinutes = useMemo(
+    () => steps.reduce((sum, step) => sum + step.minutes, 0),
+    [steps],
+  );
+
+  const [saved] = useState(() => loadSaved(storageKey, defaultLeave));
   const [activeTab, setActiveTab] = useState('checklist');
   const [sheetStyle, setSheetStyle] = useState('day');
-  const [leaveTime, setLeaveTime] = useState(saved?.leaveTime ?? DEFAULT_LEAVE);
+  const [leaveTime, setLeaveTime] = useState(saved?.leaveTime ?? defaultLeave);
   const [done, setDone] = useState(() => new Set(saved?.done ?? []));
 
   useEffect(() => {
     try {
       localStorage.setItem(
-        STORAGE_KEY,
+        storageKey,
         JSON.stringify({ date: todayKey(), leaveTime, done: [...done] }),
       );
     } catch {
       /* private mode / storage disabled */
     }
-  }, [leaveTime, done]);
+  }, [storageKey, leaveTime, done]);
 
   /* Times run backwards from the leave time: each step starts as late as it
    * can while still leaving room for everything after it. */
   const schedule = useMemo(() => {
-    const leaveAt = parseTime(leaveTime);
-    let remaining = TOTAL_MINUTES;
-    return STEPS.map((step) => {
+    const leaveAt = parseTime(leaveTime, defaultLeave);
+    let remaining = totalMinutes;
+    return steps.map((step) => {
       const startsAt = leaveAt - remaining;
       remaining -= step.minutes;
       return { ...step, startsAt, time: formatTime(startsAt) };
     });
-  }, [leaveTime]);
+  }, [steps, totalMinutes, leaveTime, defaultLeave]);
 
   const toggleStep = (id) => {
     setDone((prev) => {
@@ -163,8 +101,8 @@ export default function MorningRoutineApp() {
   };
 
   const nextStep = schedule.find((step) => !done.has(step.id));
-  const finished = done.size === STEPS.length;
-  const percent = Math.round((done.size / STEPS.length) * 100);
+  const finished = done.size === steps.length;
+  const percent = Math.round((done.size / steps.length) * 100);
 
   const renderChecklist = () => (
     <div className="space-y-4">
@@ -181,14 +119,15 @@ export default function MorningRoutineApp() {
             />
           </label>
           <p className="text-sm font-semibold text-sky-600">
-            ☀️ Wake up at {schedule[0].time} ({TOTAL_MINUTES} min routine)
+            {schedule[0].emoji} {schedule[0].label} at {schedule[0].time} ({totalMinutes} min
+            routine)
           </p>
         </div>
 
         <div className="mt-4">
           <div className="mb-1 flex items-baseline justify-between text-sm font-bold">
             <span className="text-pink-500">
-              {done.size} / {STEPS.length} done
+              {done.size} / {steps.length} done
             </span>
             <span className="text-sky-500">{percent}%</span>
           </div>
@@ -202,9 +141,7 @@ export default function MorningRoutineApp() {
 
         <p className="mt-3 text-center text-sm font-semibold text-slate-600">
           {finished ? (
-            <span className="text-pink-500">
-              🏆 Whole routine done — glowing and out the door. Have the best day! 💖
-            </span>
+            <span className="text-pink-500">{doneMessage}</span>
           ) : (
             <>
               Next up: {nextStep.emoji} <span className="text-sky-600">{nextStep.label}</span> at{' '}
@@ -297,7 +234,7 @@ export default function MorningRoutineApp() {
         <span>Name: ______________________</span>
         <span>{sheetStyle === 'week' ? 'Week of: ____________' : 'Date: ____________'}</span>
       </div>
-      <h3 className="print-title">September Morning Routine 💖🏀</h3>
+      <h3 className="print-title">{sheetTitle}</h3>
 
       {sheetStyle === 'week' ? (
         <table className="w-full border-collapse">
@@ -345,7 +282,7 @@ export default function MorningRoutineApp() {
         </ul>
       )}
 
-      <p className="print-note">Out the door by {formatTime(parseTime(leaveTime))} ✨</p>
+      <p className="print-note">Out the door by {formatTime(parseTime(leaveTime, defaultLeave))} ✨</p>
     </div>
   );
 
@@ -394,9 +331,9 @@ export default function MorningRoutineApp() {
       <div className="no-print mx-auto max-w-3xl">
         <header className="no-print mb-6 text-center">
           <h1 className="bg-gradient-to-r from-pink-400 to-sky-400 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
-            September Morning Routine
+            {title}
           </h1>
-          <h2 className="text-lg text-slate-600">Tea, skincare, and out the door 💖🏀</h2>
+          <h2 className="text-lg text-slate-600">{subtitle}</h2>
         </header>
 
         <div className="no-print mb-6 flex flex-wrap justify-center gap-2">
