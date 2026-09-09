@@ -76,6 +76,11 @@ const STEPS = [
 ];
 
 const TOTAL_MINUTES = STEPS.reduce((sum, step) => sum + step.minutes, 0);
+const WEEKDAYS = ['M', 'T', 'W', 'Th', 'F'];
+const SHEET_STYLES = [
+  { id: 'day', name: '📄 One day' },
+  { id: 'week', name: '🗓️ Whole week' },
+];
 const STORAGE_KEY = 'roseMorningRoutine';
 const DEFAULT_LEAVE = '07:30';
 
@@ -121,6 +126,7 @@ function loadSaved() {
 export default function MorningRoutineApp() {
   const [saved] = useState(loadSaved);
   const [activeTab, setActiveTab] = useState('checklist');
+  const [sheetStyle, setSheetStyle] = useState('day');
   const [leaveTime, setLeaveTime] = useState(saved?.leaveTime ?? DEFAULT_LEAVE);
   const [done, setDone] = useState(() => new Set(saved?.done ?? []));
 
@@ -281,33 +287,100 @@ export default function MorningRoutineApp() {
     </div>
   );
 
-  /* Blank version for the bathroom mirror — same steps, boxes to check with a
-   * pen. Print rules live in src/index.css. */
-  const renderPrint = () => (
-    <div className="space-y-4">
-      <p className="no-print text-center text-sm text-slate-600">
-        Print this and tape it up. The times come from the leave time on the Checklist tab.
-      </p>
-      <div className="print-sheet rounded-lg bg-white p-6 shadow">
-        <div className="print-head">
-          <span>Name: ______________________</span>
-          <span>Date: ____________</span>
-        </div>
-        <h3 className="print-title">September Morning Routine 💖🏀</h3>
-        <ul className="space-y-2">
+  /* Blank version for the bathroom mirror — same steps, boxes to tick with a
+   * pen. One copy of this is always rendered inside a `.print-only` wrapper
+   * below, so Ctrl+P from either tab prints the sheet and never the
+   * interactive checklist. Print rules live in src/index.css. */
+  const renderSheet = () => (
+    <div className="print-sheet mx-auto max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow">
+      <div className="print-head">
+        <span>Name: ______________________</span>
+        <span>{sheetStyle === 'week' ? 'Week of: ____________' : 'Date: ____________'}</span>
+      </div>
+      <h3 className="print-title">September Morning Routine 💖🏀</h3>
+
+      {sheetStyle === 'week' ? (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <th className="border border-slate-500 p-2 text-left text-sm">Step</th>
+              <th className="border border-slate-500 p-2 text-sm">Time</th>
+              {WEEKDAYS.map((day) => (
+                <th key={day} className="w-10 border border-slate-500 p-2 text-sm">
+                  {day}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {schedule.map((step) => (
+              <tr key={step.id}>
+                <td className="border border-slate-500 p-2 font-bold">
+                  <span aria-hidden="true">{step.emoji}</span> {step.label}
+                </td>
+                <td className="whitespace-nowrap border border-slate-500 p-2 text-center text-sm font-semibold">
+                  {step.time}
+                </td>
+                {WEEKDAYS.map((day) => (
+                  <td key={day} className="h-9 border border-slate-500" />
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <ul>
           {schedule.map((step) => (
-            <li key={step.id} className="flex items-center gap-3 border-b border-slate-200 py-2">
-              <span className="h-6 w-6 flex-none rounded border-2 border-slate-800" />
-              <span className="text-xl" aria-hidden="true">
+            <li key={step.id} className="flex items-center gap-4 border-b border-slate-300 py-3">
+              <span className="h-7 w-7 flex-none rounded border-2 border-slate-900" />
+              <span className="text-2xl" aria-hidden="true">
                 {step.emoji}
               </span>
-              <span className="flex-1 font-bold text-slate-900">{step.label}</span>
-              <span className="text-sm font-semibold text-slate-700">{step.time}</span>
+              <span className="flex-1 text-lg font-bold">{step.label}</span>
+              <span className="whitespace-nowrap text-base font-semibold text-slate-700">
+                {step.time}
+              </span>
             </li>
           ))}
         </ul>
-        <p className="print-note">Out the door by {formatTime(parseTime(leaveTime))} ✨</p>
+      )}
+
+      <p className="print-note">Out the door by {formatTime(parseTime(leaveTime))} ✨</p>
+    </div>
+  );
+
+  const renderPrintTab = () => (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {SHEET_STYLES.map((style) => (
+          <button
+            key={style.id}
+            type="button"
+            onClick={() => setSheetStyle(style.id)}
+            className={`min-h-[44px] rounded-full border-2 px-4 font-semibold ${
+              sheetStyle === style.id
+                ? 'border-pink-200 bg-pink-50 text-pink-500'
+                : 'border-transparent bg-white/70 text-slate-500 hover:bg-pink-50'
+            }`}
+          >
+            {style.name}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="min-h-[44px] rounded-full border-2 border-sky-200 bg-sky-50 px-5 font-bold text-sky-600 hover:bg-sky-100"
+        >
+          🖨️ Print this sheet
+        </button>
       </div>
+      <p className="text-center text-sm text-slate-500">
+        {sheetStyle === 'week'
+          ? 'One sheet covers Monday to Friday — a box to tick per day.'
+          : 'One day per sheet, with room to tick each step off.'}{' '}
+        Times follow the leave time on the Checklist tab.
+      </p>
+      {renderSheet()}
     </div>
   );
 
@@ -317,8 +390,8 @@ export default function MorningRoutineApp() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-sky-50 p-4 font-sans">
-      <div className="mx-auto max-w-3xl">
+    <div className="print-page min-h-screen bg-gradient-to-b from-pink-50 via-white to-sky-50 p-4 font-sans">
+      <div className="no-print mx-auto max-w-3xl">
         <header className="no-print mb-6 text-center">
           <h1 className="bg-gradient-to-r from-pink-400 to-sky-400 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
             September Morning Routine
@@ -344,8 +417,12 @@ export default function MorningRoutineApp() {
         </div>
 
         {activeTab === 'checklist' && renderChecklist()}
-        {activeTab === 'print' && renderPrint()}
+        {activeTab === 'print' && renderPrintTab()}
       </div>
+
+      {/* The paper copy. Hidden on screen, so what prints is the same sheet
+          whichever tab happens to be open. */}
+      <div className="print-only">{renderSheet()}</div>
     </div>
   );
 }

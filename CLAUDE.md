@@ -86,6 +86,11 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 - The step times are computed BACKWARDS from the leave time, so the only value
   worth editing is `minutes` on each step in `STEPS`; every displayed time
   follows from those and the leave time she picks.
+- Printing works from either tab: the blank sheet is always rendered in a
+  `.print-only` wrapper (the mirror of `.no-print`, added in `src/index.css`)
+  while everything on screen sits inside `.no-print`. `.print-page` on the
+  outer wrapper drops the gradient and full-page height for paper. The Print
+  tab's own button just calls `window.print()`.
 - Today's checked steps live in `localStorage` under `roseMorningRoutine`
   (`{date, leaveTime, done}`). The `date` is a **local** date — using a UTC one
   would roll the list over in the evening and wipe it mid-day. The saved

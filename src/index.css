@@ -71,6 +71,13 @@
   color: #334155;
 }
 
+/* The mirror image of .no-print: content that exists only on paper. The
+   Morning Routine keeps a copy of its sheet in here so printing from any tab
+   produces the sheet rather than the interactive checklist. */
+.print-only {
+  display: none;
+}
+
 @media print {
   @page {
     size: letter portrait;
@@ -90,6 +97,18 @@
 
   .no-print {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Screen paints a pink → blue gradient over a full-height page; paper gets
+     plain white and only as much height as the sheet needs. */
+  .print-page {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
   }
 
   .print-sheet {
