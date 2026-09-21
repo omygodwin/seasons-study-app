@@ -52,6 +52,7 @@ src/
   RocksStudyApp.jsx         # Rocks & Minerals topic
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
   GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
+  ScienceInquiryStudyApp.jsx # Rose's Unit 1: Thinking Like a Scientist
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
