@@ -55,7 +55,7 @@ src/
   ScienceInquiryStudyApp.jsx # Rose's Unit 1: Thinking Like a Scientist
   MathFactsStudyApp.jsx     # Ruth's multiplication facts + Mad Minute
   Flashcards.jsx            # Shared spaced-repetition note-card engine
-                            #   (used by every study app except Geography)
+                            #   (every study app except Geography and Math Facts)
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
@@ -96,10 +96,6 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   constants when Firebase reads return empty — so login stays usable even if
   rules temporarily block writes.
 
-## Study-app conventions
-
-- Each `*StudyApp.jsx` follows the same pattern: tab state, flashcard state
-  (Known/Review sets), randomized 10-question quiz from a larger pool.
 ### Math facts (Ruth) specifics
 
 - `MathFactsStudyApp.jsx` deliberately does NOT use `Flashcards.jsx`. Fact
@@ -127,8 +123,12 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   `sky-600`, `green-700` on white pass all six checks). Every cell also carries
   its product, so identity is never color-alone — keep it that way.
 
+## Study-app conventions
+
+- Each `*StudyApp.jsx` follows the same pattern: tab state, flashcard state
+  (Known/Review sets), randomized 10-question quiz from a larger pool.
 - **All flashcards go through `Flashcards.jsx`.** Every study app uses it
-  (Geography has no cards). Don't hand-roll a card UI in a study app again.
+  (Geography has no cards; Math Facts has its own model — see above). Don't hand-roll a card UI in a study app again.
   It takes `decks` (`[{id, label, emoji, cards: [{term, definition, note?}]}]`),
   a `storageKey` (`flashcards:<topic>`, and it must be unique — two topics
   sharing one would merge their schedules), and a `theme` naming one of the
