@@ -46,7 +46,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
  * face, which would give the answer away.
  *
  * Each study topic keeps its own palette, so themes are named presets below
- * rather than colour props: Tailwind's JIT only sees class names it can find
+ * rather than color props: Tailwind's JIT only sees class names it can find
  * as literal text, so `bg-${color}-800` would be purged. To add a topic, add a
  * preset — don't build class names from fragments at the call site. */
 

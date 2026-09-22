@@ -53,8 +53,9 @@ src/
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
   GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
   ScienceInquiryStudyApp.jsx # Rose's Unit 1: Thinking Like a Scientist
+  MathFactsStudyApp.jsx     # Ruth's multiplication facts + Mad Minute
   Flashcards.jsx            # Shared spaced-repetition note-card engine
-                            #   (used by every study app except Geography)
+                            #   (every study app except Geography and Math Facts)
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
@@ -95,12 +96,39 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   constants when Firebase reads return empty — so login stays usable even if
   rules temporarily block writes.
 
+### Math facts (Ruth) specifics
+
+- `MathFactsStudyApp.jsx` deliberately does NOT use `Flashcards.jsx`. Fact
+  fluency is a different problem from recognition: the target is automatic
+  retrieval, so a fact counts as `fluent` only when answered correctly **and**
+  within `FLUENT_MS` (3s). A fact she works out by skip-counting is not learned
+  yet, so speed is part of the state, not a nice-to-have.
+- State is keyed on the **sorted** pair (`pairId`), because 7×8 and 8×7 are one
+  fact to learn — 1-12 is 78 facts, not 144. Both orders are still shown. The
+  Progress grid is symmetric for this reason; that is correct, not a bug.
+- `buildRound` is incremental rehearsal: mostly known material, at most
+  `NEW_PER_ROUND` (2) unseen facts. **When a round comes up short it pads with
+  facts she already knows, never with more new ones** — both bugs found in
+  review were here (a 2-question cold-start round, then a round padded with 9
+  new facts when nothing was due). Re-test all four states after touching it:
+  cold start, known-but-nothing-due, some-due, everything-fluent.
+- Practice corrects immediately; **Mad Minute stays silent for the full minute**
+  and scores at the end, because it exists to rehearse the timed sheet she does
+  at school. Don't "improve" it by adding live feedback.
+- Input: an on-screen keypad is the default because iOS's numeric keyboard has
+  no return key and covers half an iPad. `inputMode="numeric"` is available via
+  the Settings toggle; a hardware keyboard (digits / Backspace / Enter) works in
+  both modes. Keep answer inputs at 16px+ or iOS zooms the page on focus.
+- Mastery colors were validated for colorblind separation (`amber-700`,
+  `sky-600`, `green-700` on white pass all six checks). Every cell also carries
+  its product, so identity is never color-alone — keep it that way.
+
 ## Study-app conventions
 
 - Each `*StudyApp.jsx` follows the same pattern: tab state, flashcard state
   (Known/Review sets), randomized 10-question quiz from a larger pool.
 - **All flashcards go through `Flashcards.jsx`.** Every study app uses it
-  (Geography has no cards). Don't hand-roll a card UI in a study app again.
+  (Geography has no cards; Math Facts has its own model — see above). Don't hand-roll a card UI in a study app again.
   It takes `decks` (`[{id, label, emoji, cards: [{term, definition, note?}]}]`),
   a `storageKey` (`flashcards:<topic>`, and it must be unique — two topics
   sharing one would merge their schedules), and a `theme` naming one of the
