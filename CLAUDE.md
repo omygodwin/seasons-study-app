@@ -105,7 +105,30 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   yet, so speed is part of the state, not a nice-to-have.
 - State is keyed on the **sorted** pair (`pairId`), because 7×8 and 8×7 are one
   fact to learn — 1-12 is 78 facts, not 144. Both orders are still shown. The
-  Progress grid is symmetric for this reason; that is correct, not a bug.
+  × Progress grid is symmetric for this reason; that is correct, not a bug.
+- **Division is not commutative**, so it does not share that model: 56÷7 and
+  56÷8 are two facts (a square like 64÷8 is one), giving 144 division facts
+  keyed on `(product, divisor)`. Keys are namespaced `m:` / `d:` and storage
+  is `v: 2`; `loadState` migrates bare v1 keys rather than resetting, because
+  her multiplication progress is what unlocks division. The ÷ grid is
+  deliberately NOT symmetric.
+- **A division fact only unlocks once its × pair is fluent.** That gate is the
+  whole point — the inverse is nearly free once the product is automatic
+  (CCSS 3.OA.C.7), and worthless if met cold. Locked cells render a `·`, not a
+  number, so the state is never conveyed by color alone.
+- **Mixing × and ÷ in one round is the default, and that is the opposite of
+  the blocked-decks rule in `Flashcards.jsx`.** Both are correct; interleaving
+  helps when it forces a *discrimination* (which operation?) and hurts for
+  verbal term/definition material. Read `docs/learning-design.md` →
+  "Interleaving cuts both ways" before changing either to match the other.
+- Strategy hints fire only on a miss or a right-but-slow answer — never on a
+  fast correct one. `MUL_RULES` covers every multiplier except 7; 7×7 lands on
+  the squares case. Division always hints the inverse.
+- The Practice/Mad Minute feedback slot has a **fixed** height and the problem
+  card a **fixed** content height. Both are load-bearing: the answer field's
+  `border-b-4` grows the line box by 4px the moment it holds a digit, and a
+  hint appearing used to push the keypad down mid-question. Re-measure the
+  keypad's position with and without a hint after touching that layout.
 - `buildRound` is incremental rehearsal: mostly known material, at most
   `NEW_PER_ROUND` (2) unseen facts. **When a round comes up short it pads with
   facts she already knows, never with more new ones** — both bugs found in
