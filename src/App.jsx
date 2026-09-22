@@ -41,6 +41,14 @@ const RAEGAN_TOPIC_IDS = RAEGAN_TOPICS.map((t) => t.id);
 
 const TOPIC_KEY = 'studyTopic';
 
+/* The tab said "Basketball Tournament" on every page for months. Titles are
+ * derived from the same arrays the menus are built from, so a new topic names
+ * itself without a second list to forget about. */
+const SITE_NAME = 'Godwin Studies';
+const TOPIC_LABELS = Object.fromEntries(
+  [...RAEGAN_TOPICS, ...RUTH_TOPICS, ...ROSE_TOPICS].map((t) => [t.id, t.label]),
+);
+
 // Two kids share this app, so it reopens on whichever topic was used last.
 function getSavedTopic(valid) {
   try {
@@ -171,6 +179,11 @@ export default function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  useEffect(() => {
+    const topic = route === 'tournament' ? 'Basketball Tournament' : TOPIC_LABELS[studyTopic];
+    document.title = topic ? `${topic} · ${SITE_NAME}` : SITE_NAME;
+  }, [route, studyTopic]);
 
   if (route === 'tournament') {
     return <TournamentApp />;
