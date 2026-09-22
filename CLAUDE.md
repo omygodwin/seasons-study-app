@@ -53,6 +53,7 @@ src/
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
   GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
   ScienceInquiryStudyApp.jsx # Rose's Unit 1: Thinking Like a Scientist
+  Flashcards.jsx            # Shared spaced-repetition note-card engine
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
@@ -97,6 +98,23 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 
 - Each `*StudyApp.jsx` follows the same pattern: tab state, flashcard state
   (Known/Review sets), randomized 10-question quiz from a larger pool.
+- `Flashcards.jsx` is the newer card engine (`ScienceInquiryStudyApp` uses it;
+  the older apps still have their own inline Known/Review cards). It takes
+  `decks` (`[{id, label, emoji, cards: [{term, definition}]}]`) and a
+  `storageKey`, and owns its own deck picker, so a topic using it needs one
+  tab, not one per deck. Three rules it exists to enforce — breaking any of
+  them is what makes flashcards feel productive while teaching much less:
+  1. **Never render a term next to its definition on a study tab.** The answer
+     is hidden behind the flip, and the grade buttons only appear after a
+     reveal. A browsable term/definition list belongs on its own tab (see the
+     "All Notes" tab), never under the cards.
+  2. **Card scheduling must persist.** Leitner boxes with 1/3/7/16-day
+     intervals in `localStorage` — spacing does nothing if it resets on
+     reload, which is what the in-app `Set`s in the older apps do.
+  3. **A card leaves the round only when graded "Knew it."** "Almost" and
+     "Study Again" requeue it, so every round ends on successful recall.
+  The `lg:` card height is deliberately *shorter* than `sm:` — `lg` width is
+  the iPad in landscape, where the grade buttons have to stay above the fold.
 - When adding a new Rose study topic:
   1. Create `FooStudyApp.jsx` mirroring `VocabStudyApp.jsx`
   2. Add `{ id, label, emoji, date }` to `ROSE_TOPICS` in `App.jsx`, where

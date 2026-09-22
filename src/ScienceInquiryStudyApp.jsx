@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Flashcards from './Flashcards';
 
 /* Unit 1: Thinking Like a Scientist.
  *
@@ -13,245 +14,265 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // --- FLASHCARD DECKS ---
 
-const DECKS = {
-  inquiry: [
-    {
-      term: 'Scientific Inquiry',
-      definition:
-        'The diverse ways in which scientists study and investigate our world with wonder.',
-    },
-    {
-      term: 'Scientific Method',
-      definition: 'The method used to conduct experiments.',
-    },
-    {
-      term: 'Engineering Design Process',
-      definition: 'The method used to create prototypes.',
-    },
-    {
-      term: 'Observation',
-      definition:
-        'Using your senses to gather information around you — sight, smell, touch, taste, and hearing.',
-    },
-    {
-      term: 'Examination',
-      definition: 'An extended, focused observation.',
-    },
-    {
-      term: 'Properties / Characteristics',
-      definition:
-        'What you are looking at when you observe. Observing an object means looking at its characteristics or properties.',
-    },
-    {
-      term: 'Data',
-      definition: 'Facts, figures, and other evidence gathered through observation.',
-    },
-    {
-      term: 'Quantitative',
-      definition:
-        'Describes something using a measurement — you need a measuring tool. Example: "The pie weighs one pound."',
-    },
-    {
-      term: 'Qualitative',
-      definition:
-        'Describes what something is like using your senses. Example: "The pie is round, sweet, and soft."',
-    },
-    {
-      term: 'Inference',
-      definition: 'A suggestion or possible explanation for an observation.',
-    },
-    {
-      term: 'Predict',
-      definition: 'State what you think will happen based on past observations; a forecast.',
-    },
-    {
-      term: 'Estimate',
-      definition: 'A careful guess when measurements are not needed or are difficult to obtain.',
-    },
-    {
-      term: 'Measure',
-      definition: 'Describe the amount of an observation, usually in quantitative terms.',
-    },
-    {
-      term: 'Identify',
-      definition: 'After recognition, to name a person, place, or thing.',
-    },
-    {
-      term: 'Classify',
-      definition: 'Group things by how they are alike.',
-    },
-    {
-      term: 'Hypothesize',
-      definition:
-        'Suggest an answer to a problem based on information, usually written in "if / then / because" format. Then test to support your hypothesis or not.',
-    },
-    {
-      term: 'Record and Organize',
-      definition: 'Keeping a good record of your work — like your lab book.',
-    },
-    {
-      term: 'Analyze',
-      definition: 'Looking for trends or patterns in data, often using charts and graphs.',
-    },
-  ],
+const DECKS = [
+  {
+    id: 'inquiry',
+    label: 'Inquiry Words',
+    emoji: '🔍',
+    cards: [
+      {
+        term: 'Scientific Inquiry',
+        definition:
+          'The diverse ways in which scientists study and investigate our world with wonder.',
+      },
+      {
+        term: 'Scientific Method',
+        definition: 'The method used to conduct experiments.',
+      },
+      {
+        term: 'Engineering Design Process',
+        definition: 'The method used to create prototypes.',
+      },
+      {
+        term: 'Observation',
+        definition:
+          'Using your senses to gather information around you — sight, smell, touch, taste, and hearing.',
+      },
+      {
+        term: 'Examination',
+        definition: 'An extended, focused observation.',
+      },
+      {
+        term: 'Properties / Characteristics',
+        definition:
+          'What you are looking at when you observe. Observing an object means looking at its characteristics or properties.',
+      },
+      {
+        term: 'Data',
+        definition: 'Facts, figures, and other evidence gathered through observation.',
+      },
+      {
+        term: 'Quantitative',
+        definition:
+          'Describes something using a measurement — you need a measuring tool. Example: "The pie weighs one pound."',
+      },
+      {
+        term: 'Qualitative',
+        definition:
+          'Describes what something is like using your senses. Example: "The pie is round, sweet, and soft."',
+      },
+      {
+        term: 'Inference',
+        definition: 'A suggestion or possible explanation for an observation.',
+      },
+      {
+        term: 'Predict',
+        definition: 'State what you think will happen based on past observations; a forecast.',
+      },
+      {
+        term: 'Estimate',
+        definition: 'A careful guess when measurements are not needed or are difficult to obtain.',
+      },
+      {
+        term: 'Measure',
+        definition: 'Describe the amount of an observation, usually in quantitative terms.',
+      },
+      {
+        term: 'Identify',
+        definition: 'After recognition, to name a person, place, or thing.',
+      },
+      {
+        term: 'Classify',
+        definition: 'Group things by how they are alike.',
+      },
+      {
+        term: 'Hypothesize',
+        definition:
+          'Suggest an answer to a problem based on information, usually written in "if / then / because" format. Then test to support your hypothesis or not.',
+      },
+      {
+        term: 'Record and Organize',
+        definition: 'Keeping a good record of your work — like your lab book.',
+      },
+      {
+        term: 'Analyze',
+        definition: 'Looking for trends or patterns in data, often using charts and graphs.',
+      },
+    ],
+  },
 
-  method: [
-    {
-      term: 'Steps of the Scientific Method',
-      definition:
-        'State the Problem → Research Known Data → Hypothesize or Predict → Plan and Conduct the Experiment → Record and Analyze Data → Make Conclusions.',
-    },
-    {
-      term: 'Controlled Experiment',
-      definition: 'An experiment in which all variables except one remain the same.',
-    },
-    {
-      term: 'Experimental Group',
-      definition: 'The setup that CONTAINS the variable being tested.',
-    },
-    {
-      term: 'Control Group',
-      definition: 'The setup WITHOUT the variable being tested.',
-    },
-    {
-      term: 'Constant',
-      definition: 'Factors that stay the same in an experiment.',
-    },
-    {
-      term: 'Variable',
-      definition: 'Factors that change during an experiment.',
-    },
-    {
-      term: 'Independent Variable',
-      definition:
-        'What you, the experimenter, change or enact in order to do your experiment. Remember: "I do or change."',
-    },
-    {
-      term: 'Dependent Variable',
-      definition:
-        'What changes when the independent variable changes — it depends on the outcome of the independent variable. This is the DATA.',
-    },
-    {
-      term: 'Observations → Facts → Theories',
-      definition: 'The path that scientific knowledge follows as evidence builds up.',
-    },
-    {
-      term: 'Theory',
-      definition:
-        'Explains why and how something happened, with the support of many observations.',
-    },
-    {
-      term: 'Law',
-      definition:
-        'When all observations support it after being tested over and over. Laws can be expressed in a mathematical formula — math is the language of science.',
-    },
-    {
-      term: 'Consensus',
-      definition:
-        'The best solution the group can achieve at the time, based on the current and understood science of the time. It is NOT what everyone agrees to, and NOT the preference of the majority. It requires the good work of many scientists.',
-    },
-  ],
+  {
+    id: 'method',
+    label: 'Scientific Method',
+    emoji: '⚗️',
+    cards: [
+      {
+        term: 'Steps of the Scientific Method',
+        definition:
+          'State the Problem → Research Known Data → Hypothesize or Predict → Plan and Conduct the Experiment → Record and Analyze Data → Make Conclusions.',
+      },
+      {
+        term: 'Controlled Experiment',
+        definition: 'An experiment in which all variables except one remain the same.',
+      },
+      {
+        term: 'Experimental Group',
+        definition: 'The setup that CONTAINS the variable being tested.',
+      },
+      {
+        term: 'Control Group',
+        definition: 'The setup WITHOUT the variable being tested.',
+      },
+      {
+        term: 'Constant',
+        definition: 'Factors that stay the same in an experiment.',
+      },
+      {
+        term: 'Variable',
+        definition: 'Factors that change during an experiment.',
+      },
+      {
+        term: 'Independent Variable',
+        definition:
+          'What you, the experimenter, change or enact in order to do your experiment. Remember: "I do or change."',
+      },
+      {
+        term: 'Dependent Variable',
+        definition:
+          'What changes when the independent variable changes — it depends on the outcome of the independent variable. This is the DATA.',
+      },
+      {
+        term: 'Observations → Facts → Theories',
+        definition: 'The path that scientific knowledge follows as evidence builds up.',
+      },
+      {
+        term: 'Theory',
+        definition:
+          'Explains why and how something happened, with the support of many observations.',
+      },
+      {
+        term: 'Law',
+        definition:
+          'When all observations support it after being tested over and over. Laws can be expressed in a mathematical formula — math is the language of science.',
+      },
+      {
+        term: 'Consensus',
+        definition:
+          'The best solution the group can achieve at the time, based on the current and understood science of the time. It is NOT what everyone agrees to, and NOT the preference of the majority. It requires the good work of many scientists.',
+      },
+    ],
+  },
 
-  measurement: [
-    {
-      term: 'Metric System',
-      definition: 'A decimal based form of measurement — the system we use in science.',
-    },
-    {
-      term: 'SI',
-      definition:
-        'The International System of Units. Abbreviated SI from "systeme internationale," the French version of the name.',
-    },
-    {
-      term: 'Length',
-      definition:
-        'The distance from one end of an object to another. Base unit: the METER. Tools: meter sticks, rulers, tape measures.',
-    },
-    {
-      term: 'Time',
-      definition:
-        'Used to sequence events, compare the duration of events, and quantify rates of change. Base unit: the SECOND. Tool: digital stopwatch (hourglasses and sundials are older methods).',
-    },
-    {
-      term: 'Mass',
-      definition:
-        'The amount of matter in something. Base unit: the KILOGRAM (kg). Tools: triple beam balance or electronic balance.',
-    },
-    {
-      term: 'Mass vs. Weight',
-      definition:
-        'Careful — they are not the same! Mass is the amount of matter in an object. Weight is the pull of gravity on an object.',
-    },
-    {
-      term: 'Temperature',
-      definition:
-        'A measure of the average heat or thermal energy of the particles in a substance. Because it is an average, it does NOT depend on the number of particles. SI uses Kelvin; we use degrees Celsius (°C). Tools: thermometer and digital probes.',
-    },
-    {
-      term: 'Volume',
-      definition:
-        'The three dimensional space that something fills. Liquid volume base unit: the LITER (L or l). Tool: graduated cylinder.',
-    },
-    {
-      term: 'Graduation Marks',
-      definition:
-        'The measuring lines on a graduated cylinder or beaker — the marks you read your measurement from.',
-    },
-    {
-      term: 'Lab Glassware',
-      definition:
-        'Beakers and Erlenmeyer flasks hold liquids, but the graduated cylinder is the accurate tool for MEASURING liquid volume.',
-    },
-  ],
+  {
+    id: 'measurement',
+    label: 'Measurement',
+    emoji: '📏',
+    cards: [
+      {
+        term: 'Metric System',
+        definition: 'A decimal based form of measurement — the system we use in science.',
+      },
+      {
+        term: 'SI',
+        definition:
+          'The International System of Units. Abbreviated SI from "systeme internationale," the French version of the name.',
+      },
+      {
+        term: 'Length',
+        definition:
+          'The distance from one end of an object to another. Base unit: the METER. Tools: meter sticks, rulers, tape measures.',
+      },
+      {
+        term: 'Time',
+        definition:
+          'Used to sequence events, compare the duration of events, and quantify rates of change. Base unit: the SECOND. Tool: digital stopwatch (hourglasses and sundials are older methods).',
+      },
+      {
+        term: 'Mass',
+        definition:
+          'The amount of matter in something. Base unit: the KILOGRAM (kg). Tools: triple beam balance or electronic balance.',
+      },
+      {
+        term: 'Mass vs. Weight',
+        definition:
+          'Careful — they are not the same! Mass is the amount of matter in an object. Weight is the pull of gravity on an object.',
+      },
+      {
+        term: 'Temperature',
+        definition:
+          'A measure of the average heat or thermal energy of the particles in a substance. Because it is an average, it does NOT depend on the number of particles. SI uses Kelvin; we use degrees Celsius (°C). Tools: thermometer and digital probes.',
+      },
+      {
+        term: 'Volume',
+        definition:
+          'The three dimensional space that something fills. Liquid volume base unit: the LITER (L or l). Tool: graduated cylinder.',
+      },
+      {
+        term: 'Graduation Marks',
+        definition:
+          'The measuring lines on a graduated cylinder or beaker — the marks you read your measurement from.',
+      },
+      {
+        term: 'Lab Glassware',
+        definition:
+          'Beakers and Erlenmeyer flasks hold liquids, but the graduated cylinder is the accurate tool for MEASURING liquid volume.',
+      },
+    ],
+  },
 
-  lab: [
-    {
-      term: 'Habits',
-      definition:
-        'Not a written section, but part of every lab grade: observe safety precautions, use correct techniques, assist your partner or others when appropriate, clean up your lab work area, and maintain quality written work.',
-    },
-    {
-      term: 'Title',
-      definition: 'Placed in the center at the top of your page AND in the table of contents.',
-    },
-    {
-      term: 'Date',
-      definition: 'Placed on the line at the top right of the page.',
-    },
-    {
-      term: 'Purpose',
-      definition:
-        'The reason we are conducting the lab. Found on the board the day of the lab and written down before we begin.',
-    },
-    {
-      term: 'Hypothesis or Prediction',
-      definition:
-        'Completed BEFORE the lab. States what you think will happen based on your background knowledge or research, using the if... then... because format. A prediction may be used when testing prototypes.',
-    },
-    {
-      term: 'Materials',
-      definition: 'The complete list of specific materials needed to complete the lab.',
-    },
-    {
-      term: 'Procedure',
-      definition: 'The step by step instructions needed to complete the lab.',
-    },
-    {
-      term: 'Results',
-      definition: 'The presentation of your collected data. This section could contain a chart or a graph.',
-    },
-    {
-      term: 'Conclusion',
-      definition:
-        'Summarizes your experiment, answers any questions, and further explains your results. Reflections about the lab and error analysis go here too, if appropriate.',
-    },
-    {
-      term: 'Order of the Write-Up',
-      definition:
-        'Title → Date → Purpose → Hypothesis/Prediction → Materials → Procedure → Results → Conclusion.',
-    },
-  ],
-};
+  {
+    id: 'lab',
+    label: 'Lab Write-Up',
+    emoji: '🧪',
+    cards: [
+      {
+        term: 'Habits',
+        definition:
+          'Not a written section, but part of every lab grade: observe safety precautions, use correct techniques, assist your partner or others when appropriate, clean up your lab work area, and maintain quality written work.',
+      },
+      {
+        term: 'Title',
+        definition: 'Placed in the center at the top of your page AND in the table of contents.',
+      },
+      {
+        term: 'Date',
+        definition: 'Placed on the line at the top right of the page.',
+      },
+      {
+        term: 'Purpose',
+        definition:
+          'The reason we are conducting the lab. Found on the board the day of the lab and written down before we begin.',
+      },
+      {
+        term: 'Hypothesis or Prediction',
+        definition:
+          'Completed BEFORE the lab. States what you think will happen based on your background knowledge or research, using the if... then... because format. A prediction may be used when testing prototypes.',
+      },
+      {
+        term: 'Materials',
+        definition: 'The complete list of specific materials needed to complete the lab.',
+      },
+      {
+        term: 'Procedure',
+        definition: 'The step by step instructions needed to complete the lab.',
+      },
+      {
+        term: 'Results',
+        definition: 'The presentation of your collected data. This section could contain a chart or a graph.',
+      },
+      {
+        term: 'Conclusion',
+        definition:
+          'Summarizes your experiment, answers any questions, and further explains your results. Reflections about the lab and error analysis go here too, if appropriate.',
+      },
+      {
+        term: 'Order of the Write-Up',
+        definition:
+          'Title → Date → Purpose → Hypothesis/Prediction → Materials → Procedure → Results → Conclusion.',
+      },
+    ],
+  },
+];
 
 // --- QUAL vs. QUANT SORTING DRILL ---
 
@@ -579,28 +600,21 @@ function isAnswerCorrect(question, answer, selfGrade) {
   }
 }
 
-const DECK_TABS = [
-  { id: 'inquiry', name: '🔍 Inquiry Words' },
-  { id: 'method', name: '⚗️ Sci. Method' },
-  { id: 'measurement', name: '📏 Measurement' },
-  { id: 'lab', name: '🧪 Lab Write-Up' },
-];
-
+/* Retrieval-first ordering: the note cards come before the reference sheets,
+ * and the full term/definition list sits on its own tab so it can't be read
+ * off the screen while she is trying to recall a card. */
 const TABS = [
-  { id: 'overview', name: '📖 Overview' },
-  ...DECK_TABS,
+  { id: 'cards', name: '🃏 Note Cards' },
   { id: 'sort', name: '⚖️ Qual or Quant' },
   { id: 'quiz', name: '📝 Practice Test' },
+  { id: 'overview', name: '📖 Study Sheet' },
+  { id: 'notes', name: '📋 All Notes' },
 ];
 
-export default function ScienceInquiryStudyApp() {
-  const [activeTab, setActiveTab] = useState('overview');
+const STORAGE_KEY = 'flashcards:scienceinquiry';
 
-  // Flashcards
-  const [currentCard, setCurrentCard] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [knownCards, setKnownCards] = useState(new Set());
-  const [reviewCards, setReviewCards] = useState(new Set());
+export default function ScienceInquiryStudyApp() {
+  const [activeTab, setActiveTab] = useState('cards');
 
   // Qualitative / quantitative drill
   const [drillOrder, setDrillOrder] = useState(() => shuffle(OBSERVATIONS));
@@ -624,58 +638,6 @@ export default function ScienceInquiryStudyApp() {
   useEffect(() => {
     startNewQuiz();
   }, [startNewQuiz]);
-
-  const deck = DECKS[activeTab] || [];
-  const card = deck[currentCard];
-  const cardId = card ? `${activeTab}-${card.term}` : null;
-
-  const nextCard = () => {
-    if (deck.length === 0) return;
-    setCurrentCard((prev) => (prev + 1) % deck.length);
-    setIsFlipped(false);
-  };
-
-  const prevCard = () => {
-    if (deck.length === 0) return;
-    setCurrentCard((prev) => (prev - 1 + deck.length) % deck.length);
-    setIsFlipped(false);
-  };
-
-  const handleMarkCard = (status) => {
-    if (!cardId) return;
-    if (status === 'known') {
-      setKnownCards((prev) => new Set(prev).add(cardId));
-      setReviewCards((prev) => {
-        const s = new Set(prev);
-        s.delete(cardId);
-        return s;
-      });
-    } else {
-      setReviewCards((prev) => new Set(prev).add(cardId));
-      setKnownCards((prev) => {
-        const s = new Set(prev);
-        s.delete(cardId);
-        return s;
-      });
-    }
-    setTimeout(nextCard, 200);
-  };
-
-  const resetCardProgress = () => {
-    setKnownCards(new Set());
-    setReviewCards(new Set());
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
-
-  // Switching decks starts at the front of the new deck.
-  const selectTab = (id) => {
-    setActiveTab(id);
-    if (DECKS[id]) {
-      setCurrentCard(0);
-      setIsFlipped(false);
-    }
-  };
 
   const drillCard = drillOrder[drillIndex];
 
@@ -842,91 +804,38 @@ export default function ScienceInquiryStudyApp() {
     </div>
   );
 
-  // --- RENDER: FLASHCARDS ---
+  // --- RENDER: ALL NOTES (reference) ---
 
-  const renderFlashcards = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-2 text-center text-sm text-gray-700">
-        <div className="rounded bg-green-100 p-2">✅ Known: {knownCards.size}</div>
-        <div className="rounded bg-orange-100 p-2">🤔 Review: {reviewCards.size}</div>
-        <div className="rounded bg-teal-100 p-2">
-          Card {deck.length ? currentCard + 1 : 0} / {deck.length}
-        </div>
+  /* The full term-and-definition list. It lives behind its own tab on purpose:
+   * having it under the note cards turns recall practice into reading, which
+   * feels productive and teaches much less. */
+  const renderNotes = () => (
+    <div className="space-y-6">
+      <div className="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+        <p className="text-sm text-gray-800">
+          📋 Everything in one place, for reading over before a round or checking
+          something you got stuck on. To <em>practice</em>, use the Note Cards tab —
+          trying to remember first is what makes it stick.
+        </p>
       </div>
 
-      <div className="relative h-72" onClick={() => setIsFlipped(!isFlipped)}>
-        <div
-          className={`absolute inset-0 flex h-full w-full cursor-pointer items-center justify-center rounded-lg bg-white p-6 text-center shadow-lg transition-opacity duration-300 ${
-            isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'
-          }`}
-        >
-          <div>
-            <h3 className="text-3xl font-bold text-teal-800">{card?.term}</h3>
-            <p className="mt-3 text-xs text-gray-500">(tap to see the definition)</p>
-          </div>
-        </div>
-        <div
-          className={`absolute inset-0 flex h-full w-full cursor-pointer items-center justify-center rounded-lg bg-teal-800 p-6 text-center text-white shadow-lg transition-opacity duration-300 ${
-            isFlipped ? 'opacity-100' : 'pointer-events-none opacity-0'
-          }`}
-        >
-          <p className="text-lg">{card?.definition}</p>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap justify-center gap-2">
-        <button
-          onClick={prevCard}
-          className="min-h-[44px] rounded-lg bg-gray-500 px-4 py-2 font-semibold text-white hover:bg-gray-600"
-        >
-          ← Prev
-        </button>
-        <button
-          onClick={() => handleMarkCard('review')}
-          className="min-h-[44px] rounded-lg bg-orange-500 px-6 py-2 font-semibold text-white hover:bg-orange-600"
-        >
-          🤔 Review Again
-        </button>
-        <button
-          onClick={() => handleMarkCard('known')}
-          className="min-h-[44px] rounded-lg bg-green-500 px-6 py-2 font-semibold text-white hover:bg-green-600"
-        >
-          ✅ I Knew This
-        </button>
-        <button
-          onClick={nextCard}
-          className="min-h-[44px] rounded-lg bg-gray-500 px-4 py-2 font-semibold text-white hover:bg-gray-600"
-        >
-          Next →
-        </button>
-      </div>
-
-      <div className="flex justify-center">
-        <button
-          onClick={resetCardProgress}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
-        >
-          🔄 Reset Progress
-        </button>
-      </div>
-
-      <ul className="divide-y divide-teal-100 rounded-lg bg-white shadow">
-        {deck.map((entry, i) => (
-          <li
-            key={entry.term}
-            className={`cursor-pointer p-3 text-sm hover:bg-teal-50 ${
-              i === currentCard ? 'bg-teal-50' : ''
-            }`}
-            onClick={() => {
-              setCurrentCard(i);
-              setIsFlipped(false);
-            }}
-          >
-            <span className="font-bold text-teal-800">{entry.term}</span>
-            <span className="text-gray-700"> — {entry.definition}</span>
-          </li>
-        ))}
-      </ul>
+      {DECKS.map((deck) => (
+        <section key={deck.id}>
+          <h3 className="mb-2 text-xl font-bold text-teal-800">
+            <span aria-hidden="true">{deck.emoji}</span> {deck.label}
+          </h3>
+          <ul className="divide-y divide-teal-100 overflow-hidden rounded-xl bg-white shadow">
+            {deck.cards.map((entry) => (
+              <li key={entry.term} className="p-4 sm:flex sm:gap-4">
+                <span className="block font-bold text-teal-900 sm:w-56 sm:shrink-0">
+                  {entry.term}
+                </span>
+                <span className="text-gray-700">{entry.definition}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 
@@ -953,15 +862,15 @@ export default function ScienceInquiryStudyApp() {
           </div>
         </div>
 
-        <div className="flex min-h-[9rem] items-center justify-center rounded-lg bg-white p-6 text-center shadow">
-          <p className="text-2xl font-medium text-gray-800">“{drillCard?.text}”</p>
+        <div className="flex min-h-[10rem] items-center justify-center rounded-2xl bg-white p-6 text-center shadow sm:min-h-[12rem] sm:p-10">
+          <p className="text-2xl font-medium text-gray-800 sm:text-3xl lg:text-4xl">“{drillCard?.text}”</p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <button
             onClick={() => answerDrill('qualitative')}
             disabled={answered}
-            className={`min-h-[44px] rounded-lg px-4 py-3 font-bold text-white ${
+            className={`min-h-[64px] rounded-xl px-4 py-3 text-base font-bold text-white shadow sm:text-lg ${
               !answered
                 ? 'bg-sky-600 hover:bg-sky-700'
                 : drillCard.kind === 'qualitative'
@@ -976,7 +885,7 @@ export default function ScienceInquiryStudyApp() {
           <button
             onClick={() => answerDrill('quantitative')}
             disabled={answered}
-            className={`min-h-[44px] rounded-lg px-4 py-3 font-bold text-white ${
+            className={`min-h-[64px] rounded-xl px-4 py-3 text-base font-bold text-white shadow sm:text-lg ${
               !answered
                 ? 'bg-purple-600 hover:bg-purple-700'
                 : drillCard.kind === 'quantitative'
@@ -1011,7 +920,7 @@ export default function ScienceInquiryStudyApp() {
           <button
             onClick={nextDrill}
             disabled={!answered}
-            className="min-h-[44px] rounded-lg bg-teal-700 px-6 py-2 font-semibold text-white hover:bg-teal-800 disabled:bg-gray-400"
+            className="min-h-[56px] rounded-xl bg-teal-700 px-8 py-3 text-lg font-bold text-white shadow hover:bg-teal-800 disabled:bg-gray-400"
           >
             Next Observation →
           </button>
@@ -1038,7 +947,7 @@ export default function ScienceInquiryStudyApp() {
           {q.options.map((option, oIndex) => {
             const isSelected = answer === oIndex;
             const isRight = oIndex === q.correct;
-            let cls = 'w-full min-h-[44px] text-left p-3 rounded border ';
+            let cls = 'w-full min-h-[52px] text-left p-3 rounded-lg border ';
             if (showQuizResults) {
               if (isRight) cls += 'bg-green-200 border-green-400';
               else if (isSelected) cls += 'bg-red-200 border-red-400';
@@ -1069,7 +978,7 @@ export default function ScienceInquiryStudyApp() {
           {[true, false].map((value) => {
             const isSelected = answer === value;
             const isRight = value === q.answer;
-            let cls = 'min-h-[44px] rounded border p-3 font-semibold ';
+            let cls = 'min-h-[56px] rounded-lg border p-3 text-lg font-semibold ';
             if (showQuizResults) {
               if (isRight) cls += 'bg-green-200 border-green-400';
               else if (isSelected) cls += 'bg-red-200 border-red-400';
@@ -1103,7 +1012,7 @@ export default function ScienceInquiryStudyApp() {
             onChange={(e) => setAnswer(qIndex, e.target.value)}
             disabled={showQuizResults}
             placeholder="Type your answer"
-            className={`min-h-[44px] w-full rounded border p-3 ${
+            className={`min-h-[52px] w-full rounded-lg border p-3 text-lg ${
               showQuizResults
                 ? correct
                   ? 'border-green-400 bg-green-100'
@@ -1129,7 +1038,7 @@ export default function ScienceInquiryStudyApp() {
           onChange={(e) => setAnswer(qIndex, e.target.value)}
           disabled={showQuizResults}
           placeholder="Write your answer in a sentence or two"
-          className="w-full rounded border border-gray-300 bg-white p-3"
+          className="w-full rounded-lg border border-gray-300 bg-white p-3 text-lg"
         />
         {showQuizResults && (
           <div className="mt-3 rounded-lg bg-teal-50 p-3">
@@ -1236,7 +1145,7 @@ export default function ScienceInquiryStudyApp() {
   );
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl bg-teal-50 p-4 font-sans">
+    <div className="mx-auto min-h-screen max-w-5xl touch-manipulation bg-teal-50 p-4 font-sans sm:p-6">
       <div className="mb-6 text-center">
         <h1 className="text-4xl font-bold text-teal-800">Thinking Like a Scientist</h1>
         <h2 className="text-lg text-gray-600">
@@ -1248,10 +1157,10 @@ export default function ScienceInquiryStudyApp() {
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => selectTab(tab.id)}
-            className={`min-h-[44px] rounded-lg px-4 py-2 font-semibold transition-transform duration-200 ${
+            onClick={() => setActiveTab(tab.id)}
+            className={`min-h-[48px] rounded-xl px-4 py-2.5 font-semibold transition ${
               activeTab === tab.id
-                ? 'scale-110 bg-teal-800 text-white'
+                ? 'bg-teal-800 text-white shadow-lg ring-2 ring-teal-900 ring-offset-2 ring-offset-teal-50'
                 : 'bg-teal-600 text-white hover:bg-teal-700'
             }`}
           >
@@ -1261,10 +1170,11 @@ export default function ScienceInquiryStudyApp() {
       </div>
 
       <div className="rounded-lg bg-white/80 p-6 shadow-lg backdrop-blur-sm">
-        {activeTab === 'overview' && renderOverview()}
-        {DECKS[activeTab] && renderFlashcards()}
+        {activeTab === 'cards' && <Flashcards decks={DECKS} storageKey={STORAGE_KEY} />}
         {activeTab === 'sort' && renderSort()}
         {activeTab === 'quiz' && renderQuiz()}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'notes' && renderNotes()}
       </div>
     </div>
   );
