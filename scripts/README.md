@@ -1,3 +1,10 @@
+# Generated assets
+
+- **Maps** — this file, below.
+- **App icon** — see [`icons/README.md`](icons/README.md).
+
+---
+
 # Map data generation
 
 `src/data/mapPaths.js` is **generated** — don't hand-edit it. It holds the SVG

@@ -2,13 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/seasons-study-app/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicons. favicon.svg is the SIMPLIFIED mark (heavier strokes, no amber
+         bar) because browsers that prefer the SVG render it at 16-32px, where
+         the full mark turns to mush. The PNGs are the same simplified art. -->
+    <link rel="icon" type="image/svg+xml" href="/seasons-study-app/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/seasons-study-app/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/seasons-study-app/favicon-16.png" />
+
+    <!-- iOS home screen. Must be full-bleed and opaque: iOS composites a
+         transparent touch icon onto black and applies its own squircle mask. -->
+    <link rel="apple-touch-icon" href="/seasons-study-app/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#1f2937" />
+    <!-- The name that fills in by default when "Add to Home Screen" is tapped. -->
+    <meta name="apple-mobile-web-app-title" content="Godwin Studies" />
+
+    <meta name="application-name" content="Godwin Studies" />
+    <meta name="description" content="Study guides for the Godwin girls — note cards, quizzes, maps and math facts." />
+    <meta name="theme-color" content="#1e1b4b" />
     <link rel="manifest" href="/seasons-study-app/manifest.json" />
-    <title>Basketball Tournament</title>
+
+    <title>Godwin Studies</title>
   </head>
   <body>
     <div id="root"></div>

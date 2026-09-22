@@ -62,7 +62,7 @@ src/
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
-scripts/                    # Map data generation (see scripts/README.md)
+scripts/                    # Map data generation + app icon (see scripts/README.md)
 animal-hospital/            # Independent Vite app → dist/hospital/
 hotel/                      # Independent Vite app → dist/hotel/
 movie-theater/              # Independent Vite app → dist/movie-theater/
@@ -234,7 +234,19 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   clean, and only blows up as "Flashcards is not defined" at render. A study
   app's tabs have to be clicked in a browser before you trust a refactor of
   one — `npm run build` passing means nothing here.
-- PWA manifest lives at `public/manifest.json`.
+- PWA manifest lives at `public/manifest.json`. The app icon (the **RG**
+  monogram — all three girls are R. Godwin) is generated: see
+  `scripts/icons/README.md`, don't hand-edit the PNGs in `public/`. Three
+  variants exist for good reasons — the favicon is a **simplified** mark
+  (heavier strokes, no amber bar) because the full one is illegible below
+  ~48px, `apple-touch-icon.png` is **square and opaque** because iOS masks it
+  itself and composites transparency onto black, and the maskable icon is
+  scaled to 78% to survive Android's circle crop.
+- The tab title is set from `App.jsx` (`SITE_NAME` + the topic label, derived
+  from the same arrays the menus use). It said "Basketball Tournament" on every
+  page for months — if you add a topic list, it titles itself.
+- `manifest.json` `orientation` is **`any`**, not `portrait`. The iPad is used
+  in landscape and the Flashcards `lg:` height exists for exactly that.
 - Shared Firebase Realtime DB project `roseruthclinic` is used by `hotel/`,
   `animal-hospital/`, and `movie-theater/` (under namespace `movieTheater`),
   not by the main study app.
