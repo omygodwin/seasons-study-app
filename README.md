@@ -1,40 +1,99 @@
-# Interactive Study Guides for Middle School 📝
+# Study Apps
 
-This is a simple web application built to help my daughter study for her middle school classes. It features interactive flashcards and randomized quizzes designed to make learning engaging and effective.
+A small collection of study tools built for my three daughters, plus a
+basketball tournament hub and three pretend-play apps they run together.
+Everything is static and deploys to GitHub Pages.
 
----
-
-## 🚀 View the Live App
-
-You can use the study guide right now by visiting the link below:
-
-**[https://omygodwin.github.io/seasons-study-app/](https://omygodwin.github.io/seasons-study-app/)**
-
-
+**Live: <https://omygodwin.github.io/seasons-study-app/>**
 
 ---
 
-## 📚 Topics Covered
+## What's in here
 
-Currently, the app includes study guides for the following subjects:
+### Study guides
 
-* **🌍 Earth Science:** An in-depth guide to Earth's seasons, tilt, solstices, and climate zones.
-* **📜 Ancient Egypt:** Explore the world of pharaohs, gods, pyramids, and key historical periods.
+The main app opens on whichever child used it last. Each child has her own
+menu in the nav.
+
+| Child | Topic | What it is |
+| --- | --- | --- |
+| **Ruth** (4th) | ✖️ Math Facts | Multiplication 1–12: adaptive practice plus a one-minute timed drill |
+| **Rose** (middle school) | 🔬 Thinking Like a Scientist | Unit 1 — inquiry, scientific method, measurement, lab write-up |
+| | 🗺️ Maps & Rivers | Interactive continents, oceans and rivers, with printable blank maps |
+| | 📚 Vocab Words | 22 vocabulary words |
+| **Raegan** (9th) | 🌍 Earth Science: Seasons | Tilt, solstices, climate zones, plus an orbit simulation |
+| | 🏺 Ancient Egypt | Pharaohs, gods, terms and periods |
+| | 🪨 Rocks & Minerals | Rock types, the rock cycle, minerals and properties |
+| | 🏛️ Latin Vocab | Chapter 13, lessons 48–51 |
+| | 🏰 Middle Ages | Feudalism, the Church, the Crusades, Magna Carta |
+
+### Basketball tournament hub
+
+At `#tournament` — brackets, schedule and team pages for a school tournament.
+
+### Pretend-play apps
+
+Three separate apps the girls run together on their own devices, each with
+staff and customer roles and shared live state. They build independently and
+are stitched into the same deploy:
+
+| App | Path | What they play |
+| --- | --- | --- |
+| [Animal Hospital](animal-hospital/) | `/hospital/` | Vet clinic — check-in, records, treatment timers |
+| [Hotel](hotel/) | `/hotel/` | Front desk, housekeeping, bellhop, themed rooms |
+| [Movie Theater](movie-theater/) | `/movie-theater/` | Box office, concessions, seating, showtimes |
 
 ---
 
-## ✨ Features
+## How the study material works
 
-* **Interactive Flashcards**: Flip cards to learn terms and mark them as "Known" or "Review Again" to track your progress.
-* **Randomized Quizzes**: Test your knowledge with a unique, 10-question quiz generated from a larger question bank each time.
-* **Multiple Topics**: Easily switch between different study guides from the main navigation bar.
+Cards are not just cards. The flashcard engine and the math facts app are
+both built around the two study techniques with the strongest evidence behind
+them, and several design decisions look odd until you know why:
+
+- The answer is hidden until she has tried to recall it, and the browsable
+  term-and-definition list lives on a separate tab. Reading a term beside its
+  definition feels productive and teaches much less.
+- Scheduling persists across days rather than resetting each session.
+- Rounds study one topic at a time by default; mixing is opt-in.
+- The Mad Minute deliberately gives no feedback until time is up.
+
+The reasoning, with the research behind it, is in
+**[docs/learning-design.md](docs/learning-design.md)** — read that before
+changing how practice behaves.
 
 ---
 
-## 🛠️ Built With
+## Running it
 
-This project was built using modern web technologies:
+```bash
+npm install
+npm run dev       # http://localhost:5173
+npm run build     # → dist/
+npm run preview
+npm run lint
+```
 
-* **React**
-* **Vite**
-* **Tailwind CSS**
+The sub-apps are separate npm projects and build on their own:
+
+```bash
+cd hotel && npm ci && npm run build
+```
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup, conventions and how to
+add a new child or topic, and **[docs/deploying.md](docs/deploying.md)** for
+the deploy pipeline.
+
+---
+
+## Documentation
+
+| File | What it covers |
+| --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, conventions, adding a topic or a child |
+| [CLAUDE.md](CLAUDE.md) | Working notes for AI coding agents |
+| [docs/learning-design.md](docs/learning-design.md) | Why practice behaves the way it does |
+| [docs/deploying.md](docs/deploying.md) | GitHub Pages pipeline and its history |
+| [docs/firebase.md](docs/firebase.md) | Shared Realtime Database, rules, namespaces |
+| [docs/topics/](docs/topics/) | One file per study topic |
+| [scripts/README.md](scripts/README.md) | Regenerating the map data |
