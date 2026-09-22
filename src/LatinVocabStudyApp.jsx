@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useGuidanceTab } from './guidanceContext';
 import Flashcards from './Flashcards';
 
 const VOCAB = [
@@ -76,6 +77,7 @@ function buildQuizPool(words) {
 
 export default function LatinVocabStudyApp() {
   const [activeTab, setActiveTab] = useState('flashcards');
+  useGuidanceTab(activeTab);
   const [lessonFilter, setLessonFilter] = useState('all');
   const [currentQuiz, setCurrentQuiz] = useState([]);
   const [quizAnswers, setQuizAnswers] = useState({});

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useGuidanceTab } from './guidanceContext';
 import Flashcards from './Flashcards';
 
 /* Unit 1: Thinking Like a Scientist.
@@ -617,6 +618,7 @@ export default function ScienceInquiryStudyApp() {
   const [activeTab, setActiveTab] = useState('cards');
 
   // Qualitative / quantitative drill
+  useGuidanceTab(activeTab);
   const [drillOrder, setDrillOrder] = useState(() => shuffle(OBSERVATIONS));
   const [drillIndex, setDrillIndex] = useState(0);
   const [drillPick, setDrillPick] = useState(null);

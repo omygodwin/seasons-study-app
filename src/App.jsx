@@ -10,6 +10,7 @@ import ScienceInquiryStudyApp from './ScienceInquiryStudyApp';
 import MathFactsStudyApp from './MathFactsStudyApp';
 import TournamentApp from './tournament/TournamentApp';
 import { groupTopicsByMonth } from './topicSchedule';
+import { GuidanceButton, GuidanceProvider } from './Guidance';
 
 /* Topics carry the date the unit was studied. The menu groups and sorts on
  * that date, so the list stays in order by itself as topics are added through
@@ -208,7 +209,8 @@ export default function App() {
   ];
 
   return (
-    <div>
+    <GuidanceProvider>
+      <div>
       <nav className="no-print sticky top-0 z-20 flex flex-wrap items-center justify-center gap-2 border-b border-white/10 bg-slate-900/95 px-4 py-3 text-white shadow-lg backdrop-blur">
         {menus.map((menu) => (
           <TopicMenu
@@ -224,6 +226,8 @@ export default function App() {
             onSelect={selectTopic}
           />
         ))}
+        <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-white/20 sm:block" />
+        <GuidanceButton topic={studyTopic} />
       </nav>
 
       {studyTopic === 'seasons' && <SeasonsStudyApp />}
@@ -235,6 +239,7 @@ export default function App() {
       {studyTopic === 'geography' && <GeographyStudyApp />}
       {studyTopic === 'scienceinquiry' && <ScienceInquiryStudyApp />}
       {studyTopic === 'mathfacts' && <MathFactsStudyApp />}
-    </div>
+      </div>
+    </GuidanceProvider>
   );
 }

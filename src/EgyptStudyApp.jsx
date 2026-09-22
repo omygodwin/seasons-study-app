@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useGuidanceTab } from './guidanceContext';
 import Flashcards from './Flashcards';
 
 const DECKS = [
@@ -64,6 +65,7 @@ export default function EgyptStudyApp() {
 
 
   // State for the quiz
+  useGuidanceTab(activeTab);
   const [currentQuiz, setCurrentQuiz] = useState([]);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showQuizResults, setShowQuizResults] = useState(false);

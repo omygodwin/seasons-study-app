@@ -56,6 +56,9 @@ src/
   MathFactsStudyApp.jsx     # Ruth's multiplication facts + Mad Minute
   Flashcards.jsx            # Shared spaced-repetition note-card engine
                             #   (every study app except Geography and Math Facts)
+  Guidance.jsx              # "Tips" panel: study advice + a grown-ups section
+  guidanceContext.js        # its context + useGuidanceTab hook
+  guidance.js               # the Tips content, per topic and per tab
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
@@ -200,6 +203,19 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   renders as a flat list; add dates to their entries to switch them over.
 - Touch-first nav: nav buttons use `min-h-[44px]`; the Rose dropdown closes on
   outside tap or Escape. Preserve these when editing nav.
+- **The Tips panel** (`Guidance.jsx`) sits in the nav on every study topic. Two
+  audiences: study advice for the child, and a "For grown-ups" section tying
+  the page to the research. Content lives in `guidance.js`, keyed by topic and
+  tab; a tab entry that is a string names a shared role (`cards` / `quiz` /
+  `notes` / `overview`) so nine topics don't each carry a copy. A study app
+  opts in with one line: `useGuidanceTab(activeTab)`.
+  - **The panel MUST stay portalled to `document.body`.** The nav carries
+    `backdrop-blur`, and `backdrop-filter` makes an element a containing block
+    for `fixed` descendants — rendered in place, the panel inherited the nav's
+    68px height and silently clipped while still reporting all its text to the
+    DOM. A presence check will not catch this; assert its height.
+  - Adding a topic means adding a `GUIDANCE` entry, or the button hides itself
+    for that topic.
 - The selected topic is remembered in `localStorage` (`studyTopic`) so the app
   reopens on whichever child used it last.
 - No test framework — verify with `npm run build` and manual browser check.
