@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useGuidanceTab } from './guidanceContext';
 import Flashcards from './Flashcards';
 
 const DECKS = [
@@ -71,6 +72,7 @@ const STORAGE_KEY = 'flashcards:seasons';
 
 export default function SeasonsStudyApp() {
   const [activeTab, setActiveTab] = useState('cards');
+  useGuidanceTab(activeTab);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showQuizResults, setShowQuizResults] = useState(false);
   const [simulationStep, setSimulationStep] = useState(0);

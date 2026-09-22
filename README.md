@@ -96,4 +96,5 @@ the deploy pipeline.
 | [docs/deploying.md](docs/deploying.md) | GitHub Pages pipeline and its history |
 | [docs/firebase.md](docs/firebase.md) | Shared Realtime Database, rules, namespaces |
 | [docs/topics/](docs/topics/) | One file per study topic |
+| [docs/tips-panel.md](docs/tips-panel.md) | The in-app Tips panel and its content model |
 | [scripts/README.md](scripts/README.md) | Regenerating the map data |

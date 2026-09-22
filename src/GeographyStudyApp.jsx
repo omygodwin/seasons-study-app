@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useGuidanceTab } from './guidanceContext';
 import {
   US_VIEWBOX,
   WORLD_VIEWBOX,
@@ -983,6 +984,7 @@ const TABS = [
 
 export default function GeographyStudyApp() {
   const [tab, setTab] = useState('rivers');
+  useGuidanceTab(tab);
   // Held here so switching tabs never throws away map progress.
   const [riverProgress, setRiverProgress] = useState({});
   const [worldProgress, setWorldProgress] = useState({});

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useGuidanceTab } from './guidanceContext';
 
 /* Ruth's multiplication and division facts, 1-12.
  *
@@ -451,6 +452,7 @@ function Legend({ keys }) {
 
 export default function MathFactsStudyApp() {
   const [tab, setTab] = useState('practice');
+  useGuidanceTab(tab);
   const [state, setState] = useState(loadState);
 
   // practice
