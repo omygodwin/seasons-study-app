@@ -17,16 +17,33 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
  *   schedule outlives the sitting, so boxes and due dates persist to
  *   localStorage.
  *
- * Two moderate-utility techniques are here too. Rounds draw from every deck by
- * default (interleaving, which helps most with the confusable pairs in this
- * material — qualitative/quantitative, independent/dependent, theory/law), and
- * a round is capped so a sitting is a finishable chunk instead of an endless
- * deck.
+ * A round is also capped, so a sitting is a finishable chunk instead of an
+ * endless deck.
+ *
+ * Rounds are BLOCKED by deck by default, and mixing is opt-in. An earlier
+ * version defaulted to mixing every deck together on the strength of
+ * interleaving being a "moderate utility" technique in that 2013 review. The
+ * moderators undercut that for this material: Brunmair & Richter (2019) put
+ * interleaving at g = 0.42 overall but estimate a NEGATIVE effect for verbal
+ * material, against g = 0.67 for visual categories, and Hwang (2025) finds
+ * blocked practice first matters for new declarative knowledge in younger
+ * learners. Term-and-definition cards are exactly the weak case, so mixing is
+ * offered as something to turn on once a deck is familiar rather than as the
+ * default.
  *
  * Self-grading is the known weak spot: children systematically over-rate their
  * own recall. Two things push back on that — the middle "Almost" grade gives
  * the half-known card somewhere honest to go, and nothing leaves the round
  * until it is graded "Knew it".
+ *
+ * A card graded "Almost" or "Study Again" then asks her to put the answer in
+ * her own words. That is the generation effect plus self-explanation (g ≈ 0.55,
+ * Bisra et al. 2018), layered onto the retrieval she has just attempted. It is
+ * deliberately NOT offered for a card she knew: writing out all fifty would be
+ * the opportunity-cost trap the flashcard-creation research warns about, where
+ * time goes into making cards instead of retrieving from them. Her wording is
+ * kept and shown beneath the real definition next time — never on the question
+ * face, which would give the answer away.
  *
  * Each study topic keeps its own palette, so themes are named presets below
  * rather than colour props: Tailwind's JIT only sees class names it can find
@@ -137,7 +154,7 @@ function isoDaysFromNow(days) {
 const todayISO = () => isoDaysFromNow(0);
 
 function loadState(key) {
-  const empty = { v: STATE_VERSION, deck: MIXED, direction: 'term', cards: {} };
+  const empty = { v: STATE_VERSION, deck: null, direction: 'term', cards: {} };
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return empty;
@@ -159,6 +176,8 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
   const [phase, setPhase] = useState('start'); // 'start' | 'study' | 'done'
   const [tally, setTally] = useState({ knew: 0, almost: 0, again: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
+  // { id, text } while she is writing a missed card up in her own words
+  const [composing, setComposing] = useState(null);
 
   useEffect(() => {
     try {
@@ -189,14 +208,20 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
 
   const byId = useMemo(() => new Map(allCards.map((c) => [c.id, c])), [allCards]);
 
-  // A saved deck id can go stale if decks are renamed, and a single-deck topic
-  // never sets one, so an unknown id falls back to everything rather than an
-  // empty round.
-  const pool = useMemo(() => {
-    if (state.deck === MIXED) return allCards;
-    const picked = allCards.filter((c) => c.deckId === state.deck);
-    return picked.length ? picked : allCards;
-  }, [allCards, state.deck]);
+  /* The deck actually in play. Nothing saved yet means the first deck, not
+   * MIXED — see the note at the top about why blocked is the default. A saved
+   * id can also go stale if a deck is renamed, so an id that matches nothing
+   * falls back rather than producing an empty round. */
+  const deckId = useMemo(() => {
+    if (state.deck === MIXED) return MIXED;
+    if (state.deck && allCards.some((c) => c.deckId === state.deck)) return state.deck;
+    return decks[0]?.id ?? MIXED;
+  }, [state.deck, allCards, decks]);
+
+  const pool = useMemo(
+    () => (deckId === MIXED ? allCards : allCards.filter((c) => c.deckId === deckId)),
+    [allCards, deckId],
+  );
 
   const today = todayISO();
 
@@ -221,8 +246,8 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
   }, [pool, state.cards, today]);
 
   const deckDue = useCallback(
-    (deckId) => {
-      const cards = deckId === MIXED ? allCards : allCards.filter((c) => c.deckId === deckId);
+    (id) => {
+      const cards = id === MIXED ? allCards : allCards.filter((c) => c.deckId === id);
       return cards.filter((c) => {
         const st = state.cards[c.id];
         return !st || st.due <= today;
@@ -253,6 +278,19 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
     setRevealed(true);
   }, []);
 
+  /* Move past the current card. `retire` drops it from the round; otherwise it
+   * goes to the back, so every card in a round ends on a successful recall. */
+  const advance = useCallback(
+    (id, retire) => {
+      const remaining = retire ? queue.slice(1) : [...queue.slice(1), id];
+      setQueue(remaining);
+      setFlipped(false);
+      setRevealed(false);
+      if (remaining.length === 0) setPhase('done');
+    },
+    [queue],
+  );
+
   const grade = useCallback(
     (result) => {
       const id = queue[0];
@@ -268,23 +306,40 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
         next = { box, due: isoDaysFromNow(BOX_DAYS[box]), seen: prev.seen + 1, right: prev.right + 1 };
       }
 
-      setState((s) => ({ ...s, cards: { ...s.cards, [id]: next } }));
+      // Her own wording survives a regrade — it is hers, not part of the schedule.
+      setState((s) => ({ ...s, cards: { ...s.cards, [id]: { ...next, own: prev.own } } }));
       setTally((t) => ({ ...t, [result]: t[result] + 1 }));
 
-      // Only a card she knew leaves the round; the others go to the back so
-      // every card in a round ends on a successful recall.
-      const remaining = result === 'knew' ? queue.slice(1) : [...queue.slice(1), id];
-      setQueue(remaining);
-      setFlipped(false);
-      setRevealed(false);
-      if (remaining.length === 0) setPhase('done');
+      if (result === 'knew') {
+        advance(id, true);
+      } else {
+        // A missed card gets the own-words prompt before the round moves on.
+        setComposing({ id, text: prev.own ?? '' });
+      }
     },
-    [queue, state.cards, today],
+    [queue, state.cards, today, advance],
+  );
+
+  const finishComposing = useCallback(
+    (save) => {
+      if (!composing) return;
+      const { id, text } = composing;
+      const trimmed = text.trim();
+      if (save && trimmed) {
+        setState((s) => ({
+          ...s,
+          cards: { ...s.cards, [id]: { ...s.cards[id], own: trimmed } },
+        }));
+      }
+      setComposing(null);
+      advance(id, false);
+    },
+    [composing, advance],
   );
 
   // Physical keyboard (iPad Magic Keyboard / laptop): space flips, 1-2-3 grade.
   useEffect(() => {
-    if (phase !== 'study') return undefined;
+    if (phase !== 'study' || composing) return undefined;
     function onKey(e) {
       const tag = e.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -298,7 +353,7 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [phase, revealed, flip, grade]);
+  }, [phase, revealed, composing, flip, grade]);
 
   const setDeck = (deck) => {
     setState((s) => ({ ...s, deck }));
@@ -309,21 +364,31 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
   const toggleDirection = () =>
     setState((s) => ({ ...s, direction: s.direction === 'term' ? 'definition' : 'term' }));
 
+  /* Reset clears the schedule, not her writing: the boxes are the app's state
+   * but the own-words notes are hers, and losing them to a stray tap on a
+   * button a nine-year-old is curious about would be the wrong trade. */
   const resetProgress = () => {
-    setState((s) => ({ ...s, cards: {} }));
+    setState((s) => {
+      const kept = {};
+      Object.entries(s.cards).forEach(([id, st]) => {
+        if (st.own) kept[id] = { box: 0, due: todayISO(), seen: 0, right: 0, own: st.own };
+      });
+      return { ...s, cards: kept };
+    });
     setConfirmReset(false);
     setPhase('start');
     setQueue([]);
   };
 
   const card = byId.get(queue[0]);
+  const ownWords = card ? state.cards[card.id]?.own : null;
   const askTerm = state.direction === 'term';
   const front = card ? (askTerm ? card.term : card.definition) : '';
   const back = card ? (askTerm ? card.definition : card.term) : '';
   const done = roundTotal - queue.length;
 
   const multiDeck = decks.length > 1;
-  const deckOptions = multiDeck ? [{ id: MIXED, label: 'All Mixed', emoji: '🎲' }, ...decks] : [];
+  const deckOptions = multiDeck ? [...decks, { id: MIXED, label: 'Mix It Up', emoji: '🎲' }] : [];
 
   // --- deck picker, shown above every phase so she can switch at any time ---
 
@@ -332,7 +397,7 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
       {multiDeck && (
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {deckOptions.map((option) => {
-          const selected = state.deck === option.id;
+          const selected = deckId === option.id;
           const due = deckDue(option.id);
           return (
             <button
@@ -361,6 +426,13 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
           );
         })}
       </div>
+      )}
+
+      {multiDeck && (
+        <p className="text-center text-xs text-slate-500">
+          One topic at a time while it is new. Mix It Up once a topic is mostly
+          &ldquo;Strong&rdquo; — mixing too early makes new material harder, not stickier.
+        </p>
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
@@ -426,7 +498,9 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
       <div className="text-center">
         {confirmReset ? (
           <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-xl bg-red-50 p-3">
-            <span className="text-sm text-red-900">Erase all card progress?</span>
+            <span className="text-sm text-red-900">
+              Start the schedule over? Your own-words notes are kept.
+            </span>
             <button
               onClick={resetProgress}
               className="min-h-[44px] rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
@@ -468,7 +542,7 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
         </p>
       </div>
 
-      {state.deck === MIXED && card && (
+      {deckId === MIXED && card && (
         <p className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
           {card.deckEmoji} {card.deckLabel}
         </p>
@@ -525,11 +599,50 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
             >
               {back}
             </p>
+            {ownWords && (
+              <p className="mt-5 max-w-prose border-t border-white/25 pt-4 text-sm italic text-white/80 sm:text-base">
+                Your words: {ownWords}
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {revealed ? (
+      {composing ? (
+        <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
+          <label htmlFor="own-words" className="block font-bold text-slate-800">
+            Now say it in your own words
+          </label>
+          <p className="mt-1 text-sm text-slate-600">
+            Not the book&rsquo;s words — yours. Explaining it yourself is what moves it
+            from &ldquo;almost&rdquo; to &ldquo;known&rdquo;.
+          </p>
+          <textarea
+            id="own-words"
+            rows={3}
+            autoFocus
+            value={composing.text}
+            onChange={(e) => setComposing((c) => ({ ...c, text: e.target.value }))}
+            placeholder="In my own words..."
+            className="mt-3 w-full rounded-lg border border-slate-300 p-3 text-base"
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={() => finishComposing(true)}
+              disabled={!composing.text.trim()}
+              className={`min-h-[52px] flex-1 rounded-xl px-5 py-3 font-bold text-white shadow disabled:bg-gray-400 ${t.primary}`}
+            >
+              Save &amp; Keep Going
+            </button>
+            <button
+              onClick={() => finishComposing(false)}
+              className="min-h-[52px] rounded-xl bg-slate-200 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-300"
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      ) : revealed ? (
         <div>
           <p className="mb-2 text-center text-sm font-semibold text-slate-600">
             How did that go?
@@ -564,14 +677,16 @@ export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
         </button>
       )}
 
-      <div className="flex justify-center">
-        <button
-          onClick={() => setPhase('start')}
-          className="min-h-[44px] rounded-lg px-4 py-2 text-sm text-slate-500 underline hover:text-slate-700"
-        >
-          End round
-        </button>
-      </div>
+      {!composing && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => setPhase('start')}
+            className="min-h-[44px] rounded-lg px-4 py-2 text-sm text-slate-500 underline hover:text-slate-700"
+          >
+            End round
+          </button>
+        </div>
+      )}
     </div>
   );
 

@@ -116,7 +116,23 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
      intervals in `localStorage` — spacing does nothing if it resets on
      reload, which is what the old in-component `Set`s did.
   3. **A card leaves the round only when graded "Knew it."** "Almost" and
-     "Study Again" requeue it, so every round ends on successful recall.
+     "Study Again" requeue it, so every round ends on successful recall, and
+     they also trigger the own-words prompt (below).
+  4. **Rounds are blocked by deck; mixing is opt-in.** This was reversed once
+     and put back deliberately — don't "fix" it. Interleaving measures g = 0.42
+     overall but the moderators run the other way for term-and-definition
+     material: Brunmair & Richter (2019) estimate a *negative* effect for
+     verbal material (against g = 0.67 for visual categories), and Hwang (2025)
+     finds blocked practice first matters for new declarative knowledge in
+     younger learners. "Mix It Up" sits last in the picker with a line saying
+     to use it once a topic is mostly Strong.
+  5. **Only a missed card asks her to write it in her own words.** Generation
+     plus self-explanation on the cards retrieval just showed are weak; doing
+     it for all 50 is the opportunity-cost trap (time spent making cards
+     instead of retrieving from them). Her wording persists as `cards[id].own`,
+     shows under the real definition on the *answer* face only, and survives
+     both a regrade and a progress reset — the boxes are the app's state, the
+     notes are hers.
   The `lg:` card height is deliberately *shorter* than `sm:` — `lg` width is
   the iPad in landscape, where the grade buttons have to stay above the fold.
 - When adding a new Rose study topic:
