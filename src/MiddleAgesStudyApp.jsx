@@ -1,68 +1,91 @@
 import { useState, useEffect } from 'react';
+import Flashcards from './Flashcards';
+
+const DECKS = [
+  {
+    id: 'feudalism',
+    label: 'Feudalism',
+    emoji: '🏰',
+    cards: [
+        { term: 'Feudalism', definition: 'The political and social system of the Middle Ages in which the king gave land to nobles in exchange for loyalty and military service.' },
+        { term: 'Nobles / Lords', definition: 'Received large pieces of land from the king. They gave smaller pieces of land (fiefs) to knights in exchange for protection.' },
+        { term: 'Vassal', definition: 'A knight (or noble) who has accepted land and protection from a lord in exchange for loyalty and military service.' },
+        { term: 'Fief', definition: 'Land given to a knight or vassal in exchange for loyalty and service to a lord.' },
+        { term: 'Manor', definition: 'An area of land controlled by a lord where peasants lived and worked the fields.' },
+        { term: 'Tithes', definition: 'A payment (usually 1/10 of income) given to the Church by peasants and others.' },
+        { term: 'Code of Chivalry', definition: 'A set of rules of behavior that a knight had to live by — examples: avoid cheating, die with honor, avoid torture, protect the weak.' },
+        { term: 'Feudal Pyramid', definition: 'Top to bottom: Church → Monarch → Nobility → Knights & Vassals → Merchants, Farmers, Craftsmen. Taxes and loyalty flow up; land flows down.' },
+    
+    ],
+  },
+  {
+    id: 'church',
+    label: 'The Church',
+    emoji: '⛪',
+    cards: [
+        { term: 'The Pope', definition: 'The leader of the Catholic Church.' },
+        { term: 'Sacraments', definition: 'Religious ceremonies and acts that Christians do throughout their life in the Church to serve God.' },
+        { term: 'Excommunication', definition: 'When the Pope takes away a person\'s sacraments — cutting them off from the Church.' },
+        { term: 'Interdict', definition: 'Like excommunication, but for a whole kingdom or region. Sacraments are taken away from everyone there.' },
+        { term: 'Monasticism', definition: 'A way of life for monks and nuns. They woke up super early, went to bed late, and even woke up in the middle of the night for prayer and worship.' },
+        { term: 'Monks and Art', definition: 'Monks made art, music, and copied books (like the Bible) to glorify God. They preserved learning and literature.' },
+        { term: 'Church in Government', definition: 'Church leaders were often the only ones who could read and write, and they could excommunicate even kings.' },
+        { term: 'Church and Education', definition: 'Members of the Church could read, write, and teach others, making them the educators of the Middle Ages.' },
+        { term: 'Church Land and Wealth', definition: 'The Church owned the most land in Europe. Kings had to stay on good terms with the Church to keep their land and power.' },
+        { term: 'Church and Unity', definition: 'People across many different countries were united because they were all part of the Catholic Church.' },
+    
+    ],
+  },
+  {
+    id: 'events',
+    label: 'Events',
+    emoji: '⚔️',
+    cards: [
+        { term: 'The Dark Ages', definition: 'A nickname for the Middle Ages. Some say it fits because of the Black Death, heavy taxes, and lack of new technology. Others disagree because monks copied Bibles and peace treaties were made.' },
+        { term: 'The Black Death', definition: 'The Bubonic Plague. Most likely carried by rats and fleas. About 1/3 (33%) of the European population died.' },
+        { term: 'Causes (as people thought)', definition: 'People in the Middle Ages thought the Black Death was caused by dirtiness, but mostly believed they were being punished by God for sin.' },
+        { term: 'Church Response to Plague', definition: 'The Church (especially nuns) helped care for the sick, and called people to repent of their sins.' },
+        { term: 'The Hundred Years\' War', definition: 'A long war between England and France, fought over who would rule the French throne.' },
+        { term: 'Joan of Arc', definition: 'A young French girl who helped lead and fight with the French army. She claimed to have visions from God. She gained so much power that she was arrested and killed (burned at the stake).' },
+        { term: 'The Crusades', definition: 'A series of religious wars where European Christians traveled to take back the Holy Land (Jerusalem) from Muslim control.' },
+        { term: 'Pope Urban II', definition: 'The Pope who called Christians to go on the First Crusade.' },
+        { term: 'Pilgrims', definition: 'The Crusaders considered themselves pilgrims — religious travelers — so they could enter Jerusalem.' },
+        { term: 'First Crusade', definition: 'Goal: rescue the Holy Land from the Turks. It was successful — Crusaders gained lots of land and divided it into smaller regions called Crusader States.' },
+        { term: 'Crusader States', definition: 'Land in the Holy Land that the Crusaders divided into smaller regions to control after the First Crusade.' },
+        { term: '2nd–8th Crusades', definition: 'Not really successful — they tried to do the same thing (capture more land) over and over again, and they mostly failed.' },
+        { term: 'The Reconquista', definition: 'A movement to drive the Muslims out of Spain and place Spain under the control of Christian monarchs.' },
+        { term: 'Impact of the Crusades', definition: 'They spread Christianity, increased trade, and connected Europe with the Middle East.' },
+    
+    ],
+  },
+  {
+    id: 'magnaCarta',
+    label: 'Magna Carta',
+    emoji: '📜',
+    cards: [
+        { term: 'Magna Carta', definition: 'A constitutional document from the Middle Ages that formed the basis of government and contained legal and political rights.' },
+        { term: 'Whose Power It Limited', definition: 'The Magna Carta limited the power of the government (the king) and gave rights to the people.' },
+        { term: 'Inspired By It', definition: 'Later documents inspired by the Magna Carta include the U.S. Constitution and the Declaration of Independence.' },
+        { term: 'Limited Government', definition: 'The government\'s powers are limited. Why important: it prevents corruption and over-reach of power.' },
+        { term: 'The Rule of Law', definition: 'Everyone has to obey the law, no matter their position or circumstance. Why important: gives everyone equality and prevents corruption.' },
+        { term: 'Individual Rights', definition: 'Everyone is born with natural rights that can\'t be taken away. The government doesn\'t grant life, liberty, and the right to own property — it protects them.' },
+        { term: 'Shared Power', definition: 'Power has to be shared between different branches of government. Why important: prevents corruption and unjust decisions.' },
+    
+    ],
+  },
+];
+
+const STORAGE_KEY = 'flashcards:middleages';
 
 export default function MiddleAgesStudyApp() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [currentCard, setCurrentCard] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [activeTab, setActiveTab] = useState('cards');
 
-  const [knownCards, setKnownCards] = useState(new Set());
-  const [reviewCards, setReviewCards] = useState(new Set());
 
   const [currentQuiz, setCurrentQuiz] = useState([]);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showQuizResults, setShowQuizResults] = useState(false);
 
   // --- DATA ---
-
-  const studyData = {
-    feudalism: [
-      { term: 'Feudalism', definition: 'The political and social system of the Middle Ages in which the king gave land to nobles in exchange for loyalty and military service.' },
-      { term: 'Nobles / Lords', definition: 'Received large pieces of land from the king. They gave smaller pieces of land (fiefs) to knights in exchange for protection.' },
-      { term: 'Vassal', definition: 'A knight (or noble) who has accepted land and protection from a lord in exchange for loyalty and military service.' },
-      { term: 'Fief', definition: 'Land given to a knight or vassal in exchange for loyalty and service to a lord.' },
-      { term: 'Manor', definition: 'An area of land controlled by a lord where peasants lived and worked the fields.' },
-      { term: 'Tithes', definition: 'A payment (usually 1/10 of income) given to the Church by peasants and others.' },
-      { term: 'Code of Chivalry', definition: 'A set of rules of behavior that a knight had to live by — examples: avoid cheating, die with honor, avoid torture, protect the weak.' },
-      { term: 'Feudal Pyramid', definition: 'Top to bottom: Church → Monarch → Nobility → Knights & Vassals → Merchants, Farmers, Craftsmen. Taxes and loyalty flow up; land flows down.' },
-    ],
-    church: [
-      { term: 'The Pope', definition: 'The leader of the Catholic Church.' },
-      { term: 'Sacraments', definition: 'Religious ceremonies and acts that Christians do throughout their life in the Church to serve God.' },
-      { term: 'Excommunication', definition: 'When the Pope takes away a person\'s sacraments — cutting them off from the Church.' },
-      { term: 'Interdict', definition: 'Like excommunication, but for a whole kingdom or region. Sacraments are taken away from everyone there.' },
-      { term: 'Monasticism', definition: 'A way of life for monks and nuns. They woke up super early, went to bed late, and even woke up in the middle of the night for prayer and worship.' },
-      { term: 'Monks and Art', definition: 'Monks made art, music, and copied books (like the Bible) to glorify God. They preserved learning and literature.' },
-      { term: 'Church in Government', definition: 'Church leaders were often the only ones who could read and write, and they could excommunicate even kings.' },
-      { term: 'Church and Education', definition: 'Members of the Church could read, write, and teach others, making them the educators of the Middle Ages.' },
-      { term: 'Church Land and Wealth', definition: 'The Church owned the most land in Europe. Kings had to stay on good terms with the Church to keep their land and power.' },
-      { term: 'Church and Unity', definition: 'People across many different countries were united because they were all part of the Catholic Church.' },
-    ],
-    events: [
-      { term: 'The Dark Ages', definition: 'A nickname for the Middle Ages. Some say it fits because of the Black Death, heavy taxes, and lack of new technology. Others disagree because monks copied Bibles and peace treaties were made.' },
-      { term: 'The Black Death', definition: 'The Bubonic Plague. Most likely carried by rats and fleas. About 1/3 (33%) of the European population died.' },
-      { term: 'Causes (as people thought)', definition: 'People in the Middle Ages thought the Black Death was caused by dirtiness, but mostly believed they were being punished by God for sin.' },
-      { term: 'Church Response to Plague', definition: 'The Church (especially nuns) helped care for the sick, and called people to repent of their sins.' },
-      { term: 'The Hundred Years\' War', definition: 'A long war between England and France, fought over who would rule the French throne.' },
-      { term: 'Joan of Arc', definition: 'A young French girl who helped lead and fight with the French army. She claimed to have visions from God. She gained so much power that she was arrested and killed (burned at the stake).' },
-      { term: 'The Crusades', definition: 'A series of religious wars where European Christians traveled to take back the Holy Land (Jerusalem) from Muslim control.' },
-      { term: 'Pope Urban II', definition: 'The Pope who called Christians to go on the First Crusade.' },
-      { term: 'Pilgrims', definition: 'The Crusaders considered themselves pilgrims — religious travelers — so they could enter Jerusalem.' },
-      { term: 'First Crusade', definition: 'Goal: rescue the Holy Land from the Turks. It was successful — Crusaders gained lots of land and divided it into smaller regions called Crusader States.' },
-      { term: 'Crusader States', definition: 'Land in the Holy Land that the Crusaders divided into smaller regions to control after the First Crusade.' },
-      { term: '2nd–8th Crusades', definition: 'Not really successful — they tried to do the same thing (capture more land) over and over again, and they mostly failed.' },
-      { term: 'The Reconquista', definition: 'A movement to drive the Muslims out of Spain and place Spain under the control of Christian monarchs.' },
-      { term: 'Impact of the Crusades', definition: 'They spread Christianity, increased trade, and connected Europe with the Middle East.' },
-    ],
-    magnaCarta: [
-      { term: 'Magna Carta', definition: 'A constitutional document from the Middle Ages that formed the basis of government and contained legal and political rights.' },
-      { term: 'Whose Power It Limited', definition: 'The Magna Carta limited the power of the government (the king) and gave rights to the people.' },
-      { term: 'Inspired By It', definition: 'Later documents inspired by the Magna Carta include the U.S. Constitution and the Declaration of Independence.' },
-      { term: 'Limited Government', definition: 'The government\'s powers are limited. Why important: it prevents corruption and over-reach of power.' },
-      { term: 'The Rule of Law', definition: 'Everyone has to obey the law, no matter their position or circumstance. Why important: gives everyone equality and prevents corruption.' },
-      { term: 'Individual Rights', definition: 'Everyone is born with natural rights that can\'t be taken away. The government doesn\'t grant life, liberty, and the right to own property — it protects them.' },
-      { term: 'Shared Power', definition: 'Power has to be shared between different branches of government. Why important: prevents corruption and unjust decisions.' },
-    ],
-  };
 
   const quizQuestionBank = [
     { question: 'In feudalism, what did the king give to nobles in exchange for loyalty?', options: ['Gold', 'Land', 'Weapons', 'Servants'], correct: 1 },
@@ -109,40 +132,6 @@ export default function MiddleAgesStudyApp() {
   useEffect(() => {
     startNewQuiz();
   }, []);
-
-  const currentDeck = studyData[activeTab] || [];
-  const cardId = `${activeTab}-${currentCard}`;
-
-  const nextCard = () => {
-    setCurrentCard((prev) => (prev + 1) % currentDeck.length);
-    setIsFlipped(false);
-  };
-
-  const handleMarkCard = (status) => {
-    if (status === 'known') {
-      setKnownCards((prev) => new Set(prev).add(cardId));
-      setReviewCards((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(cardId);
-        return newSet;
-      });
-    } else {
-      setReviewCards((prev) => new Set(prev).add(cardId));
-      setKnownCards((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(cardId);
-        return newSet;
-      });
-    }
-    setTimeout(nextCard, 200);
-  };
-
-  const resetCardProgress = () => {
-    setKnownCards(new Set());
-    setReviewCards(new Set());
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
 
   const handleQuizAnswer = (qIndex, aIndex) =>
     setQuizAnswers((prev) => ({ ...prev, [qIndex]: aIndex }));
@@ -219,57 +208,37 @@ export default function MiddleAgesStudyApp() {
     </div>
   );
 
-  const renderFlashcards = () => (
-    <div className="space-y-4">
-      {currentDeck.length > 0 ? (
-        <>
-          <div className="text-center text-sm text-gray-600 grid grid-cols-2 gap-2">
-            <div className="bg-green-100 p-2 rounded">Known: {knownCards.size}</div>
-            <div className="bg-orange-100 p-2 rounded">Needs Review: {reviewCards.size}</div>
-          </div>
-          <div className="relative h-64" onClick={() => setIsFlipped(!isFlipped)}>
-            <div
-              className={`absolute inset-0 w-full h-full flex justify-center items-center bg-white p-6 rounded-lg shadow-lg text-center cursor-pointer transition-transform duration-500 ${
-                isFlipped ? 'opacity-0' : ''
-              }`}
-            >
-              <h3 className="text-3xl font-bold">{currentDeck[currentCard]?.term}</h3>
-            </div>
-            <div
-              className={`absolute inset-0 w-full h-full flex justify-center items-center bg-amber-800 text-white p-6 rounded-lg shadow-lg text-center cursor-pointer transition-transform duration-500 ${
-                !isFlipped ? 'opacity-0' : ''
-              }`}
-            >
-              <p className="text-lg">{currentDeck[currentCard]?.definition}</p>
-            </div>
-          </div>
+  /* Reference list, on its own tab. These used to be the flashcard tabs
+   * themselves, with each term printed next to its definition under the card —
+   * see the note at the top of Flashcards.jsx for why that has to be separate
+   * from the cards. */
+  const renderNotes = () => (
+    <div className="space-y-6">
+      <div className="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+        <p className="text-sm text-gray-800">
+          📋 Everything in one place, for reading over before a round or checking
+          something you got stuck on. To <em>practice</em>, use the Note Cards tab —
+          trying to remember first is what makes it stick.
+        </p>
+      </div>
 
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={() => handleMarkCard('review')}
-              className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600"
-            >
-              🤔 Review Again
-            </button>
-            <button
-              onClick={() => handleMarkCard('known')}
-              className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
-            >
-              ✅ I Knew This
-            </button>
-          </div>
-          <div className="flex justify-center">
-            <button
-              onClick={resetCardProgress}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-            >
-              🔄 Reset Progress
-            </button>
-          </div>
-        </>
-      ) : (
-        <p>Select a category.</p>
-      )}
+      {DECKS.map((deck) => (
+        <section key={deck.id}>
+          <h3 className="mb-2 text-xl font-bold text-amber-800">
+            <span aria-hidden="true">{deck.emoji}</span> {deck.label}
+          </h3>
+          <ul className="divide-y divide-amber-100 overflow-hidden rounded-xl bg-white shadow">
+            {deck.cards.map((entry) => (
+              <li key={entry.term} className="p-4 sm:flex sm:gap-4">
+                <span className="block font-bold text-amber-900 sm:w-56 sm:shrink-0">
+                  {entry.term}
+                </span>
+                <span className="text-gray-700">{entry.definition}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 
@@ -345,16 +314,14 @@ export default function MiddleAgesStudyApp() {
   };
 
   const categories = [
-    { id: 'overview', name: '📜 Overview' },
-    { id: 'feudalism', name: '🏰 Feudalism' },
-    { id: 'church', name: '⛪ The Church' },
-    { id: 'events', name: '⚔️ Events' },
-    { id: 'magnaCarta', name: '📜 Magna Carta' },
+    { id: 'cards', name: '🃏 Note Cards' },
     { id: 'quiz', name: '📝 Quiz' },
+    { id: 'overview', name: '📜 Overview' },
+    { id: 'notes', name: '📋 All Notes' },
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-amber-50 min-h-screen font-sans">
+    <div className="mx-auto min-h-screen max-w-5xl touch-manipulation bg-amber-50 p-4 font-sans sm:p-6">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-amber-900">High &amp; Late Middle Ages</h1>
         <h2 className="text-xl text-gray-600">Interactive Study Guide</h2>
@@ -365,9 +332,9 @@ export default function MiddleAgesStudyApp() {
           <button
             key={cat.id}
             onClick={() => setActiveTab(cat.id)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-transform duration-200 ${
+            className={`min-h-[48px] rounded-xl px-4 py-2.5 font-semibold transition ${
               activeTab === cat.id
-                ? 'bg-amber-800 text-white scale-110'
+                ? 'bg-amber-800 text-white shadow-lg ring-2 ring-amber-900 ring-offset-2 ring-offset-amber-50'
                 : 'bg-amber-600 text-white hover:bg-amber-700'
             }`}
           >
@@ -377,9 +344,12 @@ export default function MiddleAgesStudyApp() {
       </div>
 
       <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-lg">
-        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'cards' && (
+          <Flashcards decks={DECKS} storageKey={STORAGE_KEY} theme="amber" />
+        )}
         {activeTab === 'quiz' && renderQuiz()}
-        {['feudalism', 'church', 'events', 'magnaCarta'].includes(activeTab) && renderFlashcards()}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'notes' && renderNotes()}
       </div>
     </div>
   );

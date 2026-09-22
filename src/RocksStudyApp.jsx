@@ -1,80 +1,109 @@
 import { useState, useEffect } from 'react';
+import Flashcards from './Flashcards';
+
+const DECKS = [
+  {
+    id: 'types',
+    label: 'Rock Types',
+    emoji: '🪨',
+    cards: [
+        { term: 'Igneous Rock', definition: 'Formed when melted rock (magma or lava) cools and hardens. Example: granite, basalt, obsidian.' },
+        { term: 'Sedimentary Rock', definition: 'Formed when layers of sediment (sand, mud, pebbles) are pressed and cemented together over time. Example: sandstone, limestone, shale.' },
+        { term: 'Metamorphic Rock', definition: 'Formed when existing rock is changed by heat and pressure deep inside Earth. Example: marble, slate, quartzite.' },
+        { term: 'Intrusive Igneous Rock', definition: 'Forms when magma cools slowly beneath Earth\'s surface. Has large, visible crystals. Example: granite.' },
+        { term: 'Extrusive Igneous Rock', definition: 'Forms when lava cools quickly on Earth\'s surface. Has small or no visible crystals. Example: basalt, obsidian.' },
+        { term: 'Clastic Sedimentary Rock', definition: 'Made from broken pieces (clasts) of other rocks cemented together. Example: sandstone, conglomerate.' },
+        { term: 'Chemical Sedimentary Rock', definition: 'Forms when minerals dissolved in water crystallize out. Example: rock salt, some limestone.' },
+        { term: 'Organic Sedimentary Rock', definition: 'Formed from the remains of living things. Example: coal (from plants), some limestone (from shells).' },
+        { term: 'Foliated Metamorphic Rock', definition: 'Has visible layers or bands from minerals being squeezed into alignment. Example: slate, gneiss, schist.' },
+        { term: 'Non-Foliated Metamorphic Rock', definition: 'Does not have layers or bands. Example: marble, quartzite.' },
+    
+    ],
+  },
+  {
+    id: 'rockcycle',
+    label: 'Rock Cycle',
+    emoji: '🔄',
+    cards: [
+        { term: 'The Rock Cycle', definition: 'The continuous process by which rocks are created, changed from one type to another, destroyed, and then formed again.' },
+        { term: 'Weathering', definition: 'The breaking down of rocks into smaller pieces by wind, water, ice, or living things.' },
+        { term: 'Erosion', definition: 'The movement of weathered rock and sediment by wind, water, ice, or gravity.' },
+        { term: 'Deposition', definition: 'When eroded sediment is dropped or settled in a new location.' },
+        { term: 'Compaction & Cementation', definition: 'Layers of sediment are pressed together (compaction) and glued by minerals (cementation) to form sedimentary rock.' },
+        { term: 'Heat & Pressure', definition: 'Forces deep inside Earth that change existing rock into metamorphic rock without melting it.' },
+        { term: 'Melting', definition: 'When rock is heated enough to become magma (liquid rock inside Earth).' },
+        { term: 'Cooling & Crystallization', definition: 'When magma or lava cools and solidifies into igneous rock.' },
+        { term: 'Uplift', definition: 'Forces that push rock from deep underground up to Earth\'s surface, exposing it to weathering.' },
+    
+    ],
+  },
+  {
+    id: 'minerals',
+    label: 'Minerals',
+    emoji: '💎',
+    cards: [
+        { term: 'Mineral', definition: 'A naturally occurring, inorganic solid with a definite chemical composition and crystal structure.' },
+        { term: 'Luster', definition: 'How a mineral reflects light. Can be metallic (shiny like metal) or non-metallic (glassy, waxy, dull, etc.).' },
+        { term: 'Hardness', definition: 'How resistant a mineral is to being scratched. Measured on the Mohs Hardness Scale (1-10).' },
+        { term: 'Streak', definition: 'The color of a mineral\'s powder when rubbed on a porcelain plate. More reliable than the mineral\'s outer color.' },
+        { term: 'Cleavage', definition: 'When a mineral breaks along smooth, flat surfaces.' },
+        { term: 'Fracture', definition: 'When a mineral breaks along rough or irregular surfaces.' },
+        { term: 'Mohs Hardness Scale', definition: 'Scale from 1 (softest, talc) to 10 (hardest, diamond) used to rank mineral hardness.' },
+        { term: 'Quartz', definition: 'One of the most common minerals on Earth. Hardness of 7. Found in granite and sandstone.' },
+        { term: 'Feldspar', definition: 'The most abundant mineral group in Earth\'s crust. Key component of granite.' },
+        { term: 'Mica', definition: 'A mineral that splits into thin, flexible sheets. Has a glassy or pearly luster.' },
+    
+    ],
+  },
+  {
+    id: 'properties',
+    label: 'Properties',
+    emoji: '🔬',
+    cards: [
+        { term: 'Texture', definition: 'The size, shape, and arrangement of grains or crystals in a rock.' },
+        { term: 'Coarse-Grained Texture', definition: 'Large crystals or grains you can see with the naked eye. Example: granite.' },
+        { term: 'Fine-Grained Texture', definition: 'Very small crystals or grains, hard to see without magnification. Example: basalt, shale.' },
+        { term: 'Glassy Texture', definition: 'No visible crystals; forms when lava cools very rapidly. Example: obsidian.' },
+        { term: 'Color', definition: 'Useful for identification but can be misleading. Many different minerals share the same color.' },
+        { term: 'Fossils', definition: 'Preserved remains or traces of ancient organisms. Found mainly in sedimentary rock.' },
+        { term: 'Layers / Strata', definition: 'Visible bands in sedimentary rock showing different periods of deposition.' },
+        { term: 'Crystals', definition: 'Solid structures with atoms arranged in an orderly, repeating pattern. Slower cooling = larger crystals.' },
+    
+    ],
+  },
+  {
+    id: 'examples',
+    label: 'Rock Examples',
+    emoji: '📋',
+    cards: [
+        { term: 'Granite', definition: 'Intrusive igneous rock. Coarse-grained. Made of quartz, feldspar, and mica. Used in countertops and buildings.' },
+        { term: 'Basalt', definition: 'Extrusive igneous rock. Fine-grained and dark. Makes up most of the ocean floor.' },
+        { term: 'Obsidian', definition: 'Extrusive igneous rock. Glassy texture, forms when lava cools very fast. Used by ancient peoples for tools.' },
+        { term: 'Pumice', definition: 'Extrusive igneous rock. Very lightweight with holes from trapped gas bubbles. Can float on water.' },
+        { term: 'Sandstone', definition: 'Clastic sedimentary rock made of sand-sized grains cemented together.' },
+        { term: 'Limestone', definition: 'Sedimentary rock often made from shells and skeletons of marine organisms. Reacts with acid.' },
+        { term: 'Shale', definition: 'Fine-grained sedimentary rock made from compacted mud and clay.' },
+        { term: 'Conglomerate', definition: 'Clastic sedimentary rock made of rounded pebbles and gravel cemented together.' },
+        { term: 'Marble', definition: 'Non-foliated metamorphic rock formed from limestone. Used in sculptures and buildings.' },
+        { term: 'Slate', definition: 'Foliated metamorphic rock formed from shale. Splits into thin, flat sheets.' },
+        { term: 'Quartzite', definition: 'Non-foliated metamorphic rock formed from sandstone. Very hard and durable.' },
+        { term: 'Gneiss', definition: 'Foliated metamorphic rock with visible light and dark mineral bands.' },
+    
+    ],
+  },
+];
+
+const STORAGE_KEY = 'flashcards:rocks';
 
 export default function RocksStudyApp() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [currentCard, setCurrentCard] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [activeTab, setActiveTab] = useState('cards');
 
-  const [knownCards, setKnownCards] = useState(new Set());
-  const [reviewCards, setReviewCards] = useState(new Set());
 
   const [currentQuiz, setCurrentQuiz] = useState([]);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showQuizResults, setShowQuizResults] = useState(false);
 
   // --- DATA ---
-
-  const studyData = {
-    types: [
-      { term: 'Igneous Rock', definition: 'Formed when melted rock (magma or lava) cools and hardens. Example: granite, basalt, obsidian.' },
-      { term: 'Sedimentary Rock', definition: 'Formed when layers of sediment (sand, mud, pebbles) are pressed and cemented together over time. Example: sandstone, limestone, shale.' },
-      { term: 'Metamorphic Rock', definition: 'Formed when existing rock is changed by heat and pressure deep inside Earth. Example: marble, slate, quartzite.' },
-      { term: 'Intrusive Igneous Rock', definition: 'Forms when magma cools slowly beneath Earth\'s surface. Has large, visible crystals. Example: granite.' },
-      { term: 'Extrusive Igneous Rock', definition: 'Forms when lava cools quickly on Earth\'s surface. Has small or no visible crystals. Example: basalt, obsidian.' },
-      { term: 'Clastic Sedimentary Rock', definition: 'Made from broken pieces (clasts) of other rocks cemented together. Example: sandstone, conglomerate.' },
-      { term: 'Chemical Sedimentary Rock', definition: 'Forms when minerals dissolved in water crystallize out. Example: rock salt, some limestone.' },
-      { term: 'Organic Sedimentary Rock', definition: 'Formed from the remains of living things. Example: coal (from plants), some limestone (from shells).' },
-      { term: 'Foliated Metamorphic Rock', definition: 'Has visible layers or bands from minerals being squeezed into alignment. Example: slate, gneiss, schist.' },
-      { term: 'Non-Foliated Metamorphic Rock', definition: 'Does not have layers or bands. Example: marble, quartzite.' },
-    ],
-    rockcycle: [
-      { term: 'The Rock Cycle', definition: 'The continuous process by which rocks are created, changed from one type to another, destroyed, and then formed again.' },
-      { term: 'Weathering', definition: 'The breaking down of rocks into smaller pieces by wind, water, ice, or living things.' },
-      { term: 'Erosion', definition: 'The movement of weathered rock and sediment by wind, water, ice, or gravity.' },
-      { term: 'Deposition', definition: 'When eroded sediment is dropped or settled in a new location.' },
-      { term: 'Compaction & Cementation', definition: 'Layers of sediment are pressed together (compaction) and glued by minerals (cementation) to form sedimentary rock.' },
-      { term: 'Heat & Pressure', definition: 'Forces deep inside Earth that change existing rock into metamorphic rock without melting it.' },
-      { term: 'Melting', definition: 'When rock is heated enough to become magma (liquid rock inside Earth).' },
-      { term: 'Cooling & Crystallization', definition: 'When magma or lava cools and solidifies into igneous rock.' },
-      { term: 'Uplift', definition: 'Forces that push rock from deep underground up to Earth\'s surface, exposing it to weathering.' },
-    ],
-    minerals: [
-      { term: 'Mineral', definition: 'A naturally occurring, inorganic solid with a definite chemical composition and crystal structure.' },
-      { term: 'Luster', definition: 'How a mineral reflects light. Can be metallic (shiny like metal) or non-metallic (glassy, waxy, dull, etc.).' },
-      { term: 'Hardness', definition: 'How resistant a mineral is to being scratched. Measured on the Mohs Hardness Scale (1-10).' },
-      { term: 'Streak', definition: 'The color of a mineral\'s powder when rubbed on a porcelain plate. More reliable than the mineral\'s outer color.' },
-      { term: 'Cleavage', definition: 'When a mineral breaks along smooth, flat surfaces.' },
-      { term: 'Fracture', definition: 'When a mineral breaks along rough or irregular surfaces.' },
-      { term: 'Mohs Hardness Scale', definition: 'Scale from 1 (softest, talc) to 10 (hardest, diamond) used to rank mineral hardness.' },
-      { term: 'Quartz', definition: 'One of the most common minerals on Earth. Hardness of 7. Found in granite and sandstone.' },
-      { term: 'Feldspar', definition: 'The most abundant mineral group in Earth\'s crust. Key component of granite.' },
-      { term: 'Mica', definition: 'A mineral that splits into thin, flexible sheets. Has a glassy or pearly luster.' },
-    ],
-    properties: [
-      { term: 'Texture', definition: 'The size, shape, and arrangement of grains or crystals in a rock.' },
-      { term: 'Coarse-Grained Texture', definition: 'Large crystals or grains you can see with the naked eye. Example: granite.' },
-      { term: 'Fine-Grained Texture', definition: 'Very small crystals or grains, hard to see without magnification. Example: basalt, shale.' },
-      { term: 'Glassy Texture', definition: 'No visible crystals; forms when lava cools very rapidly. Example: obsidian.' },
-      { term: 'Color', definition: 'Useful for identification but can be misleading. Many different minerals share the same color.' },
-      { term: 'Fossils', definition: 'Preserved remains or traces of ancient organisms. Found mainly in sedimentary rock.' },
-      { term: 'Layers / Strata', definition: 'Visible bands in sedimentary rock showing different periods of deposition.' },
-      { term: 'Crystals', definition: 'Solid structures with atoms arranged in an orderly, repeating pattern. Slower cooling = larger crystals.' },
-    ],
-    examples: [
-      { term: 'Granite', definition: 'Intrusive igneous rock. Coarse-grained. Made of quartz, feldspar, and mica. Used in countertops and buildings.' },
-      { term: 'Basalt', definition: 'Extrusive igneous rock. Fine-grained and dark. Makes up most of the ocean floor.' },
-      { term: 'Obsidian', definition: 'Extrusive igneous rock. Glassy texture, forms when lava cools very fast. Used by ancient peoples for tools.' },
-      { term: 'Pumice', definition: 'Extrusive igneous rock. Very lightweight with holes from trapped gas bubbles. Can float on water.' },
-      { term: 'Sandstone', definition: 'Clastic sedimentary rock made of sand-sized grains cemented together.' },
-      { term: 'Limestone', definition: 'Sedimentary rock often made from shells and skeletons of marine organisms. Reacts with acid.' },
-      { term: 'Shale', definition: 'Fine-grained sedimentary rock made from compacted mud and clay.' },
-      { term: 'Conglomerate', definition: 'Clastic sedimentary rock made of rounded pebbles and gravel cemented together.' },
-      { term: 'Marble', definition: 'Non-foliated metamorphic rock formed from limestone. Used in sculptures and buildings.' },
-      { term: 'Slate', definition: 'Foliated metamorphic rock formed from shale. Splits into thin, flat sheets.' },
-      { term: 'Quartzite', definition: 'Non-foliated metamorphic rock formed from sandstone. Very hard and durable.' },
-      { term: 'Gneiss', definition: 'Foliated metamorphic rock with visible light and dark mineral bands.' },
-    ],
-  };
 
   const quizQuestionBank = [
     { question: 'What type of rock forms when magma or lava cools and hardens?', options: ['Sedimentary', 'Metamorphic', 'Igneous', 'Mineral'], correct: 2 },
@@ -111,45 +140,6 @@ export default function RocksStudyApp() {
   useEffect(() => {
     startNewQuiz();
   }, []);
-
-  const currentDeck = studyData[activeTab] || [];
-  const cardId = `${activeTab}-${currentCard}`;
-
-  const nextCard = () => {
-    setCurrentCard((prev) => (prev + 1) % currentDeck.length);
-    setIsFlipped(false);
-  };
-
-  const prevCard = () => {
-    setCurrentCard((prev) => (prev - 1 + currentDeck.length) % currentDeck.length);
-    setIsFlipped(false);
-  };
-
-  const handleMarkCard = (status) => {
-    if (status === 'known') {
-      setKnownCards(prev => new Set(prev).add(cardId));
-      setReviewCards(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(cardId);
-        return newSet;
-      });
-    } else {
-      setReviewCards(prev => new Set(prev).add(cardId));
-      setKnownCards(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(cardId);
-        return newSet;
-      });
-    }
-    setTimeout(nextCard, 200);
-  };
-
-  const resetCardProgress = () => {
-    setKnownCards(new Set());
-    setReviewCards(new Set());
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
 
   const handleQuizAnswer = (qIndex, aIndex) => setQuizAnswers(prev => ({ ...prev, [qIndex]: aIndex }));
   const checkQuiz = () => setShowQuizResults(true);
@@ -231,61 +221,39 @@ export default function RocksStudyApp() {
     </div>
   );
 
-  const renderFlashcards = () => {
-    const deckKnown = Array.from(knownCards).filter(id => id.startsWith(activeTab)).length;
-    const deckReview = Array.from(reviewCards).filter(id => id.startsWith(activeTab)).length;
-
-    return (
-      <div className="space-y-4">
-        {currentDeck.length > 0 ? (
-          <>
-            <div className="text-center text-sm text-gray-600">
-              Card {currentCard + 1} of {currentDeck.length}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-center text-sm">
-              <div className="bg-green-100 p-2 rounded">Known: {deckKnown}</div>
-              <div className="bg-orange-100 p-2 rounded">Needs Review: {deckReview}</div>
-            </div>
-
-            <div className="relative h-64 cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
-              <div className={`absolute inset-0 w-full h-full flex justify-center items-center bg-white p-6 rounded-lg shadow-lg text-center transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : ''}`}>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800">{currentDeck[currentCard]?.term}</h3>
-                  <p className="text-gray-400 text-sm mt-4">Tap to reveal</p>
-                </div>
-              </div>
-              <div className={`absolute inset-0 w-full h-full flex justify-center items-center bg-stone-700 text-white p-6 rounded-lg shadow-lg text-center transition-opacity duration-300 ${!isFlipped ? 'opacity-0 pointer-events-none' : ''}`}>
-                <div>
-                  <h4 className="text-lg font-semibold mb-2">{currentDeck[currentCard]?.term}</h4>
-                  <p className="text-stone-200 leading-relaxed">{currentDeck[currentCard]?.definition}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-center space-x-3">
-              <button onClick={(e) => { e.stopPropagation(); handleMarkCard('review'); }} className="px-5 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600">
-                Don't Know
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); prevCard(); }} className="px-4 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500">
-                ←
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); nextCard(); }} className="px-4 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500">
-                →
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); handleMarkCard('known'); }} className="px-5 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600">
-                I Know This
-              </button>
-            </div>
-
-            <div className="flex justify-center">
-              <button onClick={resetCardProgress} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">Reset Progress</button>
-            </div>
-          </>
-        ) : <p className="text-center text-gray-500">Select a category to study.</p>}
+  /* Reference list, on its own tab. These used to be the flashcard tabs
+   * themselves, with each term printed next to its definition under the card —
+   * see the note at the top of Flashcards.jsx for why that has to be separate
+   * from the cards. */
+  const renderNotes = () => (
+    <div className="space-y-6">
+      <div className="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+        <p className="text-sm text-gray-800">
+          📋 Everything in one place, for reading over before a round or checking
+          something you got stuck on. To <em>practice</em>, use the Note Cards tab —
+          trying to remember first is what makes it stick.
+        </p>
       </div>
-    );
-  };
+
+      {DECKS.map((deck) => (
+        <section key={deck.id}>
+          <h3 className="mb-2 text-xl font-bold text-stone-800">
+            <span aria-hidden="true">{deck.emoji}</span> {deck.label}
+          </h3>
+          <ul className="divide-y divide-stone-200 overflow-hidden rounded-xl bg-white shadow">
+            {deck.cards.map((entry) => (
+              <li key={entry.term} className="p-4 sm:flex sm:gap-4">
+                <span className="block font-bold text-stone-900 sm:w-56 sm:shrink-0">
+                  {entry.term}
+                </span>
+                <span className="text-gray-700">{entry.definition}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
 
   const renderQuiz = () => {
     const { correct, total } = getQuizScore();
@@ -343,17 +311,14 @@ export default function RocksStudyApp() {
   };
 
   const categories = [
-    { id: 'overview', name: 'Overview' },
-    { id: 'types', name: 'Rock Types' },
-    { id: 'rockcycle', name: 'Rock Cycle' },
-    { id: 'minerals', name: 'Minerals' },
-    { id: 'properties', name: 'Properties' },
-    { id: 'examples', name: 'Rock Examples' },
-    { id: 'quiz', name: 'Quiz' },
+    { id: 'cards', name: '🃏 Note Cards' },
+    { id: 'quiz', name: '📝 Quiz' },
+    { id: 'overview', name: '📖 Overview' },
+    { id: 'notes', name: '📋 All Notes' },
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-stone-50 min-h-screen font-sans">
+    <div className="mx-auto min-h-screen max-w-5xl touch-manipulation bg-stone-50 p-4 font-sans sm:p-6">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-stone-800">Rocks & Minerals</h1>
         <h2 className="text-xl text-gray-600">Interactive Study Guide</h2>
@@ -363,15 +328,11 @@ export default function RocksStudyApp() {
         {categories.map(cat => (
           <button
             key={cat.id}
-            onClick={() => {
-              setActiveTab(cat.id);
-              setCurrentCard(0);
-              setIsFlipped(false);
-            }}
-            className={`px-4 py-2 rounded-lg font-semibold transition-transform duration-200 ${
+            onClick={() => setActiveTab(cat.id)}
+            className={`min-h-[48px] rounded-xl px-4 py-2.5 font-semibold transition ${
               activeTab === cat.id
-                ? 'bg-stone-700 text-white scale-110'
-                : 'bg-stone-500 text-white hover:bg-stone-600'
+                ? 'bg-stone-800 text-white shadow-lg ring-2 ring-stone-900 ring-offset-2 ring-offset-stone-50'
+                : 'bg-stone-600 text-white hover:bg-stone-700'
             }`}
           >
             {cat.name}
@@ -380,9 +341,12 @@ export default function RocksStudyApp() {
       </div>
 
       <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-lg">
-        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'cards' && (
+          <Flashcards decks={DECKS} storageKey={STORAGE_KEY} theme="stone" />
+        )}
         {activeTab === 'quiz' && renderQuiz()}
-        {!['overview', 'quiz'].includes(activeTab) && renderFlashcards()}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'notes' && renderNotes()}
       </div>
 
       <div className="mt-6 text-center">

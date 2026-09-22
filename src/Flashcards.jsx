@@ -28,8 +28,85 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
  * the half-known card somewhere honest to go, and nothing leaves the round
  * until it is graded "Knew it".
  *
- * Colors are literal class strings rather than props so Tailwind's JIT scan
- * can see them; a second consumer should pass whole class names, not fragments. */
+ * Each study topic keeps its own palette, so themes are named presets below
+ * rather than colour props: Tailwind's JIT only sees class names it can find
+ * as literal text, so `bg-${color}-800` would be purged. To add a topic, add a
+ * preset — don't build class names from fragments at the call site. */
+
+const THEMES = {
+  teal: {
+    deckOn: 'bg-teal-800 text-white shadow-md',
+    deckOff: 'bg-white text-teal-900 shadow hover:bg-teal-50',
+    pillOff: 'bg-teal-100 text-teal-900',
+    heading: 'text-teal-900',
+    front: 'text-teal-900',
+    back: 'bg-teal-800',
+    track: 'bg-teal-100',
+    fill: 'bg-teal-600',
+    primary: 'bg-teal-700 hover:bg-teal-800',
+    ghost: 'bg-white text-teal-800 shadow hover:bg-teal-50',
+  },
+  purple: {
+    deckOn: 'bg-purple-800 text-white shadow-md',
+    deckOff: 'bg-white text-purple-900 shadow hover:bg-purple-50',
+    pillOff: 'bg-purple-100 text-purple-900',
+    heading: 'text-purple-900',
+    front: 'text-purple-900',
+    back: 'bg-purple-800',
+    track: 'bg-purple-100',
+    fill: 'bg-purple-600',
+    primary: 'bg-purple-700 hover:bg-purple-800',
+    ghost: 'bg-white text-purple-800 shadow hover:bg-purple-50',
+  },
+  rose: {
+    deckOn: 'bg-rose-800 text-white shadow-md',
+    deckOff: 'bg-white text-rose-900 shadow hover:bg-rose-50',
+    pillOff: 'bg-rose-100 text-rose-900',
+    heading: 'text-rose-900',
+    front: 'text-rose-900',
+    back: 'bg-rose-800',
+    track: 'bg-rose-100',
+    fill: 'bg-rose-600',
+    primary: 'bg-rose-700 hover:bg-rose-800',
+    ghost: 'bg-white text-rose-800 shadow hover:bg-rose-50',
+  },
+  amber: {
+    deckOn: 'bg-amber-800 text-white shadow-md',
+    deckOff: 'bg-white text-amber-900 shadow hover:bg-amber-50',
+    pillOff: 'bg-amber-100 text-amber-900',
+    heading: 'text-amber-900',
+    front: 'text-amber-900',
+    back: 'bg-amber-800',
+    track: 'bg-amber-100',
+    fill: 'bg-amber-600',
+    primary: 'bg-amber-700 hover:bg-amber-800',
+    ghost: 'bg-white text-amber-800 shadow hover:bg-amber-50',
+  },
+  stone: {
+    deckOn: 'bg-stone-800 text-white shadow-md',
+    deckOff: 'bg-white text-stone-900 shadow hover:bg-stone-50',
+    pillOff: 'bg-stone-200 text-stone-900',
+    heading: 'text-stone-900',
+    front: 'text-stone-900',
+    back: 'bg-stone-800',
+    track: 'bg-stone-200',
+    fill: 'bg-stone-600',
+    primary: 'bg-stone-700 hover:bg-stone-800',
+    ghost: 'bg-white text-stone-800 shadow hover:bg-stone-50',
+  },
+  sky: {
+    deckOn: 'bg-sky-800 text-white shadow-md',
+    deckOff: 'bg-white text-sky-900 shadow hover:bg-sky-50',
+    pillOff: 'bg-sky-100 text-sky-900',
+    heading: 'text-sky-900',
+    front: 'text-sky-900',
+    back: 'bg-sky-800',
+    track: 'bg-sky-100',
+    fill: 'bg-sky-600',
+    primary: 'bg-sky-700 hover:bg-sky-800',
+    ghost: 'bg-white text-sky-800 shadow hover:bg-sky-50',
+  },
+};
 
 const BOX_DAYS = [0, 1, 3, 7, 16];
 const MAX_BOX = BOX_DAYS.length - 1;
@@ -72,7 +149,8 @@ function loadState(key) {
   }
 }
 
-export default function Flashcards({ decks, storageKey }) {
+export default function Flashcards({ decks, storageKey, theme = 'teal' }) {
+  const t = THEMES[theme] ?? THEMES.teal;
   const [state, setState] = useState(() => loadState(storageKey));
   const [queue, setQueue] = useState([]);
   const [roundTotal, setRoundTotal] = useState(0);
@@ -102,6 +180,7 @@ export default function Flashcards({ decks, storageKey }) {
           deckEmoji: deck.emoji,
           term: card.term,
           definition: card.definition,
+          note: card.note,
         }),
       ),
     );
@@ -110,10 +189,14 @@ export default function Flashcards({ decks, storageKey }) {
 
   const byId = useMemo(() => new Map(allCards.map((c) => [c.id, c])), [allCards]);
 
-  const pool = useMemo(
-    () => (state.deck === MIXED ? allCards : allCards.filter((c) => c.deckId === state.deck)),
-    [allCards, state.deck],
-  );
+  // A saved deck id can go stale if decks are renamed, and a single-deck topic
+  // never sets one, so an unknown id falls back to everything rather than an
+  // empty round.
+  const pool = useMemo(() => {
+    if (state.deck === MIXED) return allCards;
+    const picked = allCards.filter((c) => c.deckId === state.deck);
+    return picked.length ? picked : allCards;
+  }, [allCards, state.deck]);
 
   const today = todayISO();
 
@@ -239,12 +322,14 @@ export default function Flashcards({ decks, storageKey }) {
   const back = card ? (askTerm ? card.definition : card.term) : '';
   const done = roundTotal - queue.length;
 
-  const deckOptions = [{ id: MIXED, label: 'All Mixed', emoji: '🎲' }, ...decks];
+  const multiDeck = decks.length > 1;
+  const deckOptions = multiDeck ? [{ id: MIXED, label: 'All Mixed', emoji: '🎲' }, ...decks] : [];
 
   // --- deck picker, shown above every phase so she can switch at any time ---
 
   const renderPicker = () => (
     <div className="space-y-3">
+      {multiDeck && (
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {deckOptions.map((option) => {
           const selected = state.deck === option.id;
@@ -256,8 +341,8 @@ export default function Flashcards({ decks, storageKey }) {
               aria-pressed={selected}
               className={`flex min-h-[56px] items-center justify-between gap-2 rounded-xl px-4 py-3 text-left font-semibold transition ${
                 selected
-                  ? 'bg-teal-800 text-white shadow-md'
-                  : 'bg-white text-teal-900 shadow hover:bg-teal-50'
+                  ? t.deckOn
+                  : t.deckOff
               }`}
             >
               <span className="truncate">
@@ -266,7 +351,7 @@ export default function Flashcards({ decks, storageKey }) {
               {due > 0 && (
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
-                    selected ? 'bg-white/25 text-white' : 'bg-teal-100 text-teal-900'
+                    selected ? 'bg-white/25 text-white' : t.pillOff
                   }`}
                 >
                   {due} due
@@ -276,6 +361,7 @@ export default function Flashcards({ decks, storageKey }) {
           );
         })}
       </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button
@@ -312,7 +398,7 @@ export default function Flashcards({ decks, storageKey }) {
       <div className="rounded-2xl bg-white p-6 text-center shadow">
         {stats.due > 0 ? (
           <>
-            <p className="text-xl font-bold text-teal-900">
+            <p className={`text-xl font-bold ${t.heading}`}>
               {Math.min(stats.due, ROUND_SIZE)} card{Math.min(stats.due, ROUND_SIZE) === 1 ? '' : 's'} ready
             </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
@@ -331,7 +417,7 @@ export default function Flashcards({ decks, storageKey }) {
         <button
           onClick={startRound}
           disabled={stats.total === 0}
-          className="mt-4 min-h-[56px] w-full max-w-xs rounded-xl bg-teal-700 px-8 py-4 text-lg font-bold text-white shadow-lg hover:bg-teal-800 disabled:bg-gray-400 sm:w-auto"
+          className={`mt-4 min-h-[56px] w-full max-w-xs rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg disabled:bg-gray-400 sm:w-auto ${t.primary}`}
         >
           {stats.due > 0 ? '▶️ Start Round' : '▶️ Early Round'}
         </button>
@@ -371,13 +457,13 @@ export default function Flashcards({ decks, storageKey }) {
   const renderStudy = () => (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-teal-100">
+        <div className={`h-3 flex-1 overflow-hidden rounded-full ${t.track}`}>
           <div
-            className="h-full rounded-full bg-teal-600 transition-all duration-300"
+            className={`h-full rounded-full transition-all duration-300 ${t.fill}`}
             style={{ width: `${roundTotal ? (done / roundTotal) * 100 : 0}%` }}
           />
         </div>
-        <p className="shrink-0 text-sm font-bold text-teal-900" aria-live="polite">
+        <p className={`shrink-0 text-sm font-bold ${t.heading}`} aria-live="polite">
           {done} / {roundTotal}
         </p>
       </div>
@@ -416,19 +502,22 @@ export default function Flashcards({ decks, storageKey }) {
           {/* question */}
           <div className="absolute inset-0 flex flex-col items-center justify-center overflow-y-auto rounded-2xl bg-white p-6 text-center shadow-xl [backface-visibility:hidden] sm:p-10">
             <p
-              className={`font-bold text-teal-900 ${
+              className={`font-bold ${t.front} ${
                 askTerm ? 'text-3xl sm:text-4xl lg:text-5xl' : 'text-xl font-medium sm:text-2xl lg:text-3xl'
               }`}
             >
               {front}
             </p>
+            {card?.note && askTerm && (
+              <p className="mt-2 text-sm italic text-slate-500">{card.note}</p>
+            )}
             <p className="mt-6 text-xs uppercase tracking-wide text-slate-400">
               Say it out loud, then tap
             </p>
           </div>
 
           {/* answer */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center overflow-y-auto rounded-2xl bg-teal-800 p-6 text-center text-white shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-10">
+          <div className={`absolute inset-0 flex flex-col items-center justify-center overflow-y-auto rounded-2xl p-6 text-center text-white shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-10 ${t.back}`}>
             <p
               className={`leading-relaxed ${
                 askTerm ? 'text-lg sm:text-xl lg:text-2xl' : 'text-3xl font-bold sm:text-4xl lg:text-5xl'
@@ -469,7 +558,7 @@ export default function Flashcards({ decks, storageKey }) {
       ) : (
         <button
           onClick={flip}
-          className="min-h-[56px] w-full rounded-xl bg-teal-700 px-6 py-4 text-lg font-bold text-white shadow-lg hover:bg-teal-800"
+          className={`min-h-[56px] w-full rounded-xl px-6 py-4 text-lg font-bold text-white shadow-lg ${t.primary}`}
         >
           Show Answer
         </button>
@@ -497,7 +586,7 @@ export default function Flashcards({ decks, storageKey }) {
     return (
       <div className="space-y-6">
         <div className="rounded-2xl bg-white p-6 text-center shadow">
-          <p className="text-3xl font-bold text-teal-900">🎉 Round complete!</p>
+          <p className={`text-3xl font-bold ${t.heading}`}>🎉 Round complete!</p>
           <p className="mt-2 text-slate-600">
             You finished all {roundTotal} card{roundTotal === 1 ? '' : 's'}.
           </p>
@@ -532,13 +621,13 @@ export default function Flashcards({ decks, storageKey }) {
             <button
               onClick={startRound}
               disabled={stats.total === 0}
-              className="min-h-[56px] rounded-xl bg-teal-700 px-6 py-3 font-bold text-white shadow hover:bg-teal-800 disabled:bg-gray-400"
+              className={`min-h-[56px] rounded-xl px-6 py-3 font-bold text-white shadow disabled:bg-gray-400 ${t.primary}`}
             >
               ▶️ Another Round
             </button>
             <button
               onClick={() => setPhase('start')}
-              className="min-h-[56px] rounded-xl bg-white px-6 py-3 font-bold text-teal-800 shadow hover:bg-teal-50"
+              className={`min-h-[56px] rounded-xl px-6 py-3 font-bold ${t.ghost}`}
             >
               Back to Decks
             </button>

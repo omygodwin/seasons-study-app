@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import Flashcards from './Flashcards';
 
 const VOCAB = [
   // Lessons 48-9
@@ -29,6 +30,19 @@ const VOCAB = [
 ];
 
 const LESSONS = ['all', '48-9', '50-51'];
+
+const DECKS = ['48-9', '50-51'].map((lesson) => ({
+  id: lesson,
+  label: `Lessons ${lesson}`,
+  emoji: '🏛️',
+  cards: VOCAB.filter((v) => v.lesson === lesson).map((v) => ({
+    term: v.term,
+    definition: v.definition,
+    note: v.pos,
+  })),
+}));
+
+const STORAGE_KEY = 'flashcards:latin';
 
 function shuffle(array) {
   return [...array].sort(() => 0.5 - Math.random());
@@ -63,14 +77,6 @@ function buildQuizPool(words) {
 export default function LatinVocabStudyApp() {
   const [activeTab, setActiveTab] = useState('flashcards');
   const [lessonFilter, setLessonFilter] = useState('all');
-  const [deckOrder, setDeckOrder] = useState(() => VOCAB.map((_, i) => i));
-  const [currentCard, setCurrentCard] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [showDefinitionFirst, setShowDefinitionFirst] = useState(false);
-
-  const [knownCards, setKnownCards] = useState(new Set());
-  const [reviewCards, setReviewCards] = useState(new Set());
-
   const [currentQuiz, setCurrentQuiz] = useState([]);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showQuizResults, setShowQuizResults] = useState(false);
@@ -92,84 +98,6 @@ export default function LatinVocabStudyApp() {
     startNewQuiz();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonFilter]);
-
-  useEffect(() => {
-    const indices = VOCAB.map((v, i) => (lessonFilter === 'all' || v.lesson === lessonFilter ? i : null)).filter(
-      (x) => x !== null,
-    );
-    setDeckOrder(indices);
-    setCurrentCard(0);
-    setIsFlipped(false);
-  }, [lessonFilter]);
-
-  const deck = deckOrder.map((i) => VOCAB[i]).filter(Boolean);
-  const card = deck[currentCard];
-  const cardId = card?.term;
-
-  const nextCard = () => {
-    setCurrentCard((prev) => (deck.length ? (prev + 1) % deck.length : 0));
-    setIsFlipped(false);
-  };
-
-  const prevCard = () => {
-    setCurrentCard((prev) => (deck.length ? (prev - 1 + deck.length) % deck.length : 0));
-    setIsFlipped(false);
-  };
-
-  const handleMarkCard = (status) => {
-    if (!cardId) return;
-    if (status === 'known') {
-      setKnownCards((prev) => new Set(prev).add(cardId));
-      setReviewCards((prev) => {
-        const s = new Set(prev);
-        s.delete(cardId);
-        return s;
-      });
-    } else {
-      setReviewCards((prev) => new Set(prev).add(cardId));
-      setKnownCards((prev) => {
-        const s = new Set(prev);
-        s.delete(cardId);
-        return s;
-      });
-    }
-    setTimeout(nextCard, 200);
-  };
-
-  const resetCardProgress = () => {
-    setKnownCards(new Set());
-    setReviewCards(new Set());
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
-
-  const shuffleDeck = () => {
-    const indices = VOCAB.map((v, i) => (lessonFilter === 'all' || v.lesson === lessonFilter ? i : null)).filter(
-      (x) => x !== null,
-    );
-    setDeckOrder(shuffle(indices));
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
-
-  const allCards = () => {
-    const indices = VOCAB.map((v, i) => (lessonFilter === 'all' || v.lesson === lessonFilter ? i : null)).filter(
-      (x) => x !== null,
-    );
-    setDeckOrder(indices);
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
-
-  const reviewOnly = () => {
-    const reviewIndices = VOCAB.map((v, i) =>
-      reviewCards.has(v.term) && (lessonFilter === 'all' || v.lesson === lessonFilter) ? i : null,
-    ).filter((x) => x !== null);
-    if (reviewIndices.length === 0) return;
-    setDeckOrder(reviewIndices);
-    setCurrentCard(0);
-    setIsFlipped(false);
-  };
 
   const handleQuizAnswer = (qIndex, aIndex) =>
     setQuizAnswers((prev) => ({ ...prev, [qIndex]: aIndex }));
@@ -201,130 +129,17 @@ export default function LatinVocabStudyApp() {
     </div>
   );
 
-  const renderFlashcards = () => (
-    <div className="space-y-4">
-      {renderLessonFilter()}
-      <div className="text-center text-sm text-gray-700 grid grid-cols-3 gap-2">
-        <div className="bg-green-100 p-2 rounded">✅ Known: {knownCards.size}</div>
-        <div className="bg-orange-100 p-2 rounded">🤔 Review: {reviewCards.size}</div>
-        <div className="bg-rose-100 p-2 rounded">
-          Card {deck.length ? currentCard + 1 : 0} / {deck.length}
-        </div>
-      </div>
-
-      <div className="flex justify-center">
-        <button
-          onClick={() => {
-            setShowDefinitionFirst((v) => !v);
-            setIsFlipped(false);
-          }}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
-        >
-          {showDefinitionFirst
-            ? '🔄 Showing: English first (guess the Latin)'
-            : '🔄 Showing: Latin first (guess the English)'}
-        </button>
-      </div>
-
-      <div
-        className="relative h-72 [perspective:1000px]"
-        onClick={() => setIsFlipped(!isFlipped)}
-      >
-        <div
-          className={`absolute inset-0 w-full h-full flex justify-center items-center bg-white p-6 rounded-lg shadow-lg text-center cursor-pointer transition-opacity duration-300 ${
-            isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}
-        >
-          {showDefinitionFirst ? (
-            <div>
-              <p className="text-3xl text-rose-900 font-medium">{card?.definition}</p>
-              <p className="mt-3 text-xs text-gray-500">(tap to reveal the Latin word)</p>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-3xl sm:text-4xl font-bold text-rose-800">{card?.term}</h3>
-              {card?.pos && <p className="mt-2 text-sm italic text-gray-500">{card.pos}</p>}
-              <p className="mt-3 text-xs text-gray-500">(tap to see the meaning)</p>
-            </div>
-          )}
-        </div>
-        <div
-          className={`absolute inset-0 w-full h-full flex justify-center items-center bg-rose-800 text-white p-6 rounded-lg shadow-lg text-center cursor-pointer transition-opacity duration-300 ${
-            isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        >
-          {showDefinitionFirst ? (
-            <div>
-              <h3 className="text-3xl sm:text-4xl font-bold">{card?.term}</h3>
-              {card?.pos && <p className="mt-2 text-sm italic text-rose-100">{card.pos}</p>}
-            </div>
-          ) : (
-            <p className="text-2xl">{card?.definition}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex justify-center space-x-3 flex-wrap gap-2">
-        <button
-          onClick={prevCard}
-          className="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600"
-        >
-          ← Prev
-        </button>
-        <button
-          onClick={() => handleMarkCard('review')}
-          className="px-6 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600"
-        >
-          🤔 Review Again
-        </button>
-        <button
-          onClick={() => handleMarkCard('known')}
-          className="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
-        >
-          ✅ I Knew This
-        </button>
-        <button
-          onClick={nextCard}
-          className="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600"
-        >
-          Next →
-        </button>
-      </div>
-
-      <div className="flex justify-center flex-wrap gap-2">
-        <button
-          onClick={shuffleDeck}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-        >
-          🔀 Shuffle
-        </button>
-        <button
-          onClick={allCards}
-          className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 text-sm"
-        >
-          📚 All Cards
-        </button>
-        <button
-          onClick={reviewOnly}
-          disabled={reviewCards.size === 0}
-          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm disabled:bg-gray-400"
-        >
-          🎯 Study Review Pile
-        </button>
-        <button
-          onClick={resetCardProgress}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-        >
-          🔄 Reset Progress
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderList = () => {
+  const renderNotes = () => {
     const groups = ['48-9', '50-51'];
     return (
       <div className="space-y-6">
+        <div className="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+          <p className="text-sm text-gray-800">
+            📋 All {VOCAB.length} words, for reading over before a round. To{' '}
+            <em>practice</em>, use the Note Cards tab — trying to remember first
+            is what makes it stick.
+          </p>
+        </div>
         <h3 className="text-xl font-semibold text-gray-800 text-center">
           Chapter 13 Vocabulary ({VOCAB.length} words)
         </h3>
@@ -424,13 +239,13 @@ export default function LatinVocabStudyApp() {
   };
 
   const tabs = [
-    { id: 'flashcards', name: '🃏 Flashcards' },
-    { id: 'list', name: '📋 Word List' },
+    { id: 'flashcards', name: '🃏 Note Cards' },
     { id: 'quiz', name: '📝 Quiz' },
+    { id: 'list', name: '📋 Word List' },
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-rose-50 min-h-screen font-sans">
+    <div className="mx-auto min-h-screen max-w-5xl touch-manipulation bg-rose-50 p-4 font-sans sm:p-6">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-rose-800">Latin Vocab</h1>
         <h2 className="text-lg text-gray-600">Chapter 13 — Lessons 48–51</h2>
@@ -441,10 +256,10 @@ export default function LatinVocabStudyApp() {
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-transform duration-200 ${
+            className={`min-h-[48px] rounded-xl px-4 py-2.5 font-semibold transition ${
               activeTab === t.id
-                ? 'bg-rose-700 text-white scale-110'
-                : 'bg-rose-500 text-white hover:bg-rose-600'
+                ? 'bg-rose-800 text-white shadow-lg ring-2 ring-rose-900 ring-offset-2 ring-offset-rose-50'
+                : 'bg-rose-600 text-white hover:bg-rose-700'
             }`}
           >
             {t.name}
@@ -453,9 +268,11 @@ export default function LatinVocabStudyApp() {
       </div>
 
       <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-lg">
-        {activeTab === 'flashcards' && renderFlashcards()}
-        {activeTab === 'list' && renderList()}
+        {activeTab === 'flashcards' && (
+          <Flashcards decks={DECKS} storageKey={STORAGE_KEY} theme="rose" />
+        )}
         {activeTab === 'quiz' && renderQuiz()}
+        {activeTab === 'list' && renderNotes()}
       </div>
     </div>
   );
