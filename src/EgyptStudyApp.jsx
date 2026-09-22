@@ -1,13 +1,67 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import Flashcards from './Flashcards';
+
+const DECKS = [
+  {
+    id: 'pharaohs',
+    label: 'Pharaohs',
+    emoji: '👑',
+    cards: [
+        { term: 'Pepi II', definition: 'Ruled for approximately 94 years, one of the longest reigns in history.' },
+        { term: 'Hatshepsut', definition: 'One of the most powerful female pharaohs; focused on trade and building projects.' },
+        { term: 'Thutmose III', definition: 'A great military conqueror who expanded Egypt\'s empire, conquering Syria.' },
+        { term: 'Ramesses the Great', definition: 'Known for defeating the Hittites and extensive building projects like Abu Simbel.' },
+        { term: 'Akhenaten', definition: 'Formerly Amenhotep IV; abandoned polytheism to worship only the sun disk, Aten.' },
+        { term: 'Tutankhamun', definition: 'Famous for his nearly intact tomb discovered in 1922, filled with treasure.' },
+        { term: 'Cleopatra VII', definition: 'The last active pharaoh of Egypt, who allied with Julius Caesar and Mark Antony.' },
+    
+    ],
+  },
+  {
+    id: 'gods',
+    label: 'Gods',
+    emoji: '☀️',
+    cards: [
+        { term: 'Ra', definition: 'The sun god, one of the most important gods. Often depicted with a falcon head and a sun disk.' },
+        { term: 'Osiris', definition: 'God of the underworld and the afterlife. Often shown as a green-skinned, mummified pharaoh.' },
+        { term: 'Ma\'at', definition: 'Goddess of truth, justice, and cosmic order. Depicted as a woman with an ostrich feather on her head.' },
+        { term: 'Anubis', definition: 'God of mummification and funerals. Depicted with the head of a jackal.' },
+        { term: 'Horus', definition: 'Sky god, son of Isis and Osiris. Depicted with the head of a falcon.' },
+    
+    ],
+  },
+  {
+    id: 'terms',
+    label: 'Terms & Places',
+    emoji: '🏺',
+    cards: [
+        { term: 'Hieroglyphics', definition: 'The ancient Egyptian writing system using pictures and symbols.' },
+        { term: 'Mummification', definition: 'The process of preserving a body for the afterlife.' },
+        { term: 'Book of the Dead', definition: 'A collection of spells and prayers to guide the dead through the underworld.' },
+        { term: 'Lower Egypt', definition: 'The northern part of Egypt, where the Nile River forms a delta and flows into the Mediterranean Sea.' },
+        { term: 'Upper Egypt', definition: 'The southern part of Egypt, where the Nile flows from upstream.' },
+        { term: 'Nubia/Kush', definition: 'A powerful kingdom located to the south of ancient Egypt.' },
+    
+    ],
+  },
+  {
+    id: 'periods',
+    label: 'Periods',
+    emoji: '⏳',
+    cards: [
+          { term: 'Old Kingdom', definition: 'Known as the "Age of the Pyramids." A time of peace and prosperity when the pyramids at Giza were built.' },
+          { term: 'Middle Kingdom', definition: 'A period of reunification and stability, often considered the classical age of Egyptian art and literature.' },
+          { term: 'New Kingdom', definition: 'Known as the "Age of Empire." Egypt expanded its borders and famous pharaohs like Hatshepsut and Ramesses the Great ruled.' },
+    
+    ],
+  },
+];
+
+const STORAGE_KEY = 'flashcards:egypt';
 
 export default function EgyptStudyApp() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [currentCard, setCurrentCard] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [activeTab, setActiveTab] = useState('cards');
 
-  // New state for flashcard progress tracking
-  const [knownCards, setKnownCards] = useState(new Set());
-  const [reviewCards, setReviewCards] = useState(new Set());
 
   // State for the quiz
   const [currentQuiz, setCurrentQuiz] = useState([]);
@@ -15,38 +69,6 @@ export default function EgyptStudyApp() {
   const [showQuizResults, setShowQuizResults] = useState(false);
 
   // --- DATA BANK ---
-
-  const studyData = {
-    pharaohs: [
-      { term: 'Pepi II', definition: 'Ruled for approximately 94 years, one of the longest reigns in history.' },
-      { term: 'Hatshepsut', definition: 'One of the most powerful female pharaohs; focused on trade and building projects.' },
-      { term: 'Thutmose III', definition: 'A great military conqueror who expanded Egypt\'s empire, conquering Syria.' },
-      { term: 'Ramesses the Great', definition: 'Known for defeating the Hittites and extensive building projects like Abu Simbel.' },
-      { term: 'Akhenaten', definition: 'Formerly Amenhotep IV; abandoned polytheism to worship only the sun disk, Aten.' },
-      { term: 'Tutankhamun', definition: 'Famous for his nearly intact tomb discovered in 1922, filled with treasure.' },
-      { term: 'Cleopatra VII', definition: 'The last active pharaoh of Egypt, who allied with Julius Caesar and Mark Antony.' },
-    ],
-    gods: [
-      { term: 'Ra', definition: 'The sun god, one of the most important gods. Often depicted with a falcon head and a sun disk.' },
-      { term: 'Osiris', definition: 'God of the underworld and the afterlife. Often shown as a green-skinned, mummified pharaoh.' },
-      { term: 'Ma\'at', definition: 'Goddess of truth, justice, and cosmic order. Depicted as a woman with an ostrich feather on her head.' },
-      { term: 'Anubis', definition: 'God of mummification and funerals. Depicted with the head of a jackal.' },
-      { term: 'Horus', definition: 'Sky god, son of Isis and Osiris. Depicted with the head of a falcon.' },
-    ],
-    terms: [
-      { term: 'Hieroglyphics', definition: 'The ancient Egyptian writing system using pictures and symbols.' },
-      { term: 'Mummification', definition: 'The process of preserving a body for the afterlife.' },
-      { term: 'Book of the Dead', definition: 'A collection of spells and prayers to guide the dead through the underworld.' },
-      { term: 'Lower Egypt', definition: 'The northern part of Egypt, where the Nile River forms a delta and flows into the Mediterranean Sea.' },
-      { term: 'Upper Egypt', definition: 'The southern part of Egypt, where the Nile flows from upstream.' },
-      { term: 'Nubia/Kush', definition: 'A powerful kingdom located to the south of ancient Egypt.' },
-    ],
-    periods: [
-        { term: 'Old Kingdom', definition: 'Known as the "Age of the Pyramids." A time of peace and prosperity when the pyramids at Giza were built.' },
-        { term: 'Middle Kingdom', definition: 'A period of reunification and stability, often considered the classical age of Egyptian art and literature.' },
-        { term: 'New Kingdom', definition: 'Known as the "Age of Empire." Egypt expanded its borders and famous pharaohs like Hatshepsut and Ramesses the Great ruled.' },
-    ],
-  };
 
   const quizQuestionBank = [
     { question: 'Why were the pyramids built?', options: ['Palaces for pharaohs', 'Temples for the sun god', 'Tombs for the afterlife', 'Fortresses for defense'], correct: 2 },
@@ -81,41 +103,6 @@ export default function EgyptStudyApp() {
   useEffect(() => {
     startNewQuiz();
   }, []);
-
-  const currentDeck = studyData[activeTab] || [];
-  const cardId = `${activeTab}-${currentCard}`;
-
-  const nextCard = () => {
-    setCurrentCard((prev) => (prev + 1) % currentDeck.length);
-    setIsFlipped(false);
-  };
-
-  const handleMarkCard = (status) => {
-    if (status === 'known') {
-      setKnownCards(prev => new Set(prev).add(cardId));
-      setReviewCards(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(cardId);
-        return newSet;
-      });
-    } else { // 'review'
-      setReviewCards(prev => new Set(prev).add(cardId));
-      setKnownCards(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(cardId);
-        return newSet;
-      });
-    }
-    // Automatically move to the next card
-    setTimeout(nextCard, 200); 
-  };
-  
-  const resetCardProgress = () => {
-    setKnownCards(new Set());
-    setReviewCards(new Set());
-    setCurrentCard(0);
-    setIsFlipped(false);
-  }
 
   const handleQuizAnswer = (qIndex, aIndex) => setQuizAnswers(prev => ({ ...prev, [qIndex]: aIndex }));
   const checkQuiz = () => setShowQuizResults(true);
@@ -153,32 +140,37 @@ export default function EgyptStudyApp() {
     </div>
   );
 
-  const renderFlashcards = () => (
-    <div className="space-y-4">
-      {currentDeck.length > 0 ? (
-        <>
-          <div className="text-center text-sm text-gray-600 grid grid-cols-2 gap-2">
-             <div className="bg-green-100 p-2 rounded">Known: {knownCards.size}</div>
-             <div className="bg-orange-100 p-2 rounded">Needs Review: {reviewCards.size}</div>
-          </div>
-          <div className="relative h-64" onClick={() => setIsFlipped(!isFlipped)}>
-            <div className={`absolute inset-0 w-full h-full flex justify-center items-center bg-white p-6 rounded-lg shadow-lg text-center cursor-pointer transition-transform duration-500 ${isFlipped ? 'opacity-0' : ''}`}>
-              <h3 className="text-3xl font-bold">{currentDeck[currentCard]?.term}</h3>
-            </div>
-            <div className={`absolute inset-0 w-full h-full flex justify-center items-center bg-blue-800 text-white p-6 rounded-lg shadow-lg text-center cursor-pointer transition-transform duration-500 ${!isFlipped ? 'opacity-0' : ''}`}>
-              <p className="text-xl">{currentDeck[currentCard]?.definition}</p>
-            </div>
-          </div>
+  /* Reference list, on its own tab. These used to be the flashcard tabs
+   * themselves, with each term printed next to its definition under the card —
+   * see the note at the top of Flashcards.jsx for why that has to be separate
+   * from the cards. */
+  const renderNotes = () => (
+    <div className="space-y-6">
+      <div className="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+        <p className="text-sm text-gray-800">
+          📋 Everything in one place, for reading over before a round or checking
+          something you got stuck on. To <em>practice</em>, use the Note Cards tab —
+          trying to remember first is what makes it stick.
+        </p>
+      </div>
 
-          <div className="flex justify-center space-x-4">
-            <button onClick={() => handleMarkCard('review')} className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600">🤔 Review Again</button>
-            <button onClick={() => handleMarkCard('known')} className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600">✅ I Knew This</button>
-          </div>
-           <div className="flex justify-center">
-             <button onClick={resetCardProgress} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">🔄 Reset Progress</button>
-          </div>
-        </>
-      ) : <p>Select a category.</p>}
+      {DECKS.map((deck) => (
+        <section key={deck.id}>
+          <h3 className="mb-2 text-xl font-bold text-amber-800">
+            <span aria-hidden="true">{deck.emoji}</span> {deck.label}
+          </h3>
+          <ul className="divide-y divide-amber-100 overflow-hidden rounded-xl bg-white shadow">
+            {deck.cards.map((entry) => (
+              <li key={entry.term} className="p-4 sm:flex sm:gap-4">
+                <span className="block font-bold text-amber-900 sm:w-56 sm:shrink-0">
+                  {entry.term}
+                </span>
+                <span className="text-gray-700">{entry.definition}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 
@@ -228,16 +220,14 @@ export default function EgyptStudyApp() {
   };
   
   const categories = [
-      { id: 'overview', name: '📜 Overview' },
-      { id: 'pharaohs', name: '👑 Pharaohs' },
-      { id: 'gods', name: '☀️ Gods' },
-      { id: 'terms', name: '🏺 Terms & Places' },
-      { id: 'periods', name: '⏳ Periods' },
-      { id: 'quiz', name: '📝 Quiz' },
+    { id: 'cards', name: '🃏 Note Cards' },
+    { id: 'quiz', name: '📝 Quiz' },
+    { id: 'overview', name: '📜 Overview' },
+    { id: 'notes', name: '📋 All Notes' },
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-yellow-50 min-h-screen font-sans">
+    <div className="mx-auto min-h-screen max-w-5xl touch-manipulation bg-yellow-50 p-4 font-sans sm:p-6">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-yellow-800">Ancient Egypt</h1>
         <h2 className="text-xl text-gray-600">Interactive Study Guide</h2>
@@ -245,16 +235,19 @@ export default function EgyptStudyApp() {
 
       <div className="flex flex-wrap justify-center gap-2 mb-6">
         {categories.map(cat => (
-          <button key={cat.id} onClick={() => setActiveTab(cat.id)} className={`px-4 py-2 rounded-lg font-semibold transition-transform duration-200 ${activeTab === cat.id ? 'bg-yellow-700 text-white scale-110' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}>
+          <button key={cat.id} onClick={() => setActiveTab(cat.id)} className={`min-h-[48px] rounded-xl px-4 py-2.5 font-semibold transition ${activeTab === cat.id ? 'bg-yellow-700 text-white shadow-lg ring-2 ring-yellow-800 ring-offset-2 ring-offset-yellow-50' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}>
             {cat.name}
           </button>
         ))}
       </div>
 
       <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-lg">
-        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'cards' && (
+          <Flashcards decks={DECKS} storageKey={STORAGE_KEY} theme="amber" />
+        )}
         {activeTab === 'quiz' && renderQuiz()}
-        {['pharaohs', 'gods', 'terms', 'periods'].includes(activeTab) && renderFlashcards()}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'notes' && renderNotes()}
       </div>
     </div>
   );

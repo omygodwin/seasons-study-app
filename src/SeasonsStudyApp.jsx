@@ -1,56 +1,81 @@
 import { useState } from 'react';
+import Flashcards from './Flashcards';
+
+const DECKS = [
+  {
+    id: 'basics',
+    label: 'Seasons Basics',
+    emoji: '📚',
+    cards: [
+        { term: "Vernal Equinox", definition: "Occurs between winter and summer - spring begins" },
+        { term: "Autumnal Equinox", definition: "Occurs between spring and fall - fall begins" },
+        { term: "Equinoxes", definition: "Earth not tilting away nor toward the sun - equal day/night" },
+        { term: "Summer Solstice", definition: "When the sun is highest in the sky - longest day" },
+        { term: "Winter Solstice", definition: "When the sun is lowest in the sky - shortest day" },
+        { term: "Tilt of Earth's Axis", definition: "23.5 degrees - the root cause of Earth's seasons" },
+        { term: "Two Ways to Measure Sunlight", definition: "1. Angle between sun rays and Earth's surface 2. Length of the day" },
+        { term: "Root Cause of Seasons", definition: "The tilt of Earth's axis controls how well sunlight reaches different areas" }
+    
+    ],
+  },
+  {
+    id: 'earthfacts',
+    label: 'Earth Facts',
+    emoji: '🌎',
+    cards: [
+        { term: "Tilt of Earth's Axis", definition: "23.5 degrees" },
+        { term: "Distance Earth to Sun", definition: "150,000,000 km (average)" },
+        { term: "Distance Earth to Moon", definition: "384,000 km (average)" },
+        { term: "Earth's Orbital Period", definition: "365.24 days (one year)" },
+        { term: "Moon's Cycle Period", definition: "29.5 days (phases)" },
+        { term: "North Pole", definition: "One end of Earth's axis" },
+        { term: "South Pole", definition: "One end of Earth's axis" },
+        { term: "Equator", definition: "Halfway between north and south pole" }
+    
+    ],
+  },
+  {
+    id: 'zones',
+    label: 'Climate Zones',
+    emoji: '🌡️',
+    cards: [
+        { term: "Polar Zones", definition: "Within Arctic and Antarctic Circles - 24h day/night on solstices" },
+        { term: "Polar Zone Sunlight", definition: "Always nearly horizontal to the ground - stay cold year-round" },
+        { term: "Tropical Zones", definition: "Between Tropic of Cancer and Tropic of Capricorn" },
+        { term: "Tropical Zone Days", definition: "Change a little bit (up to 13.5 hours) - stay warm year-round" },
+        { term: "Tropical Zone Sunlight", definition: "Only area where sun can be completely vertical - hits tropics on solstices" },
+        { term: "Temperate Zones", definition: "Middle latitudes between tropical and polar zones" },
+        { term: "Temperate Zone Days", definition: "Change medium amount (~15 hours for Virginia)" },
+        { term: "Temperate Zone Sunlight", definition: "Moderate angle - not vertical nor horizontal - experiences four seasons" }
+    
+    ],
+  },
+  {
+    id: 'cycles',
+    label: 'Seasonal Cycles',
+    emoji: '📅',
+    cards: [
+        { term: "Spring Equinox Date", definition: "March 21 (approximately)" },
+        { term: "Summer Solstice Date", definition: "June 21 (approximately)" },
+        { term: "Fall Equinox Date", definition: "September 21 (approximately)" },
+        { term: "Winter Solstice Date", definition: "December 21 (approximately)" },
+        { term: "Northern Hemisphere Summer", definition: "When North Pole tilts toward sun (June 21)" },
+        { term: "Northern Hemisphere Winter", definition: "When North Pole tilts away from sun (December 21)" },
+        { term: "Southern Hemisphere Seasons", definition: "Opposite of Northern Hemisphere - winter when we have summer" }
+    
+    ],
+  },
+];
+
+const STORAGE_KEY = 'flashcards:seasons';
 
 export default function SeasonsStudyApp() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [currentCard, setCurrentCard] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [studiedCards, setStudiedCards] = useState(new Set());
+  const [activeTab, setActiveTab] = useState('cards');
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showQuizResults, setShowQuizResults] = useState(false);
   const [simulationStep, setSimulationStep] = useState(0);
 
   // Study data organized by topics
-  const studyData = {
-    basics: [
-      { term: "Vernal Equinox", definition: "Occurs between winter and summer - spring begins" },
-      { term: "Autumnal Equinox", definition: "Occurs between spring and fall - fall begins" },
-      { term: "Equinoxes", definition: "Earth not tilting away nor toward the sun - equal day/night" },
-      { term: "Summer Solstice", definition: "When the sun is highest in the sky - longest day" },
-      { term: "Winter Solstice", definition: "When the sun is lowest in the sky - shortest day" },
-      { term: "Tilt of Earth's Axis", definition: "23.5 degrees - the root cause of Earth's seasons" },
-      { term: "Two Ways to Measure Sunlight", definition: "1. Angle between sun rays and Earth's surface 2. Length of the day" },
-      { term: "Root Cause of Seasons", definition: "The tilt of Earth's axis controls how well sunlight reaches different areas" }
-    ],
-    earthfacts: [
-      { term: "Tilt of Earth's Axis", definition: "23.5 degrees" },
-      { term: "Distance Earth to Sun", definition: "150,000,000 km (average)" },
-      { term: "Distance Earth to Moon", definition: "384,000 km (average)" },
-      { term: "Earth's Orbital Period", definition: "365.24 days (one year)" },
-      { term: "Moon's Cycle Period", definition: "29.5 days (phases)" },
-      { term: "North Pole", definition: "One end of Earth's axis" },
-      { term: "South Pole", definition: "One end of Earth's axis" },
-      { term: "Equator", definition: "Halfway between north and south pole" }
-    ],
-    zones: [
-      { term: "Polar Zones", definition: "Within Arctic and Antarctic Circles - 24h day/night on solstices" },
-      { term: "Polar Zone Sunlight", definition: "Always nearly horizontal to the ground - stay cold year-round" },
-      { term: "Tropical Zones", definition: "Between Tropic of Cancer and Tropic of Capricorn" },
-      { term: "Tropical Zone Days", definition: "Change a little bit (up to 13.5 hours) - stay warm year-round" },
-      { term: "Tropical Zone Sunlight", definition: "Only area where sun can be completely vertical - hits tropics on solstices" },
-      { term: "Temperate Zones", definition: "Middle latitudes between tropical and polar zones" },
-      { term: "Temperate Zone Days", definition: "Change medium amount (~15 hours for Virginia)" },
-      { term: "Temperate Zone Sunlight", definition: "Moderate angle - not vertical nor horizontal - experiences four seasons" }
-    ],
-    cycles: [
-      { term: "Spring Equinox Date", definition: "March 21 (approximately)" },
-      { term: "Summer Solstice Date", definition: "June 21 (approximately)" },
-      { term: "Fall Equinox Date", definition: "September 21 (approximately)" },
-      { term: "Winter Solstice Date", definition: "December 21 (approximately)" },
-      { term: "Northern Hemisphere Summer", definition: "When North Pole tilts toward sun (June 21)" },
-      { term: "Northern Hemisphere Winter", definition: "When North Pole tilts away from sun (December 21)" },
-      { term: "Southern Hemisphere Seasons", definition: "Opposite of Northern Hemisphere - winter when we have summer" }
-    ]
-  };
 
   const quizQuestions = [
     {
@@ -101,31 +126,6 @@ export default function SeasonsStudyApp() {
     { season: "Fall", date: "September 21", position: "Autumnal Equinox", description: "Equal day and night, North Pole starting to tilt away from sun" },
     { season: "Winter", date: "December 21", position: "Winter Solstice", description: "Shortest day in Northern Hemisphere, North Pole tilted away from sun" }
   ];
-
-  const currentDeck = studyData[activeTab] || [];
-
-  const flipCard = () => {
-    setIsFlipped(!isFlipped);
-    if (!isFlipped) {
-      setStudiedCards(prev => new Set([...prev, `${activeTab}-${currentCard}`]));
-    }
-  };
-
-  const nextCard = () => {
-    setCurrentCard((prev) => (prev + 1) % currentDeck.length);
-    setIsFlipped(false);
-  };
-
-  const prevCard = () => {
-    setCurrentCard((prev) => (prev - 1 + currentDeck.length) % currentDeck.length);
-    setIsFlipped(false);
-  };
-
-  const resetCards = () => {
-    setCurrentCard(0);
-    setIsFlipped(false);
-    setStudiedCards(new Set());
-  };
 
   const handleQuizAnswer = (questionIndex, answerIndex) => {
     setQuizAnswers(prev => ({
@@ -290,51 +290,37 @@ export default function SeasonsStudyApp() {
     </div>
   );
 
-  const renderFlashcards = () => (
+  /* Reference list, on its own tab. These used to be the flashcard tabs
+   * themselves, with each term printed next to its definition under the card —
+   * see the note at the top of Flashcards.jsx for why that has to be separate
+   * from the cards. */
+  const renderNotes = () => (
     <div className="space-y-6">
-      {currentDeck.length > 0 ? (
-        <>
-          <div className="text-center text-sm text-gray-600">
-            Card {currentCard + 1} of {currentDeck.length} | 
-            Studied: {Array.from(studiedCards).filter(id => id.startsWith(activeTab)).length}/{currentDeck.length}
-          </div>
+      <div className="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+        <p className="text-sm text-gray-800">
+          📋 Everything in one place, for reading over before a round or checking
+          something you got stuck on. To <em>practice</em>, use the Note Cards tab —
+          trying to remember first is what makes it stick.
+        </p>
+      </div>
 
-          <div className="relative">
-            <div 
-              className={`w-full h-64 rounded-lg shadow-lg cursor-pointer transform transition-transform duration-300 ${isFlipped ? 'rotate-y-180' : ''}`}
-              onClick={flipCard}
-              style={{ transformStyle: 'preserve-3d' }}
-            >
-              <div className={`absolute inset-0 bg-white rounded-lg border-2 border-gray-200 flex items-center justify-center p-6 ${isFlipped ? 'opacity-0' : 'opacity-100'}`}>
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4">{currentDeck[currentCard]?.term}</h3>
-                  <p className="text-gray-500">Touch to reveal definition</p>
-                </div>
-              </div>
-              <div className={`absolute inset-0 bg-blue-600 text-white rounded-lg border-2 border-blue-700 flex items-center justify-center p-6 ${isFlipped ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="text-center">
-                  <h3 className="text-xl font-semibold mb-3">{currentDeck[currentCard]?.term}</h3>
-                  <p className="text-blue-100 leading-relaxed">{currentDeck[currentCard]?.definition}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-center space-x-4">
-            <button onClick={prevCard} className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-lg">← Previous</button>
-            <button onClick={flipCard} className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-lg">
-              {isFlipped ? 'Hide' : 'Reveal'}
-            </button>
-            <button onClick={nextCard} className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-lg">Next →</button>
-          </div>
-
-          <div className="flex justify-center">
-            <button onClick={resetCards} className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 text-lg">🔄 Reset Progress</button>
-          </div>
-        </>
-      ) : (
-        <div className="text-center text-gray-500">No flashcards available for this category</div>
-      )}
+      {DECKS.map((deck) => (
+        <section key={deck.id}>
+          <h3 className="mb-2 text-xl font-bold text-sky-800">
+            <span aria-hidden="true">{deck.emoji}</span> {deck.label}
+          </h3>
+          <ul className="divide-y divide-sky-100 overflow-hidden rounded-xl bg-white shadow">
+            {deck.cards.map((entry) => (
+              <li key={entry.term} className="p-4 sm:flex sm:gap-4">
+                <span className="block font-bold text-sky-900 sm:w-56 sm:shrink-0">
+                  {entry.term}
+                </span>
+                <span className="text-gray-700">{entry.definition}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 
@@ -412,17 +398,15 @@ export default function SeasonsStudyApp() {
   };
 
   const categories = [
-    { id: 'overview', name: '🌍 Overview', color: 'bg-blue-600' },
+    { id: 'cards', name: '🃏 Note Cards', color: 'bg-sky-700' },
     { id: 'simulation', name: '🔄 Simulation', color: 'bg-purple-600' },
-    { id: 'basics', name: '📚 Seasons Basics', color: 'bg-green-600' },
-    { id: 'earthfacts', name: '🌎 Earth Facts', color: 'bg-orange-600' },
-    { id: 'zones', name: '🌡️ Climate Zones', color: 'bg-red-600' },
-    { id: 'cycles', name: '📅 Seasonal Cycles', color: 'bg-pink-600' },
-    { id: 'quiz', name: '📝 Quiz', color: 'bg-indigo-600' }
+    { id: 'quiz', name: '📝 Quiz', color: 'bg-indigo-600' },
+    { id: 'overview', name: '🌍 Overview', color: 'bg-blue-600' },
+    { id: 'notes', name: '📋 All Notes', color: 'bg-teal-700' },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto p-4 bg-gradient-to-b from-sky-50 to-blue-100 min-h-screen">
+    <div className="mx-auto min-h-screen max-w-5xl touch-manipulation bg-gradient-to-b from-sky-50 to-blue-100 p-4 sm:p-6">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Earth Science: Seasons</h1>
         <h2 className="text-xl text-gray-600">Interactive Study Guide</h2>
@@ -433,13 +417,11 @@ export default function SeasonsStudyApp() {
         {categories.map(category => (
           <button
             key={category.id}
-            onClick={() => {
-              setActiveTab(category.id);
-              setCurrentCard(0);
-              setIsFlipped(false);
-            }}
-            className={`px-4 py-3 rounded-lg text-white font-medium transition-colors text-sm md:text-base ${
-              activeTab === category.id ? category.color : 'bg-gray-500 hover:bg-gray-600'
+            onClick={() => setActiveTab(category.id)}
+            className={`min-h-[48px] rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition md:text-base ${
+              activeTab === category.id
+                ? `${category.color} shadow-lg ring-2 ring-slate-700 ring-offset-2 ring-offset-sky-50`
+                : 'bg-gray-500 hover:bg-gray-600'
             }`}
           >
             {category.name}
@@ -449,10 +431,13 @@ export default function SeasonsStudyApp() {
 
       {/* Content */}
       <div className="bg-white rounded-lg p-6 shadow-lg">
-        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'cards' && (
+          <Flashcards decks={DECKS} storageKey={STORAGE_KEY} theme="sky" />
+        )}
         {activeTab === 'simulation' && renderSimulation()}
         {activeTab === 'quiz' && renderQuiz()}
-        {!['overview', 'simulation', 'quiz'].includes(activeTab) && renderFlashcards()}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'notes' && renderNotes()}
       </div>
 
       <div className="mt-6 text-center">

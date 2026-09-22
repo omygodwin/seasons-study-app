@@ -53,6 +53,8 @@ src/
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
   GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
   ScienceInquiryStudyApp.jsx # Rose's Unit 1: Thinking Like a Scientist
+  Flashcards.jsx            # Shared spaced-repetition note-card engine
+                            #   (used by every study app except Geography)
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
@@ -97,6 +99,42 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 
 - Each `*StudyApp.jsx` follows the same pattern: tab state, flashcard state
   (Known/Review sets), randomized 10-question quiz from a larger pool.
+- **All flashcards go through `Flashcards.jsx`.** Every study app uses it
+  (Geography has no cards). Don't hand-roll a card UI in a study app again.
+  It takes `decks` (`[{id, label, emoji, cards: [{term, definition, note?}]}]`),
+  a `storageKey` (`flashcards:<topic>`, and it must be unique — two topics
+  sharing one would merge their schedules), and a `theme` naming one of the
+  presets at the top of the file. It owns its own deck picker, so a topic needs
+  one Note Cards tab, not one tab per deck, and it hides the picker entirely
+  for a single-deck topic. Three rules it exists to enforce — breaking any of
+  them is what makes flashcards feel productive while teaching much less:
+  1. **Never render a term next to its definition on a study tab.** The answer
+     is hidden behind the flip, and the grade buttons only appear after a
+     reveal. A browsable term/definition list belongs on its own tab (see the
+     "All Notes" tab), never under the cards.
+  2. **Card scheduling must persist.** Leitner boxes with 1/3/7/16-day
+     intervals in `localStorage` — spacing does nothing if it resets on
+     reload, which is what the old in-component `Set`s did.
+  3. **A card leaves the round only when graded "Knew it."** "Almost" and
+     "Study Again" requeue it, so every round ends on successful recall, and
+     they also trigger the own-words prompt (below).
+  4. **Rounds are blocked by deck; mixing is opt-in.** This was reversed once
+     and put back deliberately — don't "fix" it. Interleaving measures g = 0.42
+     overall but the moderators run the other way for term-and-definition
+     material: Brunmair & Richter (2019) estimate a *negative* effect for
+     verbal material (against g = 0.67 for visual categories), and Hwang (2025)
+     finds blocked practice first matters for new declarative knowledge in
+     younger learners. "Mix It Up" sits last in the picker with a line saying
+     to use it once a topic is mostly Strong.
+  5. **Only a missed card asks her to write it in her own words.** Generation
+     plus self-explanation on the cards retrieval just showed are weak; doing
+     it for all 50 is the opportunity-cost trap (time spent making cards
+     instead of retrieving from them). Her wording persists as `cards[id].own`,
+     shows under the real definition on the *answer* face only, and survives
+     both a regrade and a progress reset — the boxes are the app's state, the
+     notes are hers.
+  The `lg:` card height is deliberately *shorter* than `sm:` — `lg` width is
+  the iPad in landscape, where the grade buttons have to stay above the fold.
 - When adding a new Rose study topic:
   1. Create `FooStudyApp.jsx` mirroring `VocabStudyApp.jsx`
   2. Add `{ id, label, emoji, date }` to `ROSE_TOPICS` in `App.jsx`, where
@@ -123,6 +161,12 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   tree from the registry on every deploy — that was the difference between an
   80-second and a 14-minute deploy. Lockfiles were regenerated and the clash
   did not recur; keep them committed and keep the installs on `npm ci`.
+- `npm run lint` will NOT catch a missing component import. `no-undef` doesn't
+  flag undefined JSX element names and `eslint-plugin-react` isn't installed,
+  so a dropped `import Flashcards from './Flashcards'` lints clean, builds
+  clean, and only blows up as "Flashcards is not defined" at render. A study
+  app's tabs have to be clicked in a browser before you trust a refactor of
+  one — `npm run build` passing means nothing here.
 - PWA manifest lives at `public/manifest.json`.
 - Shared Firebase Realtime DB project `roseruthclinic` is used by `hotel/`,
   `animal-hospital/`, and `movie-theater/` (under namespace `movieTheater`),
