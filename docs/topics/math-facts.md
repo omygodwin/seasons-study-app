@@ -14,8 +14,8 @@ for the reasoning behind everything below.
 
 | Tab | What it does |
 |---|---|
-| ✏️ Practice | Adaptive round of 12, corrected immediately, × and ÷ mixed |
-| ⏱ Mad Minute | 60 seconds, silent, scored at the end |
+| ✏️ Practice | Adaptive round of 12, corrected immediately, × and ÷ mixed, filterable by number |
+| ⏱ Mad Minute | 60 seconds, silent, scored at the end, skippable |
 | 📊 Progress | Two 12×12 grids — × (symmetric) and ÷ (not) — colored by mastery |
 | 📋 Tables | Reference tables, 1s through 12s, each line with its fact family |
 
@@ -77,6 +77,43 @@ interleaving pays when it forces a *discrimination*, and a round that mixes
 
 A `Mixed / × only / ÷ only` picker appears on Practice and Mad Minute once
 anything has unlocked, and applies to both.
+
+## The number picker (Practice only)
+
+Twelve toggles plus **All** and **None**, so "just my 12s" or "9s and 12s" is a
+couple of taps. Stored as `state.focus`.
+
+A fact counts if **either** operand is selected — picking 9 and 12 gets 9 × 7,
+12 × 4 and 9 × 12, not only the facts where both sides are chosen. Every fact
+carries `pa` / `pb` (its pair operands) so the one filter covers multiplication
+and division alike: `108 ÷ 9 = 12` is both a 9 fact and a 12 fact.
+
+Two guards worth keeping:
+
+- An empty selection **disables Start**, with the summary line saying why.
+- `eligibleFacts` still falls back to a non-empty pool if it is ever reached
+  with nothing selected, so a stale selection degrades to something askable
+  rather than to a blank round.
+
+It applies to **Practice only**. Mad Minute passes no focus, because the sheet
+at school doesn't let her pick the numbers either.
+
+At `sm` and up the chips render as a single row of 12 rather than 6 × 2 — that
+is what keeps the Start button above the fold on a 768px-tall iPad.
+
+## Skip, in the Mad Minute
+
+She can jump around on the paper sheet, so she can here.
+
+**A skip never calls `record()`.** She didn't answer it, so scoring it wrong
+would push a fact into "needs work" on no evidence, and would teach her to
+guess rather than move on. Skips are excluded from `total` (which counts
+attempts), from the "done" counter, and from the missed list; they get their own
+line on the results screen saying they don't count against her.
+
+Skip sits in the **timer row**, not under the keypad. Under the keypad it fell
+below the fold on a 768px-tall iPad and on phones — and it is needed
+mid-minute, when scrolling costs her seconds.
 
 ## Strategy hints
 

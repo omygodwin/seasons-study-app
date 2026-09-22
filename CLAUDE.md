@@ -138,6 +138,20 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   review were here (a 2-question cold-start round, then a round padded with 9
   new facts when nothing was due). Re-test all four states after touching it:
   cold start, known-but-nothing-due, some-due, everything-fluent.
+- Practice has a **number picker** (`state.focus`, 1-12, with All/None). A fact
+  counts if EITHER operand is selected, so picking 9 and 12 gets 9x7, 12x4 and
+  9x12 — every fact carries `pa`/`pb` (its pair operands) so one filter covers
+  multiplication and division alike. It applies to **Practice only**; Mad Minute
+  passes no focus because the sheet at school doesn't let her choose. An empty
+  selection disables Start, and `eligibleFacts` still falls back to a non-empty
+  pool rather than handing back a round with nothing in it.
+- Mad Minute has **Skip**, and a skip must never call `record()` — she didn't
+  answer, so scoring it wrong would push a fact into "needs work" on no evidence
+  and teach her to guess rather than move on. Skips are excluded from `total`
+  (attempts), from the "done" counter and from the missed list, and are shown
+  separately on the results screen. Skip lives in the **timer row**: under the
+  keypad it fell below the fold on a 768px-tall iPad, and it is needed
+  mid-minute when scrolling costs seconds.
 - Practice corrects immediately; **Mad Minute stays silent for the full minute**
   and scores at the end, because it exists to rehearse the timed sheet she does
   at school. Don't "improve" it by adding live feedback.

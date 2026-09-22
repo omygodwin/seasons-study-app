@@ -85,6 +85,7 @@ export const GUIDANCE = {
         'Ask her which trick she used, not whether she was fast. Fluency is a reasoning strategy that became automatic, not a lookup that was memorized.',
         'Let the Mad Minute be a race against her own last score. It reports her personal best and nothing else on purpose.',
         'Four short goes across a week beat one long one. The app schedules facts back at 1, 3, 7 and 16 days and that only works if she opens it across days.',
+        'If her class is on one table this week, narrow Practice to it with the number picker — then put it back to All, because the spacing only pays off across the whole set.',
       ],
       watch: [
         'Fingers, whispering, or a long pause means skip-counting. The app already treats that as "getting it" rather than fluent — back it up by naming the strategy rather than asking for speed.',
@@ -98,12 +99,12 @@ export const GUIDANCE = {
     },
     tabs: {
       practice: {
-        student: 'This one tells you straight away if you are right. That is where the learning happens.',
-        parent: 'Rounds are mostly facts she already has with at most two new ones folded in. When a round runs short it pads with known facts, never more new ones.',
+        student: 'This one tells you straight away if you are right. That is where the learning happens. Use "Which numbers?" if you only want to drill your 12s.',
+        parent: 'Rounds are mostly facts she already has with at most two new ones folded in. When a round runs short it pads with known facts, never more new ones. The number picker narrows a round to chosen tables — useful the week her class is on one of them, but the default of everything is what keeps the spacing working, so switch it back afterwards.',
       },
       mad: {
-        student: 'One minute, no hints until the end — same as the sheet at school. Do not stop to check.',
-        parent: 'Silent for the full minute by design. It exists to rehearse the timed sheet she already sits at school, and a drill she has met at home is a smaller event than one she has not. Adding live feedback would make it a different exercise.',
+        student: 'One minute, no hints until the end — same as the sheet at school. Stuck on one? Tap Skip and keep going; skips do not count against you.',
+        parent: 'Silent for the full minute by design. It exists to rehearse the timed sheet she already sits at school, and a drill she has met at home is a smaller event than one she has not. Adding live feedback would make it a different exercise. Skip is the paper sheet\u2019s "come back to it" — a skipped problem is not recorded as wrong, because she did not answer it, and scoring it against her would teach her to guess rather than move on. The number picker does not apply here: the sheet at school does not let her choose either.',
       },
       progress: {
         student: 'Green means fast and right. The × grid is symmetric because 7 × 8 and 8 × 7 are one thing to learn.',

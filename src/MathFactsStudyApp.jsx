@@ -68,7 +68,7 @@ const MUL_FACTS = (() => {
   const out = [];
   for (let a = 1; a <= MAX; a++) {
     for (let b = a; b <= MAX; b++) {
-      out.push({ kind: 'mul', id: mulId(a, b), a, b, answer: a * b, weight: a * b });
+      out.push({ kind: 'mul', id: mulId(a, b), a, b, pa: a, pb: b, answer: a * b, weight: a * b });
     }
   }
   return out;
@@ -90,6 +90,10 @@ const DIV_FACTS = (() => {
           product,
           divisor: d,
           answer: product / d,
+          /* The pair this division fact comes from, so the number filter can
+           * treat 108 / 9 = 12 as a "9" fact and a "12" fact alike. */
+          pa: a,
+          pb: b,
           weight: product,
         });
       });
@@ -120,13 +124,16 @@ function shuffle(arr) {
   return out;
 }
 
+/* 1-12, the numbers she can include or exclude in Practice. */
+const ALL_NUMBERS = Array.from({ length: MAX }, (_, i) => i + 1);
+
 const MODES = [
   { id: 'mixed', label: 'Mixed', hint: 'both, jumbled up' },
   { id: 'mul', label: '× only', hint: 'multiplication' },
   { id: 'div', label: '÷ only', hint: 'division' },
 ];
 
-const EMPTY = { v: 2, facts: {}, mad: [], keypad: 'onscreen', mode: 'mixed' };
+const EMPTY = { v: 2, facts: {}, mad: [], keypad: 'onscreen', mode: 'mixed', focus: ALL_NUMBERS };
 
 /* v1 stored multiplication facts under a bare sorted pair ("3x4"). v2 adds
  * division, so keys are namespaced ("m:3x4", "d:12/3") — migrate rather than
@@ -137,6 +144,14 @@ function migrateFacts(raw) {
     out[k.startsWith('m:') || k.startsWith('d:') ? k : `m:${k}`] = v;
   });
   return out;
+}
+
+/* Anything unparseable falls back to the whole table rather than to an empty
+ * selection, which would present her with a Practice tab that cannot start. */
+function sanitizeFocus(raw) {
+  if (!Array.isArray(raw)) return ALL_NUMBERS;
+  const keep = [...new Set(raw)].filter((n) => Number.isInteger(n) && n >= 1 && n <= MAX);
+  return keep.length ? keep.sort((a, b) => a - b) : ALL_NUMBERS;
 }
 
 function loadState() {
@@ -151,6 +166,7 @@ function loadState() {
       mad: Array.isArray(p.mad) ? p.mad : [],
       keypad: p.keypad === 'device' ? 'device' : 'onscreen',
       mode: MODES.some((m) => m.id === p.mode) ? p.mode : 'mixed',
+      focus: sanitizeFocus(p.focus),
       facts: p.v === 1 ? migrateFacts(p.facts) : (p.facts && typeof p.facts === 'object' ? p.facts : {}),
     };
   } catch {
@@ -180,10 +196,21 @@ const LEVELS = {
 /* A division fact is only in play once its multiplication pair is fluent. */
 const divReady = (facts, f) => levelOf(facts[f.mulKey]) === 'fluent';
 
-function eligibleFacts(facts, mode) {
+/* `focus` is the set of numbers she has left switched on in Practice. A fact
+ * counts if EITHER operand is in it, so picking 9 and 12 gets her 9 x 7, 12 x 4
+ * and 9 x 12 — not just the facts where both sides are chosen.
+ *
+ * Mad Minute passes no focus: it mirrors the sheet at school, which does not
+ * let her pick the numbers. */
+function eligibleFacts(facts, mode, focus) {
   const out = [];
   if (mode !== 'div') out.push(...MUL_FACTS);
   if (mode !== 'mul') out.push(...DIV_FACTS.filter((f) => divReady(facts, f)));
+  const scoped = focus ? out.filter((f) => focus.has(f.pa) || focus.has(f.pb)) : out;
+  /* Never hand back an empty pool — the caller would have nothing to ask. The
+   * start button is disabled before this can happen, but a stale selection
+   * should degrade to something askable rather than to a blank round. */
+  if (scoped.length) return scoped;
   return out.length ? out : MUL_FACTS;
 }
 
@@ -241,9 +268,9 @@ function strategyFor(q) {
  * Multiplication and division are drawn from one pool rather than alternated,
  * so a round mixes the two by whatever she actually needs. That is the
  * interleaving that matters: she has to read the sign before answering. */
-function buildRound(facts, mode) {
+function buildRound(facts, mode, focus) {
   const today = todayISO();
-  const pool = eligibleFacts(facts, mode);
+  const pool = eligibleFacts(facts, mode, focus);
   const by = { needswork: [], learning: [], untried: [], due: [], fluent: [] };
   pool.forEach((f) => {
     const st = facts[f.id];
@@ -399,6 +426,67 @@ function ModePicker({ mode, onPick }) {
   );
 }
 
+/* Which numbers are in play. Practice only — see eligibleFacts.
+ *
+ * Every chip is a toggle rather than a single-select, so "just my 12s" and
+ * "9s and 12s" are both one tap away, and All / None save twelve taps when she
+ * wants to swing between the whole table and one number. */
+function NumberPicker({ focus, onToggle, onAll, onNone }) {
+  const n = focus.size;
+  return (
+    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-bold text-slate-700">Which numbers?</p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onAll}
+            className="min-h-[44px] rounded-xl bg-white px-3 text-sm font-bold text-sky-800 shadow-sm ring-1 ring-slate-200 hover:bg-sky-50"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            onClick={onNone}
+            className="min-h-[44px] rounded-xl bg-white px-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200 hover:bg-slate-100"
+          >
+            None
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-12">
+        {ALL_NUMBERS.map((d) => {
+          const on = focus.has(d);
+          return (
+            <button
+              key={d}
+              type="button"
+              onClick={() => onToggle(d)}
+              aria-pressed={on}
+              className={`min-h-[44px] rounded-xl font-mono text-lg font-bold tabular-nums transition ${
+                on
+                  ? 'bg-sky-700 text-white shadow ring-2 ring-sky-800'
+                  : 'bg-white text-slate-400 ring-1 ring-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-2 text-sm text-slate-500">
+        {n === 0
+          ? 'Pick at least one number to start a round.'
+          : n === ALL_NUMBERS.length
+            ? 'All of them — the usual.'
+            : `Just ${[...focus].sort((a, b) => a - b).join(', ')}. Anything with one of these in it counts.`}
+      </p>
+    </div>
+  );
+}
+
 /* Feedback and the strategy hint share one slot of FIXED height. Reserving the
  * space matters more than saving it: the keypad must not move between questions
  * — her thumb is already where Next was — and a hint that pushed the keypad down
@@ -496,6 +584,22 @@ export default function MathFactsStudyApp() {
   const mode = divOpen ? state.mode : 'mul';
   const setMode = (m) => setState((s) => ({ ...s, mode: m }));
 
+  const focus = useMemo(() => new Set(state.focus), [state.focus]);
+  const toggleNumber = (d) =>
+    setState((s) => {
+      const next = new Set(s.focus);
+      if (next.has(d)) next.delete(d); else next.add(d);
+      return { ...s, focus: [...next].sort((a, b) => a - b) };
+    });
+  const setAllNumbers = () => setState((s) => ({ ...s, focus: [...ALL_NUMBERS] }));
+  const clearNumbers = () => setState((s) => ({ ...s, focus: [] }));
+  /* How many facts the current selection can actually ask about — drives both
+   * the disabled state and the "nothing here yet" copy. */
+  const inPlay = useMemo(
+    () => (focus.size === 0 ? 0 : eligibleFacts(state.facts, mode, focus).length),
+    [state.facts, mode, focus],
+  );
+
   /* One place records an answer, so Practice and Mad Minute cannot drift on what
    * counts as fluent. Spacing only applies once a fact is actually fluent. */
   const record = useCallback((id, right, ms) => {
@@ -521,7 +625,7 @@ export default function MathFactsStudyApp() {
 
   // ---------- practice ----------
   const startRound = () => {
-    setQueue(buildRound(state.facts, mode));
+    setQueue(buildRound(state.facts, mode, focus));
     setQAt(0);
     setEntry('');
     setFlash(null);
@@ -574,9 +678,12 @@ export default function MathFactsStudyApp() {
     setMadPhase('done');
     setMadLog((log) => {
       const score = log.filter((x) => x.right).length;
+      const skipped = log.filter((x) => x.skipped).length;
       setState((s) => ({
         ...s,
-        mad: [...s.mad, { score, total: log.length, date: todayISO() }].slice(-MAD_KEEP),
+        /* `total` counts attempts, not cards seen — a skipped problem was never
+         * tried, so folding it in would quietly depress her accuracy. */
+        mad: [...s.mad, { score, total: log.length - skipped, skipped, date: todayISO() }].slice(-MAD_KEEP),
       }));
       return log;
     });
@@ -592,6 +699,18 @@ export default function MathFactsStudyApp() {
     }, 1000);
     return () => { if (tick.current) clearInterval(tick.current); };
   }, [madPhase, endMad]);
+
+  /* Skipping is what she can already do on paper: leave one and come back, or
+   * just move past it. It deliberately does NOT call record() — she did not
+   * answer, so counting it wrong would punish her for moving on and would put
+   * a fact into "needs work" on no evidence. */
+  const skipMad = useCallback(() => {
+    if (!madProblem) return;
+    setMadLog((l) => [...l, { ...madProblem, given: '', right: false, skipped: true }]);
+    setEntry('');
+    setMadProblem(randomProblem(state.facts, mode));
+    shownAt.current = Date.now();
+  }, [madProblem, state.facts, mode]);
 
   /* No feedback during the minute — same as the paper sheet. */
   const submitMad = useCallback(() => {
@@ -672,9 +791,6 @@ export default function MathFactsStudyApp() {
   // ---------- practice ----------
   const renderPractice = () => {
     if (phase === 'start') {
-      const ready =
-        counts.mul.needswork + counts.mul.learning + counts.mul.untried +
-        counts.div.needswork + counts.div.learning + counts.div.untried;
       return (
         <div className="space-y-5 text-center">
           <div className="rounded-2xl bg-white p-6 shadow">
@@ -695,9 +811,17 @@ export default function MathFactsStudyApp() {
                 <ModePicker mode={mode} onPick={setMode} />
               </div>
             )}
+            <div className="mt-3 text-left">
+              <NumberPicker
+                focus={focus}
+                onToggle={toggleNumber}
+                onAll={setAllNumbers}
+                onNone={clearNumbers}
+              />
+            </div>
             <button
               onClick={startRound}
-              disabled={ready === 0 && counts.mul.fluent === 0}
+              disabled={inPlay === 0}
               className="mt-5 min-h-[56px] w-full max-w-xs rounded-xl bg-sky-600 px-8 text-lg font-bold text-white shadow-lg hover:bg-sky-700 disabled:bg-slate-400"
             >
               ▶︎ Start a round
@@ -784,8 +908,8 @@ export default function MathFactsStudyApp() {
           <div className="rounded-2xl bg-white p-6 text-center shadow">
             <p className="text-2xl font-bold text-sky-800">One minute. How many can you get?</p>
             <p className="mx-auto mt-2 max-w-md text-slate-600">
-              Just like the sheet at school: no hints until time is up. Skip nothing —
-              a wrong answer still moves you on.
+              Just like the sheet at school: no hints until time is up. Stuck on one?
+              Skip it and come back — skipped problems do not count against you.
             </p>
             {divOpen && (
               <>
@@ -819,13 +943,18 @@ export default function MathFactsStudyApp() {
 
     if (madPhase === 'done') {
       const score = madLog.filter((x) => x.right).length;
-      const missed = madLog.filter((x) => !x.right);
+      const missed = madLog.filter((x) => !x.right && !x.skipped);
+      const skipped = madLog.filter((x) => x.skipped);
+      const attempted = madLog.length - skipped.length;
       const prevBest = state.mad.slice(0, -1).reduce((m, r) => Math.max(m, r.score), 0);
       return (
         <div className="space-y-4">
           <div className="rounded-2xl bg-white p-6 text-center shadow">
             <p className="text-5xl font-bold tabular-nums text-sky-800">{score}</p>
-            <p className="mt-1 text-slate-600">right out of {madLog.length} tried</p>
+            <p className="mt-1 text-slate-600">
+              right out of {attempted} tried
+              {skipped.length > 0 && <> · {skipped.length} skipped</>}
+            </p>
             {score > prevBest && prevBest > 0 && (
               <p className="mt-2 font-bold text-green-700">🎉 New best — beat {prevBest}!</p>
             )}
@@ -835,6 +964,18 @@ export default function MathFactsStudyApp() {
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   {missed.map((m, i) => (
                     <span key={i} className="rounded-lg bg-amber-100 px-3 py-1 font-mono font-bold text-amber-900">
+                      {fullLine(m)}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+            {skipped.length > 0 && (
+              <>
+                <p className="mt-4 text-slate-600">Skipped — these do not count against you:</p>
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {skipped.map((m, i) => (
+                    <span key={i} className="rounded-lg bg-slate-100 px-3 py-1 font-mono font-bold text-slate-600">
                       {fullLine(m)}
                     </span>
                   ))}
@@ -858,11 +999,23 @@ export default function MathFactsStudyApp() {
     const low = madLeft <= 10;
     return (
       <div className="space-y-4">
+        {/* Skip lives in the timer row, not under the keypad. Below the keypad it
+          * fell past the fold on a 768px-tall iPad and on phones — and this is a
+          * control she needs mid-minute, when scrolling costs her seconds. */}
         <div className="flex items-center justify-between gap-3">
           <span className={`font-mono text-3xl font-bold tabular-nums ${low ? 'text-amber-700' : 'text-sky-800'}`}>
             0:{String(madLeft).padStart(2, '0')}
           </span>
-          <span className="font-mono text-lg font-bold tabular-nums text-slate-600">{madLog.length} done</span>
+          <button
+            type="button"
+            onClick={skipMad}
+            className="min-h-[44px] shrink-0 rounded-xl bg-white px-4 font-bold text-slate-600 shadow-sm ring-1 ring-slate-300 hover:bg-slate-50 active:translate-y-px"
+          >
+            Skip ↷
+          </button>
+          <span className="font-mono text-lg font-bold tabular-nums text-slate-600">
+            {madLog.filter((x) => !x.skipped).length} done
+          </span>
         </div>
         <div className="h-3 overflow-hidden rounded-full bg-sky-100">
           <div
