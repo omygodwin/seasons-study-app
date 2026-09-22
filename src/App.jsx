@@ -7,6 +7,7 @@ import LatinVocabStudyApp from './LatinVocabStudyApp';
 import MiddleAgesStudyApp from './MiddleAgesStudyApp';
 import GeographyStudyApp from './GeographyStudyApp';
 import ScienceInquiryStudyApp from './ScienceInquiryStudyApp';
+import MathFactsStudyApp from './MathFactsStudyApp';
 import TournamentApp from './tournament/TournamentApp';
 import { groupTopicsByMonth } from './topicSchedule';
 
@@ -22,6 +23,11 @@ const ROSE_TOPICS = [
   { id: 'vocab', label: 'Vocab Words', emoji: '📚', date: '2026-04-22' },
 ];
 const ROSE_TOPIC_IDS = ROSE_TOPICS.map((t) => t.id);
+
+const RUTH_TOPICS = [
+  { id: 'mathfacts', label: 'Math Facts', emoji: '✖️', date: '2026-09-22' },
+];
+const RUTH_TOPIC_IDS = RUTH_TOPICS.map((t) => t.id);
 
 const RAEGAN_TOPICS = [
   { id: 'seasons', label: 'Earth Science: Seasons', emoji: '🌍' },
@@ -145,7 +151,7 @@ function TopicMenu({ name, emoji, topics, active, selected, open, onToggle, onSe
 export default function App() {
   const [route, setRoute] = useState(getRouteFromHash);
   const [studyTopic, setStudyTopic] = useState(() =>
-    getSavedTopic([...ROSE_TOPIC_IDS, ...RAEGAN_TOPIC_IDS]),
+    getSavedTopic([...ROSE_TOPIC_IDS, ...RAEGAN_TOPIC_IDS, ...RUTH_TOPIC_IDS]),
   );
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -184,6 +190,14 @@ export default function App() {
       accent: { trigger: 'bg-emerald-500 shadow-emerald-900/40', item: 'bg-emerald-500' },
     },
     {
+      key: 'ruth',
+      name: 'Ruth',
+      emoji: '🦋',
+      topics: RUTH_TOPICS,
+      active: RUTH_TOPIC_IDS.includes(studyTopic),
+      accent: { trigger: 'bg-sky-500 shadow-sky-900/40', item: 'bg-sky-500' },
+    },
+    {
       key: 'rose',
       name: 'Rose',
       emoji: '🌹',
@@ -220,6 +234,7 @@ export default function App() {
       {studyTopic === 'vocab' && <VocabStudyApp />}
       {studyTopic === 'geography' && <GeographyStudyApp />}
       {studyTopic === 'scienceinquiry' && <ScienceInquiryStudyApp />}
+      {studyTopic === 'mathfacts' && <MathFactsStudyApp />}
     </div>
   );
 }
