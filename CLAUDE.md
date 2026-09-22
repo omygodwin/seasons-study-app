@@ -138,13 +138,26 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   review were here (a 2-question cold-start round, then a round padded with 9
   new facts when nothing was due). Re-test all four states after touching it:
   cold start, known-but-nothing-due, some-due, everything-fluent.
-- Practice has a **number picker** (`state.focus`, 1-12, with All/None). A fact
-  counts if EITHER operand is selected, so picking 9 and 12 gets 9x7, 12x4 and
-  9x12 — every fact carries `pa`/`pb` (its pair operands) so one filter covers
-  multiplication and division alike. It applies to **Practice only**; Mad Minute
-  passes no focus because the sheet at school doesn't let her choose. An empty
-  selection disables Start, and `eligibleFacts` still falls back to a non-empty
-  pool rather than handing back a round with nothing in it.
+- **Practice and Mad Minute each keep their OWN mode and number selection**
+  (`practiceMode`/`practiceFocus`, `madMode`/`madFocus`). They were one shared
+  pair, which meant setting Practice to "÷ only" silently changed what the next
+  timed minute asked. `loadState` migrates the old shared `mode`/`focus` into
+  both. Both screens render the same `DrillSettings` block, so they can't drift
+  in what they offer.
+- The **mode picker is always visible on both screens**. "÷ only" is *disabled*
+  rather than hidden until a division fact unlocks — hiding it made the whole
+  feature invisible to anyone who hadn't got a times fact fast yet, which is
+  every new user.
+- `settings.mode` (what rounds use) and `settings.shownMode` (what the picker
+  highlights) differ **only while division is locked**. Mixed and ×-only ask
+  identical questions then, but tapping Mixed must still light up Mixed — merge
+  the two and Mixed becomes a dead button.
+- The **number picker** is 1-12 with All/None. A fact counts if EITHER operand
+  is selected, so picking 9 and 12 gets 9x7, 12x4 and 9x12 — every fact carries
+  `pa`/`pb` (its pair operands) so one filter covers multiplication and division
+  alike. An empty selection disables that screen's Start, and `eligibleFacts`
+  still falls back to a non-empty pool rather than handing back a round with
+  nothing in it.
 - Mad Minute has **Skip**, and a skip must never call `record()` — she didn't
   answer, so scoring it wrong would push a fact into "needs work" on no evidence
   and teach her to guess rather than move on. Skips are excluded from `total`

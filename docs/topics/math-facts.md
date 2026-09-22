@@ -78,7 +78,28 @@ interleaving pays when it forces a *discrimination*, and a round that mixes
 A `Mixed / × only / ÷ only` picker appears on Practice and Mad Minute once
 anything has unlocked, and applies to both.
 
-## The number picker (Practice only)
+## Settings are per screen
+
+Practice and Mad Minute each keep their **own** mode (`Mixed` / `× only` /
+`÷ only`) and their own number selection. They used to share one pair, which
+meant setting Practice to division-only silently changed what the next timed
+minute asked — and the two exist for different things, since the minute is
+meant to look like the sheet at school.
+
+Both render the same `DrillSettings` block so they can't drift in what they
+offer. `loadState` migrates the old shared `mode`/`focus` into both.
+
+The mode picker is **always visible**, on both. `÷ only` is *disabled* rather
+than hidden until a division fact unlocks — hiding it made the feature
+invisible to anyone who hadn't got a times fact fast yet, which is every new
+user.
+
+One subtlety worth keeping: `settings.mode` (what rounds use) and
+`settings.shownMode` (what the picker highlights) differ **only while division
+is locked**. Mixed and ×-only ask identical questions then, but tapping Mixed
+still has to light up Mixed — collapse the two and Mixed becomes a dead button.
+
+## The number picker
 
 Twelve toggles plus **All** and **None**, so "just my 12s" or "9s and 12s" is a
 couple of taps. Stored as `state.focus`.
@@ -95,8 +116,8 @@ Two guards worth keeping:
   with nothing selected, so a stale selection degrades to something askable
   rather than to a blank round.
 
-It applies to **Practice only**. Mad Minute passes no focus, because the sheet
-at school doesn't let her pick the numbers either.
+Mad Minute starts unfiltered — it never had a number filter before, so the
+migration leaves it on everything rather than inheriting Practice's selection.
 
 At `sm` and up the chips render as a single row of 12 rather than 6 × 2 — that
 is what keeps the Start button above the fold on a 768px-tall iPad.

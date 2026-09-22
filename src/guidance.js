@@ -100,11 +100,11 @@ export const GUIDANCE = {
     tabs: {
       practice: {
         student: 'This one tells you straight away if you are right. That is where the learning happens. Use "Which numbers?" if you only want to drill your 12s.',
-        parent: 'Rounds are mostly facts she already has with at most two new ones folded in. When a round runs short it pads with known facts, never more new ones. The number picker narrows a round to chosen tables — useful the week her class is on one of them, but the default of everything is what keeps the spacing working, so switch it back afterwards.',
+        parent: 'Rounds are mostly facts she already has with at most two new ones folded in. When a round runs short it pads with known facts, never more new ones. The number picker narrows a round to chosen tables — useful the week her class is on one of them, but the default of everything is what keeps the spacing working, so switch it back afterwards. These settings belong to Practice; the Mad Minute keeps its own.',
       },
       mad: {
-        student: 'One minute, no hints until the end — same as the sheet at school. Stuck on one? Tap Skip and keep going; skips do not count against you.',
-        parent: 'Silent for the full minute by design. It exists to rehearse the timed sheet she already sits at school, and a drill she has met at home is a smaller event than one she has not. Adding live feedback would make it a different exercise. Skip is the paper sheet\u2019s "come back to it" — a skipped problem is not recorded as wrong, because she did not answer it, and scoring it against her would teach her to guess rather than move on. The number picker does not apply here: the sheet at school does not let her choose either.',
+        student: 'One minute, no hints until the end — same as the sheet at school. Stuck on one? Tap Skip and keep going; skips do not count against you. Set × or ÷ here separately from Practice.',
+        parent: 'Silent for the full minute by design. It exists to rehearse the timed sheet she already sits at school, and a drill she has met at home is a smaller event than one she has not. Adding live feedback would make it a different exercise. Skip is the paper sheet\u2019s "come back to it" — a skipped problem is not recorded as wrong, because she did not answer it, and scoring it against her would teach her to guess rather than move on. Its mode and numbers are set separately from Practice, so you can keep the minute matching whatever sheet she actually gets at school while Practice works on something else.',
       },
       progress: {
         student: 'Green means fast and right. The × grid is symmetric because 7 × 8 and 8 × 7 are one thing to learn.',

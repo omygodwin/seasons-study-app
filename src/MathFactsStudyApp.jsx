@@ -133,7 +133,22 @@ const MODES = [
   { id: 'div', label: '÷ only', hint: 'division' },
 ];
 
-const EMPTY = { v: 2, facts: {}, mad: [], keypad: 'onscreen', mode: 'mixed', focus: ALL_NUMBERS };
+/* Practice and Mad Minute each keep their OWN mode and number selection.
+ * They were shared, which meant setting Practice to "div only" silently
+ * changed what the next timed minute asked — and the two are used for
+ * different things: the minute is meant to look like the sheet at school. */
+const EMPTY = {
+  v: 2,
+  facts: {},
+  mad: [],
+  keypad: 'onscreen',
+  practiceMode: 'mixed',
+  practiceFocus: ALL_NUMBERS,
+  madMode: 'mixed',
+  madFocus: ALL_NUMBERS,
+};
+
+const pickMode = (m) => (MODES.some((x) => x.id === m) ? m : 'mixed');
 
 /* v1 stored multiplication facts under a bare sorted pair ("3x4"). v2 adds
  * division, so keys are namespaced ("m:3x4", "d:12/3") — migrate rather than
@@ -165,8 +180,13 @@ function loadState() {
       ...EMPTY,
       mad: Array.isArray(p.mad) ? p.mad : [],
       keypad: p.keypad === 'device' ? 'device' : 'onscreen',
-      mode: MODES.some((m) => m.id === p.mode) ? p.mode : 'mixed',
-      focus: sanitizeFocus(p.focus),
+      /* `mode` and `focus` were single shared fields before the split, so an
+       * existing choice carries into both screens rather than being dropped.
+       * Mad Minute never had a number filter, so it starts on everything. */
+      practiceMode: pickMode(p.practiceMode ?? p.mode),
+      practiceFocus: sanitizeFocus(p.practiceFocus ?? p.focus),
+      madMode: pickMode(p.madMode ?? p.mode),
+      madFocus: sanitizeFocus(p.madFocus),
       facts: p.v === 1 ? migrateFacts(p.facts) : (p.facts && typeof p.facts === 'object' ? p.facts : {}),
     };
   } catch {
@@ -319,8 +339,8 @@ function flipMaybe(f) {
 
 /* The Mad Minute does not adapt — the paper sheet does not either. It draws
  * uniformly from whatever is in play for the current mode. */
-function randomProblem(facts, mode) {
-  const pool = eligibleFacts(facts, mode);
+function randomProblem(facts, mode, focus) {
+  const pool = eligibleFacts(facts, mode, focus);
   return flipMaybe(pool[Math.floor(Math.random() * pool.length)]);
 }
 
@@ -399,29 +419,40 @@ function ProblemCard({ q, value, flash }) {
   );
 }
 
-/* Only offered once some division is actually unlocked — before that "÷ only"
- * would hand her an empty round. */
-function ModePicker({ mode, onPick }) {
+/* Always shown, on Practice AND on Mad Minute, so whether division is in play
+ * is a visible choice on both rather than something that appears one day.
+ * "÷ only" is DISABLED rather than hidden until a division fact has unlocked —
+ * it would otherwise hand her an empty round, but hiding it makes the feature
+ * invisible to anyone who has not got a times fact fast yet. */
+function ModePicker({ mode, onPick, divOpen }) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      {MODES.map((m) => (
-        <button
-          key={m.id}
-          type="button"
-          onClick={() => onPick(m.id)}
-          aria-pressed={mode === m.id}
-          className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-bold transition ${
-            mode === m.id
-              ? 'bg-sky-700 text-white shadow ring-2 ring-sky-800'
-              : 'bg-white text-slate-700 shadow-sm hover:bg-sky-50'
-          }`}
-        >
-          {m.label}
-          <span className={`ml-1.5 font-normal ${mode === m.id ? 'text-sky-100' : 'text-slate-500'}`}>
-            {m.hint}
-          </span>
-        </button>
-      ))}
+      {MODES.map((m) => {
+        const locked = m.id === 'div' && !divOpen;
+        const on = mode === m.id;
+        return (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => !locked && onPick(m.id)}
+            disabled={locked}
+            aria-pressed={on}
+            title={locked ? 'Unlocks once a times fact is fast and right' : undefined}
+            className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-bold transition ${
+              locked
+                ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                : on
+                  ? 'bg-sky-700 text-white shadow ring-2 ring-sky-800'
+                  : 'bg-white text-slate-700 shadow-sm hover:bg-sky-50'
+            }`}
+          >
+            {m.label}
+            <span className={`ml-1.5 font-normal ${locked ? 'text-slate-400' : on ? 'text-sky-100' : 'text-slate-500'}`}>
+              {locked ? 'not unlocked yet' : m.hint}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -483,6 +514,26 @@ function NumberPicker({ focus, onToggle, onAll, onNone }) {
             ? 'All of them — the usual.'
             : `Just ${[...focus].sort((a, b) => a - b).join(', ')}. Anything with one of these in it counts.`}
       </p>
+    </div>
+  );
+}
+
+/* The same controls on Practice and on Mad Minute — what is in play should be
+ * answerable from whichever screen she is looking at, and each keeps its own
+ * answer. Rendered from one component so the two cannot drift apart. */
+function DrillSettings({ settings, focus, divOpen, locked }) {
+  return (
+    <div className="space-y-3">
+      <ModePicker mode={settings.shownMode} onPick={settings.setMode} divOpen={divOpen} />
+      <div className="text-left">
+        <NumberPicker focus={focus} onToggle={settings.toggle} onAll={settings.all} onNone={settings.none} />
+      </div>
+      {locked && (
+        <p className="text-sm text-slate-500">
+          Division unlocks one fact at a time: get a times fact fast and right, and
+          both of its division facts join in.
+        </p>
+      )}
     </div>
   );
 }
@@ -581,23 +632,51 @@ export default function MathFactsStudyApp() {
   }, [state.facts]);
 
   const divOpen = counts.div.locked < DIV_FACTS.length;
-  const mode = divOpen ? state.mode : 'mul';
-  const setMode = (m) => setState((s) => ({ ...s, mode: m }));
 
-  const focus = useMemo(() => new Set(state.focus), [state.focus]);
-  const toggleNumber = (d) =>
-    setState((s) => {
-      const next = new Set(s.focus);
-      if (next.has(d)) next.delete(d); else next.add(d);
-      return { ...s, focus: [...next].sort((a, b) => a - b) };
-    });
-  const setAllNumbers = () => setState((s) => ({ ...s, focus: [...ALL_NUMBERS] }));
-  const clearNumbers = () => setState((s) => ({ ...s, focus: [] }));
-  /* How many facts the current selection can actually ask about — drives both
-   * the disabled state and the "nothing here yet" copy. */
-  const inPlay = useMemo(
-    () => (focus.size === 0 ? 0 : eligibleFacts(state.facts, mode, focus).length),
-    [state.facts, mode, focus],
+  /* One settings bundle per screen. `mode` falls back to multiplication when
+   * nothing has unlocked, so a stored "div only" can never yield a round with
+   * nothing in it. */
+  const settingsFor = (which) => {
+    const modeKey = which === 'practice' ? 'practiceMode' : 'madMode';
+    const focusKey = which === 'practice' ? 'practiceFocus' : 'madFocus';
+    const stored = state[modeKey];
+    return {
+      /* What the rounds actually use. */
+      mode: divOpen ? stored : 'mul',
+      /* What the picker shows as chosen. These differ only while division is
+       * locked, and keeping them apart is what stops "Mixed" from looking like
+       * a dead button then: mixed and multiplication-only ask the same
+       * questions when there is no division yet, but tapping Mixed should
+       * still light up Mixed. A stored "div only" cannot be re-selected while
+       * locked, so it shows as multiplication. */
+      shownMode: divOpen ? stored : (stored === 'div' ? 'mul' : stored),
+      focusList: state[focusKey],
+      setMode: (m) => setState((s) => ({ ...s, [modeKey]: m })),
+      toggle: (d) =>
+        setState((s) => {
+          const next = new Set(s[focusKey]);
+          if (next.has(d)) next.delete(d); else next.add(d);
+          return { ...s, [focusKey]: [...next].sort((a, b) => a - b) };
+        }),
+      all: () => setState((s) => ({ ...s, [focusKey]: [...ALL_NUMBERS] })),
+      none: () => setState((s) => ({ ...s, [focusKey]: [] })),
+    };
+  };
+
+  const practice = settingsFor('practice');
+  const minute = settingsFor('mad');
+  const practiceFocus = useMemo(() => new Set(practice.focusList), [practice.focusList]);
+  const madFocus = useMemo(() => new Set(minute.focusList), [minute.focusList]);
+
+  /* How many facts each selection can actually ask about — drives the disabled
+   * state on both start buttons. */
+  const practiceInPlay = useMemo(
+    () => (practiceFocus.size === 0 ? 0 : eligibleFacts(state.facts, practice.mode, practiceFocus).length),
+    [state.facts, practice.mode, practiceFocus],
+  );
+  const madInPlay = useMemo(
+    () => (madFocus.size === 0 ? 0 : eligibleFacts(state.facts, minute.mode, madFocus).length),
+    [state.facts, minute.mode, madFocus],
   );
 
   /* One place records an answer, so Practice and Mad Minute cannot drift on what
@@ -625,7 +704,7 @@ export default function MathFactsStudyApp() {
 
   // ---------- practice ----------
   const startRound = () => {
-    setQueue(buildRound(state.facts, mode, focus));
+    setQueue(buildRound(state.facts, practice.mode, practiceFocus));
     setQAt(0);
     setEntry('');
     setFlash(null);
@@ -667,7 +746,7 @@ export default function MathFactsStudyApp() {
   const startMad = () => {
     setMadLog([]);
     setMadLeft(MAD_SECONDS);
-    setMadProblem(randomProblem(state.facts, mode));
+    setMadProblem(randomProblem(state.facts, minute.mode, madFocus));
     setEntry('');
     setMadPhase('run');
     shownAt.current = Date.now();
@@ -708,9 +787,9 @@ export default function MathFactsStudyApp() {
     if (!madProblem) return;
     setMadLog((l) => [...l, { ...madProblem, given: '', right: false, skipped: true }]);
     setEntry('');
-    setMadProblem(randomProblem(state.facts, mode));
+    setMadProblem(randomProblem(state.facts, minute.mode, madFocus));
     shownAt.current = Date.now();
-  }, [madProblem, state.facts, mode]);
+  }, [madProblem, state.facts, minute.mode, madFocus]);
 
   /* No feedback during the minute — same as the paper sheet. */
   const submitMad = useCallback(() => {
@@ -720,9 +799,9 @@ export default function MathFactsStudyApp() {
     record(madProblem.id, right, ms);
     setMadLog((l) => [...l, { ...madProblem, given: entry, right }]);
     setEntry('');
-    setMadProblem(randomProblem(state.facts, mode));
+    setMadProblem(randomProblem(state.facts, minute.mode, madFocus));
     shownAt.current = Date.now();
-  }, [entry, madProblem, record, state.facts, mode]);
+  }, [entry, madProblem, record, state.facts, minute.mode, madFocus]);
 
   const active = tab === 'practice' ? phase === 'run' : madPhase === 'run';
   const submit = tab === 'practice' ? submitPractice : submitMad;
@@ -806,33 +885,18 @@ export default function MathFactsStudyApp() {
               A round is {ROUND} problems, mostly ones you are working on. Try to
               just <em>know</em> it rather than count it up — that is what makes it stick.
             </p>
-            {divOpen && (
-              <div className="mt-4">
-                <ModePicker mode={mode} onPick={setMode} />
-              </div>
-            )}
-            <div className="mt-3 text-left">
-              <NumberPicker
-                focus={focus}
-                onToggle={toggleNumber}
-                onAll={setAllNumbers}
-                onNone={clearNumbers}
-              />
+            <div className="mt-4">
+              <DrillSettings settings={practice} focus={practiceFocus} divOpen={divOpen} locked={!divOpen} />
             </div>
             <button
               onClick={startRound}
-              disabled={inPlay === 0}
+              disabled={practiceInPlay === 0}
               className="mt-5 min-h-[56px] w-full max-w-xs rounded-xl bg-sky-600 px-8 text-lg font-bold text-white shadow-lg hover:bg-sky-700 disabled:bg-slate-400"
             >
               ▶︎ Start a round
             </button>
           </div>
-          {!divOpen && (
-            <p className="mx-auto max-w-md text-sm text-slate-500">
-              Division unlocks one fact at a time: get a times fact fast and right,
-              and both of its division facts join the rounds.
-            </p>
-          )}
+
         </div>
       );
     }
@@ -911,20 +975,20 @@ export default function MathFactsStudyApp() {
               Just like the sheet at school: no hints until time is up. Stuck on one?
               Skip it and come back — skipped problems do not count against you.
             </p>
-            {divOpen && (
-              <>
-                <div className="mt-4">
-                  <ModePicker mode={mode} onPick={setMode} />
-                </div>
-                <p className="mt-2 text-sm text-slate-500">
-                  {mode === 'mul'
-                    ? 'This minute is multiplication only.'
-                    : mode === 'div'
-                      ? 'This minute is division only.'
-                      : 'This minute mixes × and ÷ — read the sign before you answer.'}
-                </p>
-              </>
-            )}
+            {/* Tighter than Practice's spacing on purpose: this screen carries one
+              * more paragraph, and at mt-4 the Start button fell 5px past the
+              * fold on a 768px-tall iPad. */}
+            <div className="mt-3">
+              <DrillSettings settings={minute} focus={madFocus} divOpen={divOpen} locked={!divOpen} />
+            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              {minute.mode === 'mul'
+                ? 'This minute is multiplication only.'
+                : minute.mode === 'div'
+                  ? 'This minute is division only.'
+                  : 'This minute mixes × and ÷ — read the sign before you answer.'}
+              {' '}These settings are just for the Mad Minute; Practice has its own.
+            </p>
             {best > 0 && (
               <p className="mt-3 font-semibold text-slate-700">
                 Your best so far: <span className="text-sky-700">{best}</span>
@@ -932,7 +996,8 @@ export default function MathFactsStudyApp() {
             )}
             <button
               onClick={startMad}
-              className="mt-5 min-h-[56px] w-full max-w-xs rounded-xl bg-sky-600 px-8 text-lg font-bold text-white shadow-lg hover:bg-sky-700"
+              disabled={madInPlay === 0}
+              className="mt-4 min-h-[56px] w-full max-w-xs rounded-xl bg-sky-600 px-8 text-lg font-bold text-white shadow-lg hover:bg-sky-700 disabled:bg-slate-400"
             >
               ⏱ Start the minute
             </button>
