@@ -50,7 +50,12 @@ import { useGuidanceTab } from './guidanceContext';
  *   home is a smaller event than one she has not. */
 
 const MAX = 12;
-const STORAGE_KEY = 'mathfacts:ruth';
+/* v3 holds several people. The v1/v2 single-person blob lived under
+ * SOLO_KEY; it is read once, folded in as the first person, and then LEFT
+ * WHERE IT IS rather than deleted — if anything about this migration is wrong,
+ * Ruth's months of progress are still sitting there untouched. */
+const STORAGE_KEY = 'mathfacts:people';
+const SOLO_KEY = 'mathfacts:ruth';
 const FLUENT_MS = 3000;
 const ROUND = 12;
 const NEW_PER_ROUND = 2;
@@ -133,12 +138,14 @@ const MODES = [
   { id: 'div', label: '÷ only', hint: 'division' },
 ];
 
-/* Practice and Mad Minute each keep their OWN mode and number selection.
- * They were shared, which meant setting Practice to "div only" silently
- * changed what the next timed minute asked — and the two are used for
+/* One person's whole world: their fact state, their minute scores, and their
+ * own settings. Practice and Mad Minute each keep their OWN mode and number
+ * selection — they were shared, which meant setting Practice to "div only"
+ * silently changed what the next timed minute asked, and the two are used for
  * different things: the minute is meant to look like the sheet at school. */
-const EMPTY = {
-  v: 2,
+const emptyProfile = (name, id) => ({
+  id: id ?? `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+  name,
   facts: {},
   mad: [],
   keypad: 'onscreen',
@@ -146,9 +153,16 @@ const EMPTY = {
   practiceFocus: ALL_NUMBERS,
   madMode: 'mixed',
   madFocus: ALL_NUMBERS,
-};
+});
+
+const MAX_PROFILES = 8;
+const MAX_NAME = 16;
 
 const pickMode = (m) => (MODES.some((x) => x.id === m) ? m : 'mixed');
+const cleanName = (n, fallback) => {
+  const t = String(n ?? '').trim().slice(0, MAX_NAME);
+  return t || fallback;
+};
 
 /* v1 stored multiplication facts under a bare sorted pair ("3x4"). v2 adds
  * division, so keys are namespaced ("m:3x4", "d:12/3") — migrate rather than
@@ -169,28 +183,55 @@ function sanitizeFocus(raw) {
   return keep.length ? keep.sort((a, b) => a - b) : ALL_NUMBERS;
 }
 
-function loadState() {
+/* One stored person -> a usable profile, with every field defended. */
+function readProfile(p, fallbackName, id) {
+  const base = emptyProfile(cleanName(p?.name, fallbackName), id ?? p?.id);
+  if (!p || typeof p !== 'object') return base;
+  return {
+    ...base,
+    mad: Array.isArray(p.mad) ? p.mad : [],
+    keypad: p.keypad === 'device' ? 'device' : 'onscreen',
+    /* `mode` and `focus` were single shared fields before the split, so an
+     * existing choice carries into both screens rather than being dropped.
+     * Mad Minute never had a number filter, so it starts on everything. */
+    practiceMode: pickMode(p.practiceMode ?? p.mode),
+    practiceFocus: sanitizeFocus(p.practiceFocus ?? p.focus),
+    madMode: pickMode(p.madMode ?? p.mode),
+    madFocus: sanitizeFocus(p.madFocus),
+    facts: p.v === 1 ? migrateFacts(p.facts) : (p.facts && typeof p.facts === 'object' ? p.facts : {}),
+  };
+}
+
+const soloStore = (solo) => ({
+  v: 3,
+  activeId: 'ruth',
+  profiles: [readProfile(solo, 'Ruth', 'ruth')],
+});
+
+function loadStore() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY;
-    const p = JSON.parse(raw);
-    if (!p || typeof p !== 'object') return EMPTY;
-    if (p.v !== 1 && p.v !== 2) return EMPTY;
-    return {
-      ...EMPTY,
-      mad: Array.isArray(p.mad) ? p.mad : [],
-      keypad: p.keypad === 'device' ? 'device' : 'onscreen',
-      /* `mode` and `focus` were single shared fields before the split, so an
-       * existing choice carries into both screens rather than being dropped.
-       * Mad Minute never had a number filter, so it starts on everything. */
-      practiceMode: pickMode(p.practiceMode ?? p.mode),
-      practiceFocus: sanitizeFocus(p.practiceFocus ?? p.focus),
-      madMode: pickMode(p.madMode ?? p.mode),
-      madFocus: sanitizeFocus(p.madFocus),
-      facts: p.v === 1 ? migrateFacts(p.facts) : (p.facts && typeof p.facts === 'object' ? p.facts : {}),
-    };
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.v === 3 && Array.isArray(s.profiles) && s.profiles.length) {
+        const profiles = s.profiles
+          .slice(0, MAX_PROFILES)
+          .map((p, i) => readProfile(p, `Person ${i + 1}`));
+        /* Two people must never share an id, or a write would land on both. */
+        const seen = new Set();
+        profiles.forEach((p) => {
+          while (seen.has(p.id)) p.id = `${p.id}x`;
+          seen.add(p.id);
+        });
+        const activeId = profiles.some((p) => p.id === s.activeId) ? s.activeId : profiles[0].id;
+        return { v: 3, activeId, profiles };
+      }
+    }
+    /* No multi-person store yet: fold the old single-person blob in. */
+    const solo = localStorage.getItem(SOLO_KEY);
+    return soloStore(solo ? JSON.parse(solo) : null);
   } catch {
-    return EMPTY; /* private mode / storage disabled */
+    return soloStore(null); /* private mode / storage disabled / bad JSON */
   }
 }
 
@@ -518,6 +559,65 @@ function NumberPicker({ focus, onToggle, onAll, onNone }) {
   );
 }
 
+/* Who is at the keyboard. Chips rather than a dropdown: one tap to switch, and
+ * whose numbers are on screen is readable without opening anything — which
+ * matters most on Progress, where the grids look identical between people.
+ *
+ * Only switching and adding live here. Rename and remove sit down in Progress
+ * with the other destructive controls, well away from a nine-year-old mid-drill. */
+function ProfileBar({ profiles, activeId, onPick, onAdd }) {
+  if (profiles.length === 1 && profiles[0].id === 'ruth') {
+    /* Before anyone else exists, a row of one chip is just noise — offer the
+     * door instead. */
+    return (
+      <div className="flex items-center justify-center gap-2 text-sm">
+        <span className="font-semibold text-slate-600">{profiles[0].name}</span>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="min-h-[44px] rounded-full px-3 font-semibold text-sky-700 underline hover:text-sky-900"
+        >
+          + someone else
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <>
+        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">Who&rsquo;s playing?</span>
+        {profiles.map((p) => {
+          const on = p.id === activeId;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onPick(p.id)}
+              aria-pressed={on}
+              className={`min-h-[44px] rounded-full px-4 font-bold transition ${
+                on
+                  ? 'bg-sky-700 text-white shadow ring-2 ring-sky-800'
+                  : 'bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-sky-50'
+              }`}
+            >
+              {p.name}
+            </button>
+          );
+        })}
+        {profiles.length < MAX_PROFILES && (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="min-h-[44px] rounded-full bg-white px-4 font-bold text-sky-700 shadow-sm ring-1 ring-slate-200 hover:bg-sky-50"
+          >
+            + Add
+          </button>
+        )}
+      </>
+    </div>
+  );
+}
+
 /* The same controls on Practice and on Mad Minute — what is in play should be
  * answerable from whichever screen she is looking at, and each keeps its own
  * answer. Rendered from one component so the two cannot drift apart. */
@@ -592,7 +692,86 @@ function Legend({ keys }) {
 export default function MathFactsStudyApp() {
   const [tab, setTab] = useState('practice');
   useGuidanceTab(tab);
-  const [state, setState] = useState(loadState);
+  const [store, setStore] = useState(loadStore);
+
+  /* The person the screen is currently about. Every read below goes through
+   * this, and every per-person write through setProfile, so one profile can
+   * never write into another's facts or scores. */
+  const profile = useMemo(
+    () => store.profiles.find((p) => p.id === store.activeId) ?? store.profiles[0],
+    [store],
+  );
+  const setProfile = useCallback((fn) => {
+    setStore((s) => ({
+      ...s,
+      profiles: s.profiles.map((p) => (p.id === s.activeId ? fn(p) : p)),
+    }));
+  }, []);
+
+  /* Switching mid-drill has to throw the drill away: a queue built for one
+   * person would otherwise be answered as another, and the answers recorded
+   * against the wrong facts. */
+  const resetDrills = useCallback(() => {
+    if (tick.current) { clearInterval(tick.current); tick.current = null; }
+    setPhase('start');
+    setMadPhase('start');
+    setQueue([]);
+    setQAt(0);
+    setRoundLog([]);
+    setMadLog([]);
+    setEntry('');
+    setFlash(null);
+    setHint(null);
+    setMadLeft(MAD_SECONDS);
+    setMadProblem(null);
+  }, []);
+
+  const pickProfile = useCallback((id) => {
+    resetDrills();
+    setStore((s) => (s.profiles.some((p) => p.id === id) ? { ...s, activeId: id } : s));
+  }, [resetDrills]);
+
+  const addProfile = useCallback(() => {
+    setStore((s) => {
+      if (s.profiles.length >= MAX_PROFILES) {
+        window.alert(`That is as many people as this keeps track of (${MAX_PROFILES}).`);
+        return s;
+      }
+      const raw = window.prompt("Who else is practicing? (first name is plenty)");
+      if (raw === null) return s;
+      const name = cleanName(raw, '');
+      if (!name) return s;
+      const next = emptyProfile(name);
+      resetDrills();
+      return { ...s, activeId: next.id, profiles: [...s.profiles, next] };
+    });
+  }, [resetDrills]);
+
+  const renameProfile = useCallback(() => {
+    setStore((s) => {
+      const cur = s.profiles.find((p) => p.id === s.activeId);
+      if (!cur) return s;
+      const raw = window.prompt('New name:', cur.name);
+      if (raw === null) return s;
+      const name = cleanName(raw, cur.name);
+      return { ...s, profiles: s.profiles.map((p) => (p.id === s.activeId ? { ...p, name } : p)) };
+    });
+  }, []);
+
+  const removeProfile = useCallback(() => {
+    setStore((s) => {
+      if (s.profiles.length <= 1) {
+        window.alert('This is the only person here — there would be nobody left.');
+        return s;
+      }
+      const cur = s.profiles.find((p) => p.id === s.activeId);
+      if (!cur) return s;
+      if (!window.confirm(`Remove ${cur.name} and everything they have done? This cannot be undone.`)) return s;
+      const profiles = s.profiles.filter((p) => p.id !== s.activeId);
+      resetDrills();
+      return { ...s, activeId: profiles[0].id, profiles };
+    });
+  }, [resetDrills]);
 
   // practice
   const [queue, setQueue] = useState([]);
@@ -614,22 +793,22 @@ export default function MathFactsStudyApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
     } catch {
       /* private mode — the session still works, it just won't be remembered */
     }
-  }, [state]);
+  }, [store]);
 
   const counts = useMemo(() => {
     const mul = { fluent: 0, learning: 0, needswork: 0, untried: 0 };
     const div = { fluent: 0, learning: 0, needswork: 0, untried: 0, locked: 0 };
-    MUL_FACTS.forEach((f) => { mul[levelOf(state.facts[f.id])] += 1; });
+    MUL_FACTS.forEach((f) => { mul[levelOf(profile.facts[f.id])] += 1; });
     DIV_FACTS.forEach((f) => {
-      if (!divReady(state.facts, f)) div.locked += 1;
-      else div[levelOf(state.facts[f.id])] += 1;
+      if (!divReady(profile.facts, f)) div.locked += 1;
+      else div[levelOf(profile.facts[f.id])] += 1;
     });
     return { mul, div };
-  }, [state.facts]);
+  }, [profile.facts]);
 
   const divOpen = counts.div.locked < DIV_FACTS.length;
 
@@ -639,7 +818,7 @@ export default function MathFactsStudyApp() {
   const settingsFor = (which) => {
     const modeKey = which === 'practice' ? 'practiceMode' : 'madMode';
     const focusKey = which === 'practice' ? 'practiceFocus' : 'madFocus';
-    const stored = state[modeKey];
+    const stored = profile[modeKey];
     return {
       /* What the rounds actually use. */
       mode: divOpen ? stored : 'mul',
@@ -650,16 +829,16 @@ export default function MathFactsStudyApp() {
        * still light up Mixed. A stored "div only" cannot be re-selected while
        * locked, so it shows as multiplication. */
       shownMode: divOpen ? stored : (stored === 'div' ? 'mul' : stored),
-      focusList: state[focusKey],
-      setMode: (m) => setState((s) => ({ ...s, [modeKey]: m })),
+      focusList: profile[focusKey],
+      setMode: (m) => setProfile((p) => ({ ...p, [modeKey]: m })),
       toggle: (d) =>
-        setState((s) => {
-          const next = new Set(s[focusKey]);
+        setProfile((p) => {
+          const next = new Set(p[focusKey]);
           if (next.has(d)) next.delete(d); else next.add(d);
-          return { ...s, [focusKey]: [...next].sort((a, b) => a - b) };
+          return { ...p, [focusKey]: [...next].sort((a, b) => a - b) };
         }),
-      all: () => setState((s) => ({ ...s, [focusKey]: [...ALL_NUMBERS] })),
-      none: () => setState((s) => ({ ...s, [focusKey]: [] })),
+      all: () => setProfile((p) => ({ ...p, [focusKey]: [...ALL_NUMBERS] })),
+      none: () => setProfile((p) => ({ ...p, [focusKey]: [] })),
     };
   };
 
@@ -671,19 +850,19 @@ export default function MathFactsStudyApp() {
   /* How many facts each selection can actually ask about — drives the disabled
    * state on both start buttons. */
   const practiceInPlay = useMemo(
-    () => (practiceFocus.size === 0 ? 0 : eligibleFacts(state.facts, practice.mode, practiceFocus).length),
-    [state.facts, practice.mode, practiceFocus],
+    () => (practiceFocus.size === 0 ? 0 : eligibleFacts(profile.facts, practice.mode, practiceFocus).length),
+    [profile.facts, practice.mode, practiceFocus],
   );
   const madInPlay = useMemo(
-    () => (madFocus.size === 0 ? 0 : eligibleFacts(state.facts, minute.mode, madFocus).length),
-    [state.facts, minute.mode, madFocus],
+    () => (madFocus.size === 0 ? 0 : eligibleFacts(profile.facts, minute.mode, madFocus).length),
+    [profile.facts, minute.mode, madFocus],
   );
 
   /* One place records an answer, so Practice and Mad Minute cannot drift on what
    * counts as fluent. Spacing only applies once a fact is actually fluent. */
   const record = useCallback((id, right, ms) => {
-    setState((s) => {
-      const prev = s.facts[id] ?? { n: 0, c: 0, streak: 0, last: null, best: null };
+    setProfile((pr) => {
+      const prev = pr.facts[id] ?? { n: 0, c: 0, streak: 0, last: null, best: null };
       const streak = right ? prev.streak + 1 : 0;
       const next = {
         n: prev.n + 1,
@@ -698,13 +877,13 @@ export default function MathFactsStudyApp() {
       } else {
         next.due = todayISO();
       }
-      return { ...s, facts: { ...s.facts, [id]: next } };
+      return { ...pr, facts: { ...pr.facts, [id]: next } };
     });
-  }, []);
+  }, [setProfile]);
 
   // ---------- practice ----------
   const startRound = () => {
-    setQueue(buildRound(state.facts, practice.mode, practiceFocus));
+    setQueue(buildRound(profile.facts, practice.mode, practiceFocus));
     setQAt(0);
     setEntry('');
     setFlash(null);
@@ -746,7 +925,7 @@ export default function MathFactsStudyApp() {
   const startMad = () => {
     setMadLog([]);
     setMadLeft(MAD_SECONDS);
-    setMadProblem(randomProblem(state.facts, minute.mode, madFocus));
+    setMadProblem(randomProblem(profile.facts, minute.mode, madFocus));
     setEntry('');
     setMadPhase('run');
     shownAt.current = Date.now();
@@ -758,15 +937,15 @@ export default function MathFactsStudyApp() {
     setMadLog((log) => {
       const score = log.filter((x) => x.right).length;
       const skipped = log.filter((x) => x.skipped).length;
-      setState((s) => ({
-        ...s,
+      setProfile((p) => ({
+        ...p,
         /* `total` counts attempts, not cards seen — a skipped problem was never
          * tried, so folding it in would quietly depress her accuracy. */
-        mad: [...s.mad, { score, total: log.length - skipped, skipped, date: todayISO() }].slice(-MAD_KEEP),
+        mad: [...p.mad, { score, total: log.length - skipped, skipped, date: todayISO() }].slice(-MAD_KEEP),
       }));
       return log;
     });
-  }, []);
+  }, [setProfile]);
 
   useEffect(() => {
     if (madPhase !== 'run') return undefined;
@@ -787,9 +966,9 @@ export default function MathFactsStudyApp() {
     if (!madProblem) return;
     setMadLog((l) => [...l, { ...madProblem, given: '', right: false, skipped: true }]);
     setEntry('');
-    setMadProblem(randomProblem(state.facts, minute.mode, madFocus));
+    setMadProblem(randomProblem(profile.facts, minute.mode, madFocus));
     shownAt.current = Date.now();
-  }, [madProblem, state.facts, minute.mode, madFocus]);
+  }, [madProblem, profile.facts, minute.mode, madFocus]);
 
   /* No feedback during the minute — same as the paper sheet. */
   const submitMad = useCallback(() => {
@@ -799,11 +978,13 @@ export default function MathFactsStudyApp() {
     record(madProblem.id, right, ms);
     setMadLog((l) => [...l, { ...madProblem, given: entry, right }]);
     setEntry('');
-    setMadProblem(randomProblem(state.facts, minute.mode, madFocus));
+    setMadProblem(randomProblem(profile.facts, minute.mode, madFocus));
     shownAt.current = Date.now();
-  }, [entry, madProblem, record, state.facts, minute.mode, madFocus]);
+  }, [entry, madProblem, record, profile.facts, minute.mode, madFocus]);
 
   const active = tab === 'practice' ? phase === 'run' : madPhase === 'run';
+  /* Mid-round on the tab she is looking at. */
+  const drilling = (tab === 'practice' && phase === 'run') || (tab === 'mad' && madPhase === 'run');
   const submit = tab === 'practice' ? submitPractice : submitMad;
 
   const pushDigit = useCallback((d) => {
@@ -823,7 +1004,7 @@ export default function MathFactsStudyApp() {
     return () => document.removeEventListener('keydown', onKey);
   }, [active, pushDigit, submit]);
 
-  const useDevice = state.keypad === 'device';
+  const useDevice = profile.keypad === 'device';
   const renderInput = (label) => (
     <>
       {useDevice && (
@@ -966,7 +1147,7 @@ export default function MathFactsStudyApp() {
   // ---------- mad minute ----------
   const renderMad = () => {
     if (madPhase === 'start') {
-      const best = state.mad.reduce((m, r) => Math.max(m, r.score), 0);
+      const best = profile.mad.reduce((m, r) => Math.max(m, r.score), 0);
       return (
         <div className="space-y-4">
           <div className="rounded-2xl bg-white p-6 text-center shadow">
@@ -1011,7 +1192,7 @@ export default function MathFactsStudyApp() {
       const missed = madLog.filter((x) => !x.right && !x.skipped);
       const skipped = madLog.filter((x) => x.skipped);
       const attempted = madLog.length - skipped.length;
-      const prevBest = state.mad.slice(0, -1).reduce((m, r) => Math.max(m, r.score), 0);
+      const prevBest = profile.mad.slice(0, -1).reduce((m, r) => Math.max(m, r.score), 0);
       return (
         <div className="space-y-4">
           <div className="rounded-2xl bg-white p-6 text-center shadow">
@@ -1056,7 +1237,7 @@ export default function MathFactsStudyApp() {
               </button>
             </div>
           </div>
-          {state.mad.length > 0 && renderScores()}
+          {profile.mad.length > 0 && renderScores()}
         </div>
       );
     }
@@ -1102,7 +1283,7 @@ export default function MathFactsStudyApp() {
   /* Her own last dozen scores. One series, so no legend; the personal best is
    * the only labelled bar because that is the number she is chasing. */
   const renderScores = () => {
-    const rows = state.mad.slice(-MAD_KEEP);
+    const rows = profile.mad.slice(-MAD_KEEP);
     const best = rows.reduce((m, r) => Math.max(m, r.score), 0) || 1;
     // Under four runs there is no shape to see yet, so it stays a sentence.
     if (rows.length < 4) {
@@ -1169,7 +1350,7 @@ export default function MathFactsStudyApp() {
                 <tr key={r}>
                   <th className="w-7 font-mono text-[10px] font-bold text-slate-500">{r + 1}</th>
                   {Array.from({ length: MAX }, (_, c) => {
-                    const lvl = levelOf(state.facts[mulId(r + 1, c + 1)]);
+                    const lvl = levelOf(profile.facts[mulId(r + 1, c + 1)]);
                     return (
                       <td key={c}>
                         <span
@@ -1221,8 +1402,8 @@ export default function MathFactsStudyApp() {
                     {Array.from({ length: MAX }, (_, c) => {
                       const quotient = c + 1;
                       const product = divisor * quotient;
-                      const ready = levelOf(state.facts[mulId(divisor, quotient)]) === 'fluent';
-                      const lvl = ready ? levelOf(state.facts[divId(product, divisor)]) : 'locked';
+                      const ready = levelOf(profile.facts[mulId(divisor, quotient)]) === 'fluent';
+                      const lvl = ready ? levelOf(profile.facts[divId(product, divisor)]) : 'locked';
                       return (
                         <td key={c}>
                           <span
@@ -1247,19 +1428,35 @@ export default function MathFactsStudyApp() {
         <Legend keys={['fluent', 'learning', 'needswork', 'untried', 'locked']} />
       </div>
 
-      {state.mad.length > 0 && renderScores()}
+      {profile.mad.length > 0 && renderScores()}
 
-      <div className="text-center">
+      {/* Every destructive control names the person, because the grids look
+        * identical between profiles and this is where a mis-tap costs months. */}
+      <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
         <button
           onClick={() => {
-            if (window.confirm('Erase all math fact progress? Mad Minute scores are kept.')) {
-              setState((s) => ({ ...s, facts: {} }));
+            if (window.confirm(`Erase ${profile.name}'s math fact progress? Mad Minute scores are kept.`)) {
+              setProfile((p) => ({ ...p, facts: {} }));
             }
           }}
-          className="min-h-[44px] rounded-lg px-4 text-sm text-slate-500 underline hover:text-slate-700"
+          className="min-h-[44px] rounded-lg px-2 text-sm text-slate-500 underline hover:text-slate-700"
         >
-          Reset fact progress
+          Reset {profile.name}&rsquo;s fact progress
         </button>
+        <button
+          onClick={renameProfile}
+          className="min-h-[44px] rounded-lg px-2 text-sm text-slate-500 underline hover:text-slate-700"
+        >
+          Rename {profile.name}
+        </button>
+        {store.profiles.length > 1 && (
+          <button
+            onClick={removeProfile}
+            className="min-h-[44px] rounded-lg px-2 text-sm text-rose-600 underline hover:text-rose-800"
+          >
+            Remove {profile.name}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1279,7 +1476,7 @@ export default function MathFactsStudyApp() {
             <h3 className="mb-2 font-bold text-sky-800">{n}× table</h3>
             <ul className="space-y-1 font-mono text-sm tabular-nums">
               {Array.from({ length: MAX }, (_, j) => j + 1).map((m) => {
-                const lvl = levelOf(state.facts[mulId(n, m)]);
+                const lvl = levelOf(profile.facts[mulId(n, m)]);
                 return (
                   <li key={m} className="flex items-start gap-2">
                     <span className={`mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full ${LEVELS[lvl].dot}`} aria-hidden="true" />
@@ -1311,9 +1508,23 @@ export default function MathFactsStudyApp() {
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl touch-manipulation bg-sky-50 p-4 font-sans sm:p-6">
-      <div className="mb-6 text-center">
-        <h1 className="text-4xl font-bold text-sky-800">Math Facts</h1>
-        <h2 className="text-lg text-gray-600">Multiplication &amp; division, 1 to 12</h2>
+      {/* Chips sit beside the title from sm up, so switching costs no vertical
+        * space — under the title they pushed the keypad's Next below the fold
+        * on a 768px-tall iPad. Hidden entirely mid-drill: switching abandons
+        * the round anyway, and the drill needs the room. */}
+      <div className="mb-4 flex flex-col items-center gap-2 sm:mb-5 sm:flex-row sm:justify-between">
+        <div className="text-center sm:text-left">
+          <h1 className="text-4xl font-bold text-sky-800">Math Facts</h1>
+          <h2 className="text-lg text-gray-600">Multiplication &amp; division, 1 to 12</h2>
+        </div>
+        {!drilling && (
+          <ProfileBar
+            profiles={store.profiles}
+            activeId={store.activeId}
+            onPick={pickProfile}
+            onAdd={addProfile}
+          />
+        )}
       </div>
 
       <div className="mb-6 flex flex-wrap justify-center gap-2">
@@ -1342,7 +1553,7 @@ export default function MathFactsStudyApp() {
       {(tab === 'practice' || tab === 'mad') && (
         <div className="mt-4 text-center">
           <button
-            onClick={() => setState((s) => ({ ...s, keypad: s.keypad === 'device' ? 'onscreen' : 'device' }))}
+            onClick={() => setProfile((p) => ({ ...p, keypad: p.keypad === 'device' ? 'onscreen' : 'device' }))}
             className="min-h-[44px] rounded-lg px-4 text-sm text-slate-500 underline hover:text-slate-700"
           >
             {useDevice ? 'Use the on-screen keypad' : "Use my device's number keyboard"}

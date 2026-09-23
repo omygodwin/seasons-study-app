@@ -85,7 +85,8 @@ export const GUIDANCE = {
         'Ask her which trick she used, not whether she was fast. Fluency is a reasoning strategy that became automatic, not a lookup that was memorized.',
         'Let the Mad Minute be a race against her own last score. It reports her personal best and nothing else on purpose.',
         'Four short goes across a week beat one long one. The app schedules facts back at 1, 3, 7 and 16 days and that only works if she opens it across days.',
-        'If her class is on one table this week, narrow Practice to it with the number picker — then put it back to All, because the spacing only pays off across the whole set.',
+          'Anyone else can have a go without touching her numbers: add a person with the chips by the title, and progress, scores and settings all follow whoever is picked. There is no leaderboard between people on purpose — each person\u2019s minute is scored against their own previous best.',
+      'If her class is on one table this week, narrow Practice to it with the number picker — then put it back to All, because the spacing only pays off across the whole set.',
       ],
       watch: [
         'Fingers, whispering, or a long pause means skip-counting. The app already treats that as "getting it" rather than fluent — back it up by naming the strategy rather than asking for speed.',

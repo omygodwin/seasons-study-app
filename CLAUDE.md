@@ -101,6 +101,26 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 
 ### Math facts (Ruth) specifics
 
+- **Several people can use it.** Storage is `mathfacts:people`
+  (`{v:3, activeId, profiles:[]}`); each profile owns its `facts`, `mad`
+  history, keypad preference and both screens' mode/focus. Every read goes
+  through `profile`, every per-person write through `setProfile` — a bare
+  `setStore` write would land on the wrong person.
+  - The pre-v3 single-person blob at `mathfacts:ruth` is read once, folded in
+    as a profile named Ruth with id `ruth`, and then **left where it is on
+    purpose**. It is the backup if the migration is ever found to be wrong;
+    don't "tidy" it away. It also means a re-seed of that key is ignored once
+    `mathfacts:people` exists.
+  - `loadStore` defends against a missing `activeId`, duplicate ids (a write
+    would otherwise hit two people), an empty list, unparseable JSON and more
+    than `MAX_PROFILES`.
+  - Switching profiles calls `resetDrills()`. A queue built for one person
+    answered as another would record against the wrong facts.
+  - The chips sit **beside the h1 at `sm:`** and are **hidden mid-drill**.
+    Under the title they pushed Next below the fold on a 768px-tall iPad;
+    hiding them while drilling also stops an accidental switch.
+  - No cross-profile leaderboard, deliberately — see `docs/learning-design.md`
+    on self-competition. Each person's Mad Minute compares to their own best.
 - `MathFactsStudyApp.jsx` deliberately does NOT use `Flashcards.jsx`. Fact
   fluency is a different problem from recognition: the target is automatic
   retrieval, so a fact counts as `fluent` only when answered correctly **and**
