@@ -30,6 +30,38 @@ const NEW_PER_ROUND = 2;      // unseen facts folded into a round, at most
 const MAD_SECONDS = 60;
 ```
 
+## Several people can use it
+
+Storage is `mathfacts:people` — `{ v: 3, activeId, profiles: [] }`. Each
+profile owns its `facts`, its `mad` history, its keypad preference and both
+screens' mode and number selection. Someone else can play without touching
+Ruth's numbers, which is the whole point.
+
+Every read goes through `profile` and every per-person write through
+`setProfile`. A bare `setStore` write would land on the wrong person.
+
+**The pre-v3 blob at `mathfacts:ruth` is left in place on purpose.** It is read
+once, folded in as a profile named Ruth with the stable id `ruth`, and then
+never touched again — if anything about the migration turns out to be wrong,
+months of her progress are still sitting there. Don't tidy it away. (It does
+mean re-seeding that key is ignored once `mathfacts:people` exists, which
+matters when writing tests.)
+
+`loadStore` defends against a missing `activeId`, duplicate ids (a write would
+otherwise hit two people at once), an empty profile list, unparseable JSON, and
+more than `MAX_PROFILES` entries.
+
+Switching calls `resetDrills()`: a queue built for one person, answered as
+another, would record against the wrong facts.
+
+The chips sit **beside the `h1`** from `sm` up and are **hidden mid-drill**.
+Under the title they pushed the keypad's Next below the fold on a 768px-tall
+iPad; hiding them during a round also stops an accidental switch.
+
+There is deliberately **no cross-profile leaderboard**. Each person's Mad
+Minute still compares to their own previous best — see
+[learning-design.md](../learning-design.md#self-competition-not-comparison).
+
 ## State model
 
 There are **78 multiplication facts and 144 division facts.**
