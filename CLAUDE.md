@@ -185,6 +185,26 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
   separately on the results screen. Skip lives in the **timer row**: under the
   keypad it fell below the fold on a 768px-tall iPad, and it is needed
   mid-minute when scrolling costs seconds.
+- Mad Minute has **Restart**, which opens a warning rather than restarting.
+  Four things are load-bearing there:
+  1. **The clock stops** while the warning is up (`madPaused` bails the timer
+     effect), which is exactly what makes it abusable — hence the cap.
+  2. **`MAD_MAX_PAUSES` (2) per run.** Opening the dialog counts, whether or
+     not she confirms; after two the button greys out for the rest of that
+     minute. A confirmed restart begins a new run, so the allowance resets —
+     the cap limits *stopping the clock*, not restarts.
+  3. **The backdrop is fully opaque**, not the usual translucent scrim: a
+     see-through overlay would turn a stopped clock into free time to work out
+     the problem behind it. It is also **portalled to `document.body`** — the
+     app's own content wrapper carries `backdrop-blur-sm`, so rendered in place
+     it would be clipped to that box (same trap as the Tips panel).
+  4. **`shownAt` is pushed forward by the paused duration on resume.** Without
+     it a long interruption lands in the current problem's elapsed time and
+     marks a fact she was mid-way through as slow; resetting it outright would
+     instead hand her free thinking time. Also `active` goes false while
+     paused, or the document-level keydown handler keeps taking digits behind
+     the dialog.
+  A confirmed restart discards the run — it is never scored.
 - Practice corrects immediately; **Mad Minute stays silent for the full minute**
   and scores at the end, because it exists to rehearse the timed sheet she does
   at school. Don't "improve" it by adding live feedback.

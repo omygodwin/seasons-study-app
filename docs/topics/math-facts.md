@@ -168,6 +168,38 @@ Skip sits in the **timer row**, not under the keypad. Under the keypad it fell
 below the fold on a 768px-tall iPad and on phones — and it is needed
 mid-minute, when scrolling costs her seconds.
 
+## Restart, and why it argues back
+
+**Restart** does not restart. It opens a warning that says to keep going
+unless something actually went wrong — a mis-tap, or being pulled away — and
+only then offers **Start over**. A confirmed restart discards the minute; it is
+never scored.
+
+Four things about it are load-bearing:
+
+**The clock stops while the warning is up.** That is the point, and also what
+makes it abusable, which is why there is a cap.
+
+**Two stops per run.** Opening the dialog counts, whether or not she confirms.
+After two, the button greys out for the rest of that minute. A confirmed
+restart starts a new run and the allowance resets — the cap limits *stopping
+the clock*, not restarting.
+
+**The backdrop is fully opaque and portalled to `document.body`.** Opaque
+because a see-through overlay would turn a stopped clock into free time to work
+out the problem behind it. Portalled because the app's content wrapper carries
+`backdrop-blur-sm`, and `backdrop-filter` makes an element a containing block
+for `fixed` descendants — rendered in place it would be clipped to that box,
+the same trap the Tips panel hit.
+
+**The pause must not poison the answer timing.** On resume, `shownAt` is pushed
+forward by exactly how long the dialog was up. Without that, a six-second
+interruption lands in the current problem's elapsed time and marks a fact she
+was mid-way through as slow. Resetting `shownAt` outright would be the opposite
+error — free thinking time, recorded as fast. `active` also goes false while
+paused, or the document-level keydown handler keeps accepting digits behind the
+dialog.
+
 ## Strategy hints
 
 Shown on a miss, and on a right-but-slow answer — the signature of

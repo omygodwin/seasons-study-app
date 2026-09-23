@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useGuidanceTab } from './guidanceContext';
 
 /* Ruth's multiplication and division facts, 1-12.
@@ -60,6 +61,10 @@ const FLUENT_MS = 3000;
 const ROUND = 12;
 const NEW_PER_ROUND = 2;
 const MAD_SECONDS = 60;
+/* Opening the restart warning stops the clock, which makes it a "pause to
+ * think" button if left unlimited. Two per run is enough for a genuine
+ * mis-tap or an interruption without becoming a way to buy time. */
+const MAD_MAX_PAUSES = 2;
 const MAD_KEEP = 12;
 
 const pairId = (a, b) => `${Math.min(a, b)}x${Math.max(a, b)}`;
@@ -559,6 +564,79 @@ function NumberPicker({ focus, onToggle, onAll, onNone }) {
   );
 }
 
+/* The restart warning.
+ *
+ * Portalled to <body> on purpose: the app's own content wrapper carries
+ * `backdrop-blur-sm`, and backdrop-filter makes an element a containing block
+ * for fixed-position descendants — rendered in place this would be clipped to
+ * that box instead of covering the screen.
+ *
+ * The backdrop is FULLY OPAQUE, not the usual translucent scrim. The point is
+ * that she cannot read the problem behind it: a see-through overlay would turn
+ * a stopped clock into free time to work the answer out. */
+function RestartWarning({ left, pausesLeft, onKeepGoing, onRestart }) {
+  const panel = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onKeepGoing(); };
+    document.addEventListener('keydown', onKey);
+    const t = setTimeout(() => panel.current?.focus(), 0);
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); };
+  }, [onKeepGoing]);
+
+  return createPortal(
+    <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-slate-900 p-4">
+      <div
+        ref={panel}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="mf-restart-title"
+        tabIndex={-1}
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl outline-none"
+      >
+        <p className="text-sm font-bold uppercase tracking-wide text-amber-700">Timer stopped</p>
+        <h2 id="mf-restart-title" className="mt-1 text-2xl font-bold text-slate-900">
+          Start this minute over?
+        </h2>
+
+        <p className="mt-3 leading-relaxed text-slate-700">
+          Only start over if something actually went wrong — you hit the wrong number by
+          accident, or somebody pulled you away.
+        </p>
+        <p className="mt-2 leading-relaxed text-slate-700">
+          If you are just having a slow minute, <strong>keep going</strong>. Finishing a bad
+          minute is worth more than starting a fresh one, and the score you are chasing is
+          your own.
+        </p>
+
+        <div className="mt-4 rounded-xl bg-slate-100 p-3 text-sm text-slate-600">
+          The clock is stopped at <strong className="font-mono">0:{String(left).padStart(2, '0')}</strong>.
+          {pausesLeft > 0
+            ? ` You can stop it ${pausesLeft} more time this minute.`
+            : ' That was your last stop this minute.'}
+        </div>
+
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
+          <button
+            type="button"
+            onClick={onKeepGoing}
+            className="min-h-[52px] flex-1 rounded-xl bg-sky-600 px-6 text-lg font-bold text-white shadow hover:bg-sky-700"
+          >
+            Keep going
+          </button>
+          <button
+            type="button"
+            onClick={onRestart}
+            className="min-h-[52px] flex-1 rounded-xl bg-white px-6 font-bold text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50"
+          >
+            Start over
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 /* Who is at the keyboard. Chips rather than a dropdown: one tap to switch, and
  * whose numbers are on screen is readable without opening anything — which
  * matters most on Progress, where the grids look identical between people.
@@ -787,6 +865,9 @@ export default function MathFactsStudyApp() {
   const [madLeft, setMadLeft] = useState(MAD_SECONDS);
   const [madProblem, setMadProblem] = useState(null);
   const [madLog, setMadLog] = useState([]);
+  const [madPaused, setMadPaused] = useState(false);
+  const [madPauses, setMadPauses] = useState(0);
+  const pausedAt = useRef(0);
   const shownAt = useRef(Date.now());
   const tick = useRef(null);
   const inputRef = useRef(null);
@@ -924,12 +1005,43 @@ export default function MathFactsStudyApp() {
   // ---------- mad minute ----------
   const startMad = () => {
     setMadLog([]);
+    setMadPaused(false);
+    setMadPauses(0);
+    pausedAt.current = 0;
     setMadLeft(MAD_SECONDS);
     setMadProblem(randomProblem(profile.facts, minute.mode, madFocus));
     setEntry('');
     setMadPhase('run');
     shownAt.current = Date.now();
   };
+
+  /* Opening the warning stops the clock. The elapsed time on the CURRENT
+   * problem has to survive that: shownAt is pushed forward by exactly how long
+   * the dialog was up, so a two-minute interruption neither marks the fact
+   * she was mid-way through as slow, nor hands her free thinking time. */
+  const openRestartWarning = useCallback(() => {
+    if (madPauses >= MAD_MAX_PAUSES) return;
+    pausedAt.current = Date.now();
+    setMadPauses((n) => n + 1);
+    setMadPaused(true);
+  }, [madPauses]);
+
+  /* Confirming throws this minute away — it is never scored, which is the
+   * whole reason the warning exists. startMad resets the pause allowance
+   * because the next minute is a new run. */
+  /* Not a useCallback: startMad closes over the current profile and settings,
+   * and a memoised wrapper would hand a restarted minute stale ones. */
+  const restartMad = () => {
+    pausedAt.current = 0;
+    setMadPaused(false);
+    startMad();
+  };
+
+  const resumeMad = useCallback(() => {
+    if (pausedAt.current) shownAt.current += Date.now() - pausedAt.current;
+    pausedAt.current = 0;
+    setMadPaused(false);
+  }, []);
 
   const endMad = useCallback(() => {
     if (tick.current) { clearInterval(tick.current); tick.current = null; }
@@ -948,7 +1060,7 @@ export default function MathFactsStudyApp() {
   }, [setProfile]);
 
   useEffect(() => {
-    if (madPhase !== 'run') return undefined;
+    if (madPhase !== 'run' || madPaused) return undefined;
     tick.current = setInterval(() => {
       setMadLeft((t) => {
         if (t <= 1) { endMad(); return 0; }
@@ -956,7 +1068,7 @@ export default function MathFactsStudyApp() {
       });
     }, 1000);
     return () => { if (tick.current) clearInterval(tick.current); };
-  }, [madPhase, endMad]);
+  }, [madPhase, madPaused, endMad]);
 
   /* Skipping is what she can already do on paper: leave one and come back, or
    * just move past it. It deliberately does NOT call record() — she did not
@@ -982,7 +1094,10 @@ export default function MathFactsStudyApp() {
     shownAt.current = Date.now();
   }, [entry, madProblem, record, profile.facts, minute.mode, madFocus]);
 
-  const active = tab === 'practice' ? phase === 'run' : madPhase === 'run';
+  /* `!madPaused` matters: the modal blocks taps, but the hardware-keyboard
+   * handler is on `document` and would happily keep taking digits and Enter
+   * behind it while the clock is stopped. */
+  const active = tab === 'practice' ? phase === 'run' : (madPhase === 'run' && !madPaused);
   /* Mid-round on the tab she is looking at. */
   const drilling = (tab === 'practice' && phase === 'run') || (tab === 'mad' && madPhase === 'run');
   const submit = tab === 'practice' ? submitPractice : submitMad;
@@ -1248,17 +1363,39 @@ export default function MathFactsStudyApp() {
         {/* Skip lives in the timer row, not under the keypad. Below the keypad it
           * fell past the fold on a 768px-tall iPad and on phones — and this is a
           * control she needs mid-minute, when scrolling costs her seconds. */}
-        <div className="flex items-center justify-between gap-3">
-          <span className={`font-mono text-3xl font-bold tabular-nums ${low ? 'text-amber-700' : 'text-sky-800'}`}>
+        {/* Wraps rather than overflows: timer + Skip + Restart + the counter is
+          * wider than a 375px phone, and a horizontally scrolling drill is
+          * worse than a two-line header. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <span className={`font-mono text-2xl font-bold tabular-nums sm:text-3xl ${low ? 'text-amber-700' : 'text-sky-800'}`}>
             0:{String(madLeft).padStart(2, '0')}
           </span>
-          <button
-            type="button"
-            onClick={skipMad}
-            className="min-h-[44px] shrink-0 rounded-xl bg-white px-4 font-bold text-slate-600 shadow-sm ring-1 ring-slate-300 hover:bg-slate-50 active:translate-y-px"
-          >
-            Skip ↷
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={skipMad}
+              className="min-h-[44px] rounded-xl bg-white px-3 font-bold text-slate-600 shadow-sm ring-1 ring-slate-300 hover:bg-slate-50 active:translate-y-px sm:px-4"
+            >
+              Skip ↷
+            </button>
+            <button
+              type="button"
+              onClick={openRestartWarning}
+              disabled={madPauses >= MAD_MAX_PAUSES}
+              title={
+                madPauses >= MAD_MAX_PAUSES
+                  ? 'No more stops this minute — finish it out'
+                  : 'Stops the clock and asks first'
+              }
+              className={`min-h-[44px] rounded-xl px-3 font-bold shadow-sm ring-1 transition sm:px-4 ${
+                madPauses >= MAD_MAX_PAUSES
+                  ? 'cursor-not-allowed bg-slate-100 text-slate-400 ring-slate-200'
+                  : 'bg-white text-slate-600 ring-slate-300 hover:bg-slate-50 active:translate-y-px'
+              }`}
+            >
+              Restart ↺
+            </button>
+          </div>
           <span className="font-mono text-lg font-bold tabular-nums text-slate-600">
             {madLog.filter((x) => !x.skipped).length} done
           </span>
@@ -1269,6 +1406,14 @@ export default function MathFactsStudyApp() {
             style={{ width: `${(madLeft / MAD_SECONDS) * 100}%` }}
           />
         </div>
+        {madPaused && (
+          <RestartWarning
+            left={madLeft}
+            pausesLeft={MAD_MAX_PAUSES - madPauses}
+            onKeepGoing={resumeMad}
+            onRestart={restartMad}
+          />
+        )}
         {madProblem && <ProblemCard q={madProblem} value={entry} flash={null} />}
         {renderInput('Next →')}
         <div className="flex justify-center">
