@@ -3,6 +3,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Wrong-answer wobble on the tap-to-label maps (Geography and Social Studies). */
+@keyframes geo-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Printable blank study maps (Geography topic → Print tab).
    These classes are styled the same on screen and on paper so the on-screen

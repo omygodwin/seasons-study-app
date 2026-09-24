@@ -12,76 +12,11 @@ import {
   CONTINENT_LABELS,
   OCEAN_LABELS,
 } from './data/mapPaths';
+import { RIVERS, CONTINENTS, OCEANS } from './data/mapFeatures';
 
-/* ------------------------------------------------------------------ data --
- * Colors match the crayon key on Rose's own worksheets so the app and the
- * paper study guide look like the same thing.
- */
-const RIVERS = [
-  {
-    id: 'missouri',
-    name: 'Missouri',
-    color: '#dc2626',
-    fact: 'The LONGEST river in North America.',
-  },
-  {
-    id: 'mississippi',
-    name: 'Mississippi',
-    color: '#38bdf8',
-    fact: 'The most famous river — and the largest watershed.',
-  },
-  {
-    id: 'ohio',
-    name: 'Ohio',
-    color: '#a16207',
-    fact: 'The Gateway to the West.',
-  },
-  {
-    id: 'stlawrence',
-    name: 'St. Lawrence',
-    color: '#1d4ed8',
-    fact: 'Connects the Great Lakes with the Atlantic Ocean.',
-  },
-  {
-    id: 'columbia',
-    name: 'Columbia',
-    color: '#f97316',
-    fact: 'Flows across the Northwest into the Pacific Ocean.',
-  },
-  {
-    id: 'colorado',
-    name: 'Colorado',
-    color: '#16a34a',
-    fact: 'The river that carved the Grand Canyon.',
-  },
-  {
-    id: 'riogrande',
-    name: 'Rio Grande',
-    color: '#ec4899',
-    fact: 'Forms the border between Texas and Mexico.',
-  },
-];
-
-/* All 11 swatches on this tab have to be told apart at a glance, so each one
- * owns a distinct hue. Rose's worksheet key colored North America, Australia
- * and Antarctica in three shades of blue, which read as the same color on a
- * phone — only the continents keep a color close to her crayons. */
-const CONTINENTS = [
-  { id: 'northamerica', name: 'North America', color: '#2563eb', fact: 'The continent we live on.' },
-  { id: 'southamerica', name: 'South America', color: '#16a34a', fact: 'Home of the Amazon rainforest.' },
-  { id: 'europe', name: 'Europe', color: '#92400e', fact: 'Joined to Asia — together they are Eurasia.' },
-  { id: 'asia', name: 'Asia', color: '#dc2626', fact: 'The largest continent.' },
-  { id: 'africa', name: 'Africa', color: '#ec4899', fact: 'Home of the Nile, the longest river on Earth.' },
-  { id: 'australia', name: 'Australia', color: '#f59e0b', fact: 'The smallest continent.' },
-  { id: 'antarctica', name: 'Antarctica', color: '#94a3b8', fact: 'The frozen continent at the South Pole.' },
-];
-
-const OCEANS = [
-  { id: 'pacific', name: 'Pacific', color: '#1e3a8a', fact: 'The biggest ocean — west of the United States.' },
-  { id: 'atlantic', name: 'Atlantic', color: '#0d9488', fact: 'Between the Americas and Europe/Africa.' },
-  { id: 'indian', name: 'Indian', color: '#7c3aed', fact: 'South of Asia, east of Africa.' },
-  { id: 'arctic', name: 'Arctic', color: '#22d3ee', fact: 'The frozen ocean at the North Pole.' },
-];
+/* The map components are exported because Rose's Social Studies Unit 1 reuses
+ * the rivers and world maps rather than carrying a second copy of each. The
+ * feature lists live in data/mapFeatures.js for the same reason. */
 
 /* The fill-in-the-blanks exactly as they appear on the study sheet. */
 const RIVER_FACTS = [
@@ -136,7 +71,7 @@ const WORLD_VIEW = vb(WORLD_VIEWBOX);
 
 /* --------------------------------------------------------------- pieces -- */
 
-function Pill({ x, y, view, children, className = '', style, onClick, title }) {
+export function Pill({ x, y, view, children, className = '', style, onClick, title }) {
   const [vx, vy, vw, vh] = view;
   const Tag = onClick ? 'button' : 'span';
   return (
@@ -157,7 +92,7 @@ function Pill({ x, y, view, children, className = '', style, onClick, title }) {
   );
 }
 
-function CrayonChip({ item, state, selected, onClick }) {
+export function CrayonChip({ item, state, selected, onClick }) {
   const done = state === 'done';
   return (
     <button
@@ -183,7 +118,7 @@ function CrayonChip({ item, state, selected, onClick }) {
   );
 }
 
-function Toolbar({ done, total, onReveal, onReset, revealed, hints, onHints }) {
+export function Toolbar({ done, total, onReveal, onReset, revealed, hints, onHints }) {
   const pct = Math.round((done / total) * 100);
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -228,7 +163,7 @@ function Toolbar({ done, total, onReveal, onReset, revealed, hints, onHints }) {
   );
 }
 
-function Feedback({ message }) {
+export function Feedback({ message }) {
   if (!message) return null;
   const good = message.tone === 'good';
   return (
@@ -244,7 +179,7 @@ function Feedback({ message }) {
 
 /* ------------------------------------------------------------- rivers map -- */
 
-function RiverMap({ progress, setProgress }) {
+export function RiverMap({ progress, setProgress }) {
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [hints, setHints] = useState(false);
@@ -392,7 +327,7 @@ function RiverMap({ progress, setProgress }) {
 
 /* -------------------------------------------------------------- world map -- */
 
-function WorldMap({ progress, setProgress }) {
+export function WorldMap({ progress, setProgress }) {
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
   const [hints, setHints] = useState(false);
@@ -998,14 +933,6 @@ export default function GeographyStudyApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 via-sky-50 to-white font-sans">
-      <style>{`
-        @keyframes geo-shake {
-          0%,100% { transform: translateX(0); }
-          25% { transform: translateX(-3px); }
-          75% { transform: translateX(3px); }
-        }
-      `}</style>
-
       <div className="mx-auto max-w-4xl p-4">
         <header className="no-print mb-4 text-center">
           <h1 className="text-3xl font-black tracking-tight text-teal-800 sm:text-4xl">
