@@ -148,6 +148,43 @@ export const GUIDANCE = {
     },
   },
 
+  socialstudies1: {
+    label: 'Social Studies Unit 1',
+    student: [
+      'One deck at a sitting. Regions, Tribes, Explorers and Colonies are four separate jobs.',
+      'On the maps, pick the name first, then find it. The test will hand you a map with no labels.',
+      'For short answers, write the whole thing before you look at the model answer.',
+      'A little each day until the test beats one big go the night before.',
+    ],
+    parent: {
+      lead:
+        'Built from her 31-question study guide. The teacher has only said the test mixes map, multiple choice, fill in the blank and short answer, so the practice test is sectioned exactly that way — practice transfers best when it looks like the test. Where her answer on the sheet and the teacher’s correction disagreed, the app uses the correction.',
+      encourage: [
+        'Hand her the printed blank regions map (Maps → Blank Regions Map) and have her fill in the key from memory. That is question 3 on her sheet and the most likely map question.',
+        'Ask "why" out loud: why the Lakota moved, why the Pueblo needed irrigation, why Georgia was for debtors. The cards give the facts; the reasons are what a short answer asks for.',
+        'Spread it over the days before the test. With four decks, one deck a day plus a practice test is plenty.',
+      ],
+      watch: [
+        'A few answers on her paper sheet were first drafts: debtors settled Georgia, not Massachusetts Bay (that was the Puritans), and fishing belongs to New England rather than the Middle colonies. If she argues from the sheet, the app is the corrected version.',
+        'Fill-in-the-blank forgives case and punctuation but not spelling. Oglethorpe and Kwakiutl are the likely casualties.',
+      ],
+      research: [
+        ['Practice should match the test format', 'Pan & Rickard (2018) on transfer of retrieval practice'],
+        ['Mixing helps when the task is telling similar things apart', 'Brunmair & Richter (2019): interleaving is strongest for discrimination'],
+      ],
+    },
+    tabs: { cards: 'cards', quiz: 'quiz', notes: 'notes', overview: 'overview',
+      maps: {
+        student: 'Regions, rivers and the world map are all here. Pick the name first, then tap where it is.',
+        parent: 'The rivers and world maps are the same ones as the Maps & Rivers topic. The regions map is new: the eight regions from question 3, drawn to match the numbered map on her sheet. The Blank Regions Map prints with the same numbers 1–8 as her worksheet.',
+      },
+      match: {
+        student: 'Read the clue, pick the answer. Everything is mixed on purpose so you have to tell them apart.',
+        parent: 'Unlike the cards, this is mixed by default. Great Plains versus Interior Lowlands, or Lakota versus Iroquois, is a discrimination task, which is where interleaving helps rather than hurts. The filter is there if one group needs a blocked pass first.',
+      },
+    },
+  },
+
   geography: {
     label: 'Maps & Rivers',
     student: [

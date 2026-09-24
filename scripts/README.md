@@ -1,6 +1,7 @@
 # Generated assets
 
 - **Maps** — this file, below.
+- **Regions map** — `gen_regions.py`, see the end of this file.
 - **App icon** — see [`icons/README.md`](icons/README.md).
 
 ---
@@ -57,3 +58,42 @@ There's no test framework. Render both maps to a PNG and look at them — a
 projection or clipping mistake is obvious visually and nearly invisible in the
 path data. The quickest check is that each river sits in the right place
 (Columbia in the Pacific Northwest, Rio Grande on the Texas border, and so on).
+
+---
+
+# Regions map (`gen_regions.py`)
+
+`src/data/regionPaths.js` is **generated** — don't hand-edit it. It holds the
+North America map of the eight geographic regions for Rose's Social Studies
+Unit 1 (`src/SocialStudiesStudyApp.jsx`).
+
+```bash
+cd scripts
+pip install shapely numpy     # shapely >= 2.1 for coverage_simplify
+for f in ne_50m_admin_0_countries ne_50m_lakes; do
+  curl -sSO "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/$f.geojson"
+done
+python3 gen_regions.py
+cp regionPaths.js ../src/data/regionPaths.js
+```
+
+- **Projection** — Albers equal-area conic centred on North America, cropped
+  from the top of Alaska to the bottom of the Gulf of Mexico.
+- **Regions** — Natural Earth has no physiographic regions, so each region is a
+  hand-drawn lon/lat outline in the script. Only the *inland* edges need care:
+  outlines are clipped to real land, and they are claimed in priority order
+  (a later region only gets land nobody earlier took), so ocean-side vertices
+  and overlaps into a neighbour are harmless. Any gap the outlines leave inside
+  the US or Canada is folded into the neighbour it shares most edge with.
+- **Scope** — the regions cover the US and Canada; the Coastal Plain and Basin
+  and Range also run into northern Mexico. The rest of Mexico, the Caribbean,
+  Greenland and the Arctic islands (except Baffin, part of the Shield) are
+  plain context land.
+- **Simplification** uses `shapely.coverage_simplify` on all eight regions at
+  once, so shared borders stay shared and no slivers open between them.
+- The boundaries are a classroom generalisation drawn to match the numbered map
+  on her study guide, not survey lines.
+
+To check a change, render the paths to a PNG and compare with a textbook
+"physical regions of North America" map — a misplaced vertex is obvious by eye
+and invisible in the path data.

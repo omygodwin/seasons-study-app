@@ -53,6 +53,8 @@ src/
   VocabStudyApp.jsx         # Rose's vocab flashcards + quiz
   GeographyStudyApp.jsx     # Rose's Maps & Rivers (interactive + printable)
   ScienceInquiryStudyApp.jsx # Rose's Unit 1: Thinking Like a Scientist
+  SocialStudiesStudyApp.jsx # Rose's Social Studies Unit 1 (regions, tribes,
+                            #   explorers, colonies) + regions map
   MathFactsStudyApp.jsx     # Ruth's multiplication facts + Mad Minute
   Flashcards.jsx            # Shared spaced-repetition note-card engine
                             #   (every study app except Geography and Math Facts)
@@ -62,6 +64,7 @@ src/
   tournament/               # Basketball tournament hub
     TournamentApp.jsx, BracketsView.jsx, ScheduleView.jsx, ...
   data/                     # Tournament data + generated map path data
+                            #   (mapPaths.js, regionPaths.js) + mapFeatures.js
 scripts/                    # Map data generation + app icon (see scripts/README.md)
 animal-hospital/            # Independent Vite app → dist/hospital/
 hotel/                      # Independent Vite app → dist/hotel/
@@ -83,6 +86,33 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 - The Print tab renders blank uncolored maps for printing. Print rules live in
   `src/index.css`; anything that shouldn't print gets `className="no-print"`
   (including the nav in `App.jsx`).
+
+### Social Studies Unit 1 (Rose) specifics
+
+- Built from her 31-question paper study guide; it follows the Virginia SOL
+  USI.2–USI.5 sequence. Where her first answer and the teacher's correction on
+  the sheet disagree, the correction wins (Puritans, not debtors, settled
+  Massachusetts Bay; the Iroquois and Pueblo farmed).
+- The rivers and world maps are **reused** from `GeographyStudyApp.jsx`, which
+  exports `RiverMap`, `WorldMap` and their small pieces for that reason. The
+  feature lists (`RIVERS`, `CONTINENTS`, `OCEANS`) live in
+  `src/data/mapFeatures.js` because exporting arrays from a component file
+  trips the fast-refresh lint rule. The `geo-shake` keyframes moved to
+  `index.css` for the same sharing.
+- `src/data/regionPaths.js` is **generated** by `scripts/gen_regions.py` — do
+  not hand-edit. The eight regions are hand-drawn lon/lat outlines clipped to
+  real coastlines, claimed in priority order, then simplified as one coverage;
+  see `scripts/README.md`. `REGIONS` in the app is in the worksheet's number
+  order (1 Coastal Range … 8 Canadian Shield) so the printable blank map's key
+  matches hers.
+- The practice test is sectioned Map / Multiple Choice / Fill in the Blank /
+  Short Answer because that is all the teacher has said about the test. Map
+  questions are generated from the map data (one region, one river, one
+  continent or ocean per test), not written into the bank.
+- "Who Am I?" is **mixed by default**, unlike the cards: telling similar
+  regions or tribes apart is a discrimination task, the case where
+  interleaving helps. Same reasoning as Math Facts — see
+  `docs/learning-design.md`.
 
 ### movie-theater specifics
 

@@ -7,6 +7,7 @@ import LatinVocabStudyApp from './LatinVocabStudyApp';
 import MiddleAgesStudyApp from './MiddleAgesStudyApp';
 import GeographyStudyApp from './GeographyStudyApp';
 import ScienceInquiryStudyApp from './ScienceInquiryStudyApp';
+import SocialStudiesStudyApp from './SocialStudiesStudyApp';
 import MathFactsStudyApp from './MathFactsStudyApp';
 import TournamentApp from './tournament/TournamentApp';
 import { groupTopicsByMonth } from './topicSchedule';
@@ -19,6 +20,7 @@ import { GuidanceButton, GuidanceProvider } from './Guidance';
  * nesting. To start dating a child's topics, add `date` to each of their
  * entries; a list with no dates just renders flat. */
 const ROSE_TOPICS = [
+  { id: 'socialstudies1', label: 'Social Studies Unit 1', emoji: '🧭', date: '2026-09-24' },
   { id: 'scienceinquiry', label: 'Thinking Like a Scientist', emoji: '🔬', date: '2026-09-21' },
   { id: 'geography', label: 'Maps & Rivers', emoji: '🗺️', date: '2026-09-03' },
   { id: 'vocab', label: 'Vocab Words', emoji: '📚', date: '2026-04-22' },
@@ -251,6 +253,7 @@ export default function App() {
       {studyTopic === 'vocab' && <VocabStudyApp />}
       {studyTopic === 'geography' && <GeographyStudyApp />}
       {studyTopic === 'scienceinquiry' && <ScienceInquiryStudyApp />}
+      {studyTopic === 'socialstudies1' && <SocialStudiesStudyApp />}
       {studyTopic === 'mathfacts' && <MathFactsStudyApp />}
       </div>
     </GuidanceProvider>
