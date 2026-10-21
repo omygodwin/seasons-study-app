@@ -18,7 +18,8 @@ menu in the nav.
 | Child | Topic | What it is |
 | --- | --- | --- |
 | **Ruth** (4th) | ✖️ Math Facts | Multiplication 1–12: adaptive practice plus a one-minute timed drill |
-| **Rose** (middle school) | 🔬 Thinking Like a Scientist | Unit 1 — inquiry, scientific method, measurement, lab write-up |
+| **Rose** (middle school) | 🧭 Social Studies Unit 1 | Geographic regions, Native Americans, explorers, the English colonies — with a regions map and a sectioned practice test |
+| | 🔬 Thinking Like a Scientist | Unit 1 — inquiry, scientific method, measurement, lab write-up |
 | | 🗺️ Maps & Rivers | Interactive continents, oceans and rivers, with printable blank maps |
 | | 📚 Vocab Words | 22 vocabulary words |
 | **Raegan** (9th) | 🌍 Earth Science: Seasons | Tilt, solstices, climate zones, plus an orbit simulation |
@@ -97,4 +98,4 @@ the deploy pipeline.
 | [docs/firebase.md](docs/firebase.md) | Shared Realtime Database, rules, namespaces |
 | [docs/topics/](docs/topics/) | One file per study topic |
 | [docs/tips-panel.md](docs/tips-panel.md) | The in-app Tips panel and its content model |
-| [scripts/README.md](scripts/README.md) | Regenerating the map data |
+| [scripts/README.md](scripts/README.md) | Regenerating the map data (rivers/world and the regions map) |

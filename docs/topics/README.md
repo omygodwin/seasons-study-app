@@ -5,6 +5,7 @@ together, and anything non-obvious about editing it.
 
 | Topic | Child | File | Tabs | Cards |
 |---|---|---|---|---|
+| [Social Studies Unit 1](social-studies.md) | Rose | `SocialStudiesStudyApp.jsx` | Note Cards · Maps · Who Am I? · Practice Test · Study Sheet · All Notes | 44 |
 | [Thinking Like a Scientist](science-inquiry.md) | Rose | `ScienceInquiryStudyApp.jsx` | Note Cards · Qual or Quant · Practice Test · Study Sheet · All Notes | 50 |
 | [Maps & Rivers](geography.md) | Rose | `GeographyStudyApp.jsx` | Rivers · World · Facts · Quiz · Print | — |
 | [Vocab Words](vocab.md) | Rose | `VocabStudyApp.jsx` | Note Cards · Quiz · Word List | 22 |
@@ -16,15 +17,18 @@ together, and anything non-obvious about editing it.
 | [Middle Ages](middle-ages.md) | Raegan | `MiddleAgesStudyApp.jsx` | Note Cards · Quiz · Overview · All Notes | 39 |
 
 Every topic except Maps & Rivers and Math Facts renders its cards through the
-shared [`Flashcards.jsx`](../../src/Flashcards.jsx) engine. Before changing how
+shared [`Flashcards.jsx`](../../src/Flashcards.jsx) engine. Social Studies
+Unit 1 also reuses the Maps & Rivers map components, so a change to those maps
+shows up in both topics. Before changing how
 any of them practices, read [learning-design.md](../learning-design.md) — several
 behaviors that look like bugs are deliberate.
 
 ## Adding a topic
 
 1. Create `src/FooStudyApp.jsx`, mirroring `VocabStudyApp.jsx` for a
-   cards-and-quiz topic or `ScienceInquiryStudyApp.jsx` for one with a
-   sectioned practice test.
+   cards-and-quiz topic, `ScienceInquiryStudyApp.jsx` for one with a
+   sectioned practice test, or `SocialStudiesStudyApp.jsx` for one that also
+   needs maps.
 2. Give it a unique `STORAGE_KEY` of the form `flashcards:foo`. **Two topics
    sharing a key merge their review schedules.**
 3. Add `{ id, label, emoji, date }` to the right child's array in `App.jsx`,

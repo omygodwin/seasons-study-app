@@ -45,9 +45,11 @@ src/
   *StudyApp.jsx              # one per topic
   Flashcards.jsx             # shared spaced-repetition card engine
   MathFactsStudyApp.jsx      # Ruth's math facts (own model, see below)
-  GeographyStudyApp.jsx      # maps (no cards)
+  GeographyStudyApp.jsx      # maps (no cards); its map components are
+                             #   reused by SocialStudiesStudyApp.jsx
   tournament/                # basketball hub, at #tournament
-  data/                      # tournament data + generated map paths
+  data/                      # tournament data, generated map paths
+                             #   (mapPaths.js, regionPaths.js), mapFeatures.js
 scripts/                     # map generation (see scripts/README.md)
 animal-hospital/  hotel/  movie-theater/     # independent Vite apps
 docs/topics/                 # one file per study topic

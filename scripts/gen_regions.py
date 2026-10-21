@@ -339,6 +339,36 @@ with open('regionPaths.js', 'w') as fh:
         fh.write(f'  {rid}: {{ x: {round(x, 1):g}, y: {round(y, 1):g} }},\n')
     fh.write('};\n')
 
+# A standalone preview to eyeball before copying regionPaths.js into src/:
+# open regions_preview.svg in any browser. A misplaced vertex is obvious here
+# and invisible in the path data. Colors are for checking only; the app sets
+# its own.
+PREVIEW_COLORS = {
+    'coastalrange': '#1d4ed8', 'basinrange': '#f97316', 'rockies': '#7c2d12',
+    'greatplains': '#eab308', 'interiorlowlands': '#65a30d',
+    'appalachian': '#15803d', 'coastalplain': '#06b6d4',
+    'canadianshield': '#be185d',
+}
+with open('regions_preview.svg', 'w') as fh:
+    fh.write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{minx:g} {miny:g} '
+             f'{maxx - minx:g} {maxy - miny:g}" width="1400" style="background:#bae6fd">\n')
+    for d in poly_paths(land_simpl, 1.0):
+        fh.write(f'<path d="{d}" fill="#e5e7eb" stroke="#475569" stroke-width="0.6"/>\n')
+    for rid, geom in zip(ids, simplified):
+        for d in poly_paths(geom):
+            fh.write(f'<path d="{d}" fill="{PREVIEW_COLORS[rid]}" fill-rule="evenodd" '
+                     'stroke="#fff" stroke-width="0.8"/>\n')
+    for d in poly_paths(lakes_svg, 0.8):
+        fh.write(f'<path d="{d}" fill="#93c5fd" stroke="#1e3a8a" stroke-width="0.4"/>\n')
+    for d in sum((line_paths(b) for b in borders), []):
+        fh.write(f'<path d="{d}" fill="none" stroke="#111" stroke-width="0.8" '
+                 'stroke-dasharray="3 2"/>\n')
+    for rid, (lon, lat) in LABEL_LONLAT.items():
+        x, y = to_svg(lon, lat)
+        fh.write(f'<text x="{x:.1f}" y="{y:.1f}" font-size="12" font-weight="bold" '
+                 f'text-anchor="middle" font-family="sans-serif">{rid}</text>\n')
+    fh.write('</svg>\n')
+
 import os
 print(f'viewBox {minx:g} {miny:g} {maxx - minx:g} {maxy - miny:g}')
 print('regionPaths.js', os.path.getsize('regionPaths.js') // 1024, 'KB')

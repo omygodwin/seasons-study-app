@@ -33,6 +33,21 @@ Two escape hatches sit in the toolbar:
 Progress is per feature and a correct match is permanent; a wrong one flashes
 and leaves the crayon selected so she can try again.
 
+## Shared with Social Studies Unit 1
+
+[Social Studies Unit 1](social-studies.md) shows these same rivers and world
+maps on its own Maps tab. It imports them rather than copying them:
+
+- This file exports `RiverMap`, `WorldMap` and their small pieces (`Pill`,
+  `CrayonChip`, `Toolbar`, `Feedback`).
+- `RIVERS`, `CONTINENTS` and `OCEANS` live in `src/data/mapFeatures.js`,
+  because exporting arrays from a component file trips the fast-refresh lint
+  rule.
+- The `geo-shake` wrong-answer keyframes live in `src/index.css`.
+
+A change to either map shows up in both topics, so click through both after
+editing one.
+
 ## Map data is generated — don't hand-edit it
 
 `src/data/mapPaths.js` is built from Natural Earth data by

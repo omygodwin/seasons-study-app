@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Map generation working files (scripts/README.md). The downloads are ~30 MB;
+# only the generated copies in src/data/ are committed.
+scripts/*.geojson
+scripts/mapPaths.js
+scripts/regionPaths.js
+scripts/regions_preview.svg
