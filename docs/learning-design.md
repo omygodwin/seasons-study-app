@@ -115,6 +115,11 @@ Note that this also means Math Facts' own rounds were *not* interleaved
 before division existed — they mixed facts, but every question was still
 "multiply these two numbers." Adding division is what made the mixing real.
 
+Social Studies Unit 1 applies the same test within one topic. Its note cards
+stay blocked, but its **Who Am I?** drill is mixed by default. A clue like
+"tall grasses, few trees" makes her choose between eight regions that are
+easy to confuse, so the mixing adds a real decision.
+
 ---
 
 ## Math facts (`src/MathFactsStudyApp.jsx`)

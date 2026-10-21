@@ -73,7 +73,7 @@ pip install shapely numpy     # shapely >= 2.1 for coverage_simplify
 for f in ne_50m_admin_0_countries ne_50m_lakes; do
   curl -sSO "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/$f.geojson"
 done
-python3 gen_regions.py
+python3 gen_regions.py          # also writes regions_preview.svg
 cp regionPaths.js ../src/data/regionPaths.js
 ```
 
@@ -94,6 +94,12 @@ cp regionPaths.js ../src/data/regionPaths.js
 - The boundaries are a classroom generalisation drawn to match the numbered map
   on her study guide, not survey lines.
 
-To check a change, render the paths to a PNG and compare with a textbook
-"physical regions of North America" map — a misplaced vertex is obvious by eye
-and invisible in the path data.
+To check a change, open `regions_preview.svg` (written next to the script) in
+a browser and compare it with a textbook "physical regions of North America"
+map, or with the numbered map on her study guide. A misplaced vertex is
+obvious by eye and invisible in the path data. Re-running the script on
+unchanged inputs reproduces the committed `regionPaths.js` byte for byte, so a
+`diff` against `src/data/` shows exactly what an outline edit changed.
+
+The downloaded `.geojson` files, the generated `.js` files and the preview are
+gitignored inside `scripts/`; only the copy in `src/data/` is committed.

@@ -89,6 +89,9 @@ movie-theater/              # Independent Vite app → dist/movie-theater/
 
 ### Social Studies Unit 1 (Rose) specifics
 
+Full write-up, including which answers differ from her paper sheet and one
+open content question (Kwakiutl housing), in `docs/topics/social-studies.md`.
+
 - Built from her 31-question paper study guide; it follows the Virginia SOL
   USI.2–USI.5 sequence. Where her first answer and the teacher's correction on
   the sheet disagree, the correction wins (Puritans, not debtors, settled
